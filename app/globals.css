@@ -37,24 +37,8 @@
 }
 
 * {
-  box-sizing: border-box;
-  margin: 4px;
-  padding: 1px;
-}
-
-/* Home Page: Margin 0 & Padding 1px */
-.home-page,
-.home-page * {
   margin: 0;
-  padding: 1px;
-  box-sizing: border-box;
-}
-
-/* About Us Page: Margin 4px & Padding 1px */
-.about-page,
-.about-page * {
-  margin: 4px;
-  padding: 1px;
+  padding: 0;
   box-sizing: border-box;
 }
 

@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function AboutPage() {
   return (
-    <div className="about-page bg-[#FAF7F2] text-[#1C1917] overflow-x-hidden selection:bg-[#EAE0D2] selection:text-[#1E382B]">
+    <div className="bg-[#FAF7F2] text-[#1C1917] overflow-x-hidden selection:bg-[#EAE0D2] selection:text-[#1E382B]">
       
       {/* 1. Hero Philosophy Header Section (Centered) */}
       <section className="relative py-16 sm:py-24 bg-[#FAF7F2] border-b border-[#E8E1D7]">
