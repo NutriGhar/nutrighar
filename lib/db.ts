@@ -1212,32 +1212,33 @@ export async function updateOrderStatus(
 // -------------------------------------------------------------
 
 export async function getWebsiteContent(): Promise<WebsiteContent> {
+  const fallback: WebsiteContent = JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
+
   try {
     const rows = await prisma.websiteContent.findMany();
-    const result = { ...DEFAULT_WEBSITE_CONTENT };
 
     if (rows && rows.length > 0) {
       for (const row of rows) {
-        if (row.section in result && row.data !== undefined && row.data !== null) {
+        if (row.section in fallback && row.data !== undefined && row.data !== null) {
           if (Array.isArray(row.data)) {
-            (result as any)[row.section] = row.data;
+            (fallback as any)[row.section] = row.data;
           } else if (typeof row.data === 'object') {
-            (result as any)[row.section] = {
-              ...(result as any)[row.section],
+            (fallback as any)[row.section] = {
+              ...(fallback as any)[row.section],
               ...(row.data as any),
             };
           } else {
-            (result as any)[row.section] = row.data;
+            (fallback as any)[row.section] = row.data;
           }
         }
       }
-      return result;
+      return fallback;
     }
   } catch (error) {
     console.error('Warning: PostgreSQL getWebsiteContent failed, falling back to in-memory store:', error);
   }
 
-  return DEFAULT_WEBSITE_CONTENT;
+  return fallback;
 }
 
 export async function updateWebsiteContent(section: keyof WebsiteContent, data: any): Promise<WebsiteContent> {
