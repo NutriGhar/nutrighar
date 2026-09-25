@@ -1,0 +1,134 @@
+// Prisma Schema for Nutri Ghar E-Commerce Application
+// Configured for PostgreSQL Database with comprehensive relational models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  icon        String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                String      @id @default(cuid())
+  name              String
+  slug              String      @unique
+  description       String
+  price             Float
+  originalPrice     Float?
+  categoryId        String
+  category          Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  categorySlug      String
+  image             String
+  images            Json?       // Array of additional image URLs
+  ingredients       Json?       // Array of strings
+  benefits          Json?       // Array of strings
+  rating            Float       @default(4.8)
+  reviewCount       Int         @default(0)
+  stockQuantity     Int         @default(50)
+  lowStockThreshold Int         @default(10)
+  isFeatured        Boolean     @default(false)
+  isBestSeller      Boolean     @default(false)
+  isActive          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  orderItems        OrderItem[]
+
+  @@map("products")
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String?
+  address      String?
+  city         String?
+  state        String?
+  postalCode   String?
+  orders       Order[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique
+  customerName   String
+  customerEmail  String
+  customerPhone  String
+  addressLine1   String
+  addressLine2   String?
+  city           String
+  state          String
+  postalCode     String
+  orderStatus    String      @default("Pending") // Pending, Confirmed, Preparing, Shipped, Delivered, Cancelled
+  paymentStatus  String      @default("Pending") // Pending, Paid, Failed, COD
+  subtotal       Float
+  deliveryCharge Float       @default(0)
+  totalAmount    Float
+  customerId     String?
+  customer       Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items          OrderItem[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName     String   // Snapshot at time of order
+  productPrice    Float    // Snapshot at time of order
+  productCategory String?
+  productImage    String?
+  quantity        Int
+  total           Float
+
+  @@map("order_items")
+}
+
+model WebsiteContent {
+  id        String   @id @default(cuid())
+  section   String   @unique // 'hero', 'announcement', 'brand_story', 'contact', 'footer', 'newsletter'
+  data      Json     // Flexible JSON structure for section-specific fields
+  updatedAt DateTime @updatedAt
+
+  @@map("website_content")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admin_users")
+}
