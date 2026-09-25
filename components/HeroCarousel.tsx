@@ -162,13 +162,14 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
               sizes="100vw"
             />
             {/* High-Contrast Gradient Overlay for Legibility (Vertical on mobile, horizontal on desktop) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 sm:bg-gradient-to-r sm:from-black/85 sm:via-black/50 sm:to-transparent" />
+            {/* High-Contrast Gradient Overlay for Crisp Legibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/40 sm:bg-gradient-to-r sm:from-black/85 sm:via-black/50 sm:to-transparent" />
           </div>
         ))}
 
         {/* Content Overlay */}
-        <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-20">
-          <div className="max-w-2xl text-white space-y-3 sm:space-y-6 animate-fadeIn" key={safeIndex}>
+        <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+          <div className="max-w-2xl text-white space-y-2.5 sm:space-y-4 animate-fadeIn" key={safeIndex}>
             
             {/* Pill Tag & Mobile Badge */}
             <div className="flex flex-wrap items-center gap-2">
@@ -179,7 +180,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                 </div>
               )}
               {slide.badgeText && (
-                <div className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 rounded-full bg-[#1E382B]/80 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/20">
+                <div className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 rounded-full bg-[#1E382B]/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/20">
                   <span className="w-1 h-1 rounded-full bg-[#E5B56A]" />
                   <span>{slide.badgeText}</span>
                 </div>
@@ -187,7 +188,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
             </div>
 
             {/* Headline */}
-            <h1 className="font-serif text-2xl sm:text-4xl lg:text-6xl font-normal leading-[1.15] tracking-tight text-white drop-shadow-sm">
+            <h1 className="font-serif text-xl sm:text-4xl lg:text-5xl font-normal leading-snug sm:leading-tight tracking-tight text-white drop-shadow-sm">
               {slide.title} {slide.titleItalic && <br className="hidden sm:inline" />}{' '}
               {slide.titleItalic && (
                 <span className="font-serif italic font-normal text-[#E5B56A]">
@@ -198,13 +199,13 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
 
             {/* Subtitle */}
             {slide.subtitle && (
-              <p className="text-xs sm:text-base lg:text-lg text-stone-200 leading-relaxed max-w-xl font-light drop-shadow-xs line-clamp-3 sm:line-clamp-none">
+              <p className="text-xs sm:text-sm lg:text-base text-stone-200 leading-relaxed max-w-lg font-light drop-shadow-xs line-clamp-2 sm:line-clamp-none">
                 {slide.subtitle}
               </p>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2.5 pt-1 sm:pt-2">
+            {/* Action Buttons (Clean & uncrowded on mobile) */}
+            <div className="flex items-center gap-2.5 pt-1 sm:pt-2">
               {slide.buttonText && (
                 <Link
                   href={slide.buttonLink || '/products'}
@@ -218,7 +219,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
               {slide.secondaryButtonText && (
                 <Link
                   href={slide.secondaryButtonLink || '/products'}
-                  className="px-4 sm:px-7 py-2.5 sm:py-3.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase text-center transition-all duration-300 cursor-pointer"
+                  className="hidden sm:inline-flex px-4 sm:px-7 py-2.5 sm:py-3.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase text-center transition-all duration-300 cursor-pointer"
                 >
                   {slide.secondaryButtonText}
                 </Link>
