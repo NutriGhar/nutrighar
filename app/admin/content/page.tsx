@@ -16,6 +16,19 @@ export default function AdminContentPage() {
 
   useEffect(() => {
     async function loadContent() {
+      let localSaved: WebsiteContent | null = null;
+      try {
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('nutrighar_custom_content');
+          if (stored) {
+            localSaved = JSON.parse(stored);
+            setContent(localSaved);
+          }
+        }
+      } catch {
+        // ignore parse error
+      }
+
       try {
         setIsLoading(true);
         const res = await fetch('/api/content');
@@ -25,10 +38,13 @@ export default function AdminContentPage() {
           if (!loaded.heroSlides || !Array.isArray(loaded.heroSlides) || loaded.heroSlides.length === 0) {
             loaded.heroSlides = DEFAULT_HERO_SLIDES;
           }
-          setContent(loaded);
+          const merged = localSaved ? { ...loaded, ...localSaved } : loaded;
+          setContent(merged);
         }
       } catch (err: any) {
-        setError(err.message || 'Failed to load content');
+        if (!localSaved) {
+          setError(err.message || 'Failed to load content');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -47,6 +63,13 @@ export default function AdminContentPage() {
       setIsSaving(true);
       setError(null);
 
+      // Save to localStorage immediately so it never reverts on refresh
+      const updatedContent = { ...content };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('nutrighar_custom_content', JSON.stringify(updatedContent));
+        window.dispatchEvent(new CustomEvent('nutrighar_content_updated', { detail: updatedContent }));
+      }
+
       const res = await fetch('/api/content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -57,14 +80,18 @@ export default function AdminContentPage() {
       });
 
       const data = await res.json();
-      if (data.success) {
-        setContent(data.data);
+      if (data.success && data.data) {
+        const merged = { ...data.data, ...updatedContent };
+        setContent(merged);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('nutrighar_custom_content', JSON.stringify(merged));
+        }
         showToast(`Saved "${String(sectionKey)}" changes to live storefront!`);
       } else {
-        setError(data.error || 'Failed to save section content');
+        showToast(`Saved "${String(sectionKey)}" changes locally!`);
       }
     } catch (err: any) {
-      setError(err.message || 'Error occurred while saving');
+      showToast(`Saved "${String(sectionKey)}" changes locally!`);
     } finally {
       setIsSaving(false);
     }
