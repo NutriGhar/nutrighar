@@ -162,24 +162,25 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
               sizes="100vw"
             />
             {/* High-Contrast Gradient Overlay for Legibility (Vertical on mobile, horizontal on desktop) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 sm:bg-gradient-to-r sm:from-black/85 sm:via-black/50 sm:to-transparent" />
+            {/* High-Contrast Gradient Overlay for Crisp Legibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/40 sm:bg-gradient-to-r sm:from-black/85 sm:via-black/50 sm:to-transparent" />
           </div>
         ))}
 
         {/* Content Overlay */}
-        <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-20">
-          <div className="max-w-2xl text-white space-y-3 sm:space-y-6 animate-fadeIn" key={safeIndex}>
+        <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+          <div className="max-w-xl sm:max-w-2xl text-white space-y-3 sm:space-y-4 animate-fadeIn" key={safeIndex}>
             
             {/* Pill Tag & Mobile Badge */}
             <div className="flex flex-wrap items-center gap-2">
               {slide.tag && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[#FDF0A6] text-[10px] sm:text-xs font-extrabold tracking-[0.18em] uppercase border border-white/25">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FDF0A6]" />
-                  {slide.tag}
+                  <span>{slide.tag}</span>
                 </div>
               )}
               {slide.badgeText && (
-                <div className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 rounded-full bg-[#1E382B]/80 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/20">
+                <div className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 rounded-full bg-[#1E382B]/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/20">
                   <span className="w-1 h-1 rounded-full bg-[#E5B56A]" />
                   <span>{slide.badgeText}</span>
                 </div>
@@ -187,7 +188,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
             </div>
 
             {/* Headline */}
-            <h1 className="font-serif text-2xl sm:text-4xl lg:text-6xl font-normal leading-[1.15] tracking-tight text-white drop-shadow-sm">
+            <h1 className="font-serif text-xl sm:text-3xl md:text-5xl font-normal leading-snug sm:leading-tight tracking-tight text-white drop-shadow-sm break-words">
               {slide.title} {slide.titleItalic && <br className="hidden sm:inline" />}{' '}
               {slide.titleItalic && (
                 <span className="font-serif italic font-normal text-[#E5B56A]">
@@ -198,31 +199,33 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
 
             {/* Subtitle */}
             {slide.subtitle && (
-              <p className="text-xs sm:text-base lg:text-lg text-stone-200 leading-relaxed max-w-xl font-light drop-shadow-xs line-clamp-3 sm:line-clamp-none">
+              <p className="text-xs sm:text-sm lg:text-base text-stone-200 leading-relaxed max-w-lg font-light drop-shadow-xs break-words line-clamp-3 sm:line-clamp-none">
                 {slide.subtitle}
               </p>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2.5 pt-1 sm:pt-2">
-              {slide.buttonText && (
-                <Link
-                  href={slide.buttonLink || '/products'}
-                  className="px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-full bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs sm:text-sm font-bold tracking-wider uppercase text-center shadow-lg hover:shadow-xl transition-all duration-300 group inline-flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer"
-                >
-                  <span>{slide.buttonText}</span>
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
-              )}
-              
-              {slide.secondaryButtonText && (
-                <Link
-                  href={slide.secondaryButtonLink || '/products'}
-                  className="px-4 sm:px-7 py-2.5 sm:py-3.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase text-center transition-all duration-300 cursor-pointer"
-                >
-                  {slide.secondaryButtonText}
-                </Link>
-              )}
+            {/* Action Buttons: Single clean, full-width or auto CTA button on mobile, secondary button on larger screens */}
+            <div className="pt-2 sm:pt-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 max-w-sm sm:max-w-none">
+                {slide.buttonText && (
+                  <Link
+                    href={slide.buttonLink || '/products'}
+                    className="w-full sm:w-auto min-h-[44px] px-6 sm:px-8 py-3 rounded-full bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs sm:text-sm font-bold tracking-wider uppercase shadow-lg hover:shadow-xl transition-all duration-300 group inline-flex items-center justify-center gap-2 border border-white/20 cursor-pointer text-center leading-none"
+                  >
+                    <span>{slide.buttonText}</span>
+                    <span className="group-hover:translate-x-1 transition-transform leading-none">→</span>
+                  </Link>
+                )}
+                
+                {slide.secondaryButtonText && (
+                  <Link
+                    href={slide.secondaryButtonLink || '/products'}
+                    className="hidden sm:inline-flex min-h-[44px] px-6 sm:px-8 py-3 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-300 items-center justify-center text-center cursor-pointer leading-none shadow-sm"
+                  >
+                    <span>{slide.secondaryButtonText}</span>
+                  </Link>
+                )}
+              </div>
             </div>
 
           </div>
@@ -236,6 +239,37 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
           </div>
         )}
 
+      </div>
+
+      {/* ========================================================
+          Fresh Kitchen Batch Countdown Strip (Matching Reference Image 1)
+      ======================================================== */}
+      <div className="w-full bg-[#4E652B] text-white py-2.5 px-4 shadow-inner">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-[#E7F0AB]">
+            <span className="w-2 h-2 rounded-full bg-[#E5B56A] animate-pulse" />
+            <span>Fresh Weekly Batch Cooking Now • Dispatches In:</span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">2</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Days</div>
+            </div>
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">14</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Hours</div>
+            </div>
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">35</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Mins</div>
+            </div>
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-[#E5B56A] leading-tight">20</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Secs</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ========================================================

@@ -8,7 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
 
 export default function Navbar() {
-  const { getItemCount } = useCart();
+  const { getItemCount, getTotal } = useCart();
   const { customer, logout } = useCustomerAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
@@ -16,6 +16,7 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [itemCount, setItemCount] = useState(0);
+  const [cartTotal, setCartTotal] = useState(0);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -25,7 +26,8 @@ export default function Navbar() {
 
   useEffect(() => {
     setItemCount(getItemCount());
-  }, [getItemCount]);
+    setCartTotal(getTotal());
+  }, [getItemCount, getTotal]);
 
   // Close dropdowns on route change
   useEffect(() => {
@@ -665,60 +667,73 @@ export default function Navbar() {
       )}
 
       {/* ========================================================
-          Mobile Bottom Navigation Bar (App-like Web Experience)
+          Mobile Bottom Navigation Bar (Matching Reference Images 1 & 4)
       ======================================================== */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 lg:hidden shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden shadow-2xl">
         
-        {/* Floating Cart Nudge if item count > 0 */}
-        {itemCount > 0 && pathname !== '/cart' && pathname !== '/checkout' && (
-          <div className="bg-[#4E652B] text-white px-4 py-2 flex items-center justify-between text-xs font-bold shadow-md animate-fadeIn">
-            <div className="flex items-center gap-2">
-              <span>🛍️</span>
-              <span>{itemCount} {itemCount === 1 ? 'item' : 'items'} in Bag</span>
+        {/* FREE Delivery Pill & Cart Summary Bar (When not on cart/checkout) */}
+        {pathname !== '/cart' && pathname !== '/checkout' && (
+          <div className="flex flex-col">
+            {/* Free Shipping Pill Sub-header */}
+            <div className="bg-[#D4E79E] text-[#1E382B] text-[10px] font-bold py-1 px-4 text-center tracking-wide">
+              🌿 FREE Shipping on all orders above ₹500
             </div>
+
+            {/* Olive Green Cart Quick Bar */}
             <Link
               href="/cart"
-              className="bg-white text-[#1E382B] px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider hover:bg-stone-100 transition-colors inline-flex items-center gap-1"
+              className="bg-[#4E652B] hover:bg-[#3D5021] text-white px-4 py-2 flex items-center justify-between transition-colors shadow-md group cursor-pointer"
             >
-              <span>View Bag</span>
-              <span>→</span>
+              <div className="flex items-center gap-2 font-bold text-xs">
+                <span>🛒</span>
+                <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+              </div>
+              <div className="flex items-center gap-2 font-bold text-xs">
+                <span>₹{cartTotal}</span>
+                <span className="bg-white/20 px-2 py-0.5 rounded text-[11px] group-hover:bg-white/30 transition-colors inline-flex items-center gap-1">
+                  <span>Cart</span>
+                  <span>▶</span>
+                </span>
+              </div>
             </Link>
           </div>
         )}
 
-        {/* 5 Bottom Nav Items */}
-        <div className="grid grid-cols-5 py-2 px-1 text-center">
+        {/* 5 Bottom Nav Items (Cream Background with Olive Active Icons) */}
+        <div className="grid grid-cols-5 py-2 px-1 text-center bg-[#FAF7F2] border-t border-stone-200">
           <Link
-            href="/"
-            className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-              pathname === '/' ? 'text-[#4E652B]' : 'text-stone-500 hover:text-stone-900'
+            href="/products?featured=true"
+            className={`flex flex-col items-center gap-0.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-colors ${
+              pathname === '/products' ? 'text-[#4E652B]' : 'text-stone-600 hover:text-[#4E652B]'
             }`}
           >
-            <span className="text-base leading-none">🏠</span>
-            <span>Home</span>
+            <span className="text-base leading-none">🏷️</span>
+            <span>Offers</span>
           </Link>
 
           <Link
             href="/products"
-            className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-              pathname?.startsWith('/products') ? 'text-[#4E652B]' : 'text-stone-500 hover:text-stone-900'
+            className={`flex flex-col items-center gap-0.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-colors ${
+              pathname === '/products' ? 'text-[#4E652B]' : 'text-stone-600 hover:text-[#4E652B]'
             }`}
           >
-            <span className="text-base leading-none">🛍️</span>
+            <span className="text-base leading-none">📂</span>
+            <span>Categories</span>
+          </Link>
+
+          <Link
+            href="/"
+            className={`flex flex-col items-center gap-0.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-colors ${
+              pathname === '/' ? 'text-[#4E652B]' : 'text-stone-600 hover:text-[#4E652B]'
+            }`}
+          >
+            <span className="text-base leading-none">🏠</span>
             <span>Shop</span>
           </Link>
 
           <Link
-            href="/products?category=mithai"
-            className="flex flex-col items-center gap-0.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-[#4E652B] transition-colors"
-          >
-            <span className="text-base leading-none">🍯</span>
-            <span>Mithai</span>
-          </Link>
-
-          <Link
             href={customer ? '/cart' : '/login'}
-            className="flex flex-col items-center gap-0.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-[#4E652B] transition-colors"
+            className="flex flex-col items-center gap-0.5 py-1 text-[9px] font-bold uppercase tracking-wider text-stone-600 hover:text-[#4E652B] transition-colors"
           >
             <span className="text-base leading-none">👤</span>
             <span>{customer ? 'Account' : 'Login'}</span>
@@ -728,7 +743,7 @@ export default function Navbar() {
             href="https://wa.me/919876543210?text=Hi%20Nutri%20Ghar,%20I%20have%20an%20inquiry."
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-0.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors"
+            className="flex flex-col items-center gap-0.5 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors"
           >
             <span className="text-base leading-none">💬</span>
             <span>Help</span>
