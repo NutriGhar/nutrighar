@@ -44,11 +44,28 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<WebsiteContent | null>(null);
 
   const refreshContent = async () => {
+    // 1. Read from local storage first if available
+    let localSaved: WebsiteContent | null = null;
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('nutrighar_custom_content');
+        if (stored) {
+          localSaved = JSON.parse(stored);
+          setContent(localSaved);
+        }
+      }
+    } catch {
+      // ignore JSON parse error
+    }
+
+    // 2. Fetch from API
     try {
       const res = await fetch('/api/content', { cache: 'no-store' });
       const data = await res.json();
       if (data.success && data.data) {
-        setContent(data.data);
+        // If local storage has customizations, merge with API data
+        const merged = localSaved ? { ...data.data, ...localSaved } : data.data;
+        setContent(merged);
       }
     } catch (err) {
       console.error('Failed to fetch website content:', err);
@@ -57,6 +74,21 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshContent();
+
+    // Listen to custom content update events across components
+    const handleContentUpdate = (e: CustomEvent<WebsiteContent>) => {
+      if (e.detail) {
+        setContent(e.detail);
+      }
+    };
+
+    window.addEventListener('nutrighar_content_updated' as any, handleContentUpdate as any);
+    window.addEventListener('storage', refreshContent);
+
+    return () => {
+      window.removeEventListener('nutrighar_content_updated' as any, handleContentUpdate as any);
+      window.removeEventListener('storage', refreshContent);
+    };
   }, []);
 
   const rawWhatsApp = content?.contact?.whatsapp || content?.footer?.whatsappUrl || '+91 98765 43210';
