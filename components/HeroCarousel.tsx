@@ -239,6 +239,37 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
       </div>
 
       {/* ========================================================
+          Fresh Kitchen Batch Countdown Strip (Matching Reference Image 1)
+      ======================================================== */}
+      <div className="w-full bg-[#4E652B] text-white py-2.5 px-4 shadow-inner">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-[#E7F0AB]">
+            <span className="w-2 h-2 rounded-full bg-[#E5B56A] animate-pulse" />
+            <span>Fresh Weekly Batch Cooking Now • Dispatches In:</span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">2</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Days</div>
+            </div>
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">14</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Hours</div>
+            </div>
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">35</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Mins</div>
+            </div>
+            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
+              <div className="font-serif text-sm sm:text-base font-bold text-[#E5B56A] leading-tight">20</div>
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Secs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================
           Interactive Slider Controls Bar (Matching Reference Image 3)
           [ < ]  [ ○ ] [ ○ ] [ ● ] [ ○ ] [ ○ ]  [ > ]   |   [ || ]
       ======================================================== */}
