@@ -50,6 +50,14 @@
   box-sizing: border-box;
 }
 
+/* About Us Page: Margin 4px & Padding 1px */
+.about-page,
+.about-page * {
+  margin: 4px;
+  padding: 1px;
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
