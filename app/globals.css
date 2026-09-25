@@ -37,9 +37,9 @@
 }
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
+  margin: 4px;
+  padding: 1px;
 }
 
 html, body {
