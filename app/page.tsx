@@ -90,7 +90,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="bg-[#FAF7F2] text-[#1C1917] overflow-x-hidden selection:bg-[#EAE0D2] selection:text-[#1E382B]">
+    <div className="home-page bg-[#FAF7F2] text-[#1C1917] overflow-x-hidden selection:bg-[#EAE0D2] selection:text-[#1E382B]">
       
       {/* ========================================================
           1. HERO CAROUSEL (Interactive Movable Slider Bar)

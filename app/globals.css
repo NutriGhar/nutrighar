@@ -42,6 +42,14 @@
   padding: 1px;
 }
 
+/* Home Page: Margin 0 & Padding 1px */
+.home-page,
+.home-page * {
+  margin: 0;
+  padding: 1px;
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
