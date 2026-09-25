@@ -143,7 +143,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
   return (
     <div className="relative w-full overflow-hidden bg-[#FAF7F2]">
       {/* Main Banner Slide Container */}
-      <div className="relative w-full min-h-[400px] sm:min-h-[500px] lg:min-h-[560px] flex items-center">
+      <div className="relative w-full min-h-[460px] sm:min-h-[520px] lg:min-h-[580px] flex items-center">
         
         {/* Slide Background Image with Smooth Crossfade */}
         {slides.map((s, idx) => (
@@ -161,14 +161,13 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
               className="object-cover object-center"
               sizes="100vw"
             />
-            {/* High-Contrast Gradient Overlay for Legibility (Vertical on mobile, horizontal on desktop) */}
-            {/* High-Contrast Gradient Overlay for Crisp Legibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/40 sm:bg-gradient-to-r sm:from-black/85 sm:via-black/50 sm:to-transparent" />
+            {/* High-Contrast Gradient Overlay for Crisp Legibility across all screen sizes */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/35 sm:bg-gradient-to-r sm:from-black/85 sm:via-black/55 sm:to-transparent" />
           </div>
         ))}
 
         {/* Content Overlay */}
-        <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+        <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 lg:py-16">
           <div className="max-w-xl sm:max-w-2xl text-white space-y-3 sm:space-y-4 animate-fadeIn" key={safeIndex}>
             
             {/* Pill Tag & Mobile Badge */}
@@ -180,7 +179,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                 </div>
               )}
               {slide.badgeText && (
-                <div className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 rounded-full bg-[#1E382B]/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/20">
+                <div className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 rounded-full bg-[#1E382B]/90 backdrop-blur-md text-[#FDF0A6] text-[10px] font-bold uppercase tracking-wider border border-white/20">
                   <span className="w-1 h-1 rounded-full bg-[#E5B56A]" />
                   <span>{slide.badgeText}</span>
                 </div>
@@ -188,7 +187,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
             </div>
 
             {/* Headline */}
-            <h1 className="font-serif text-xl sm:text-3xl md:text-5xl font-normal leading-snug sm:leading-tight tracking-tight text-white drop-shadow-sm break-words">
+            <h1 className="font-serif text-2xl sm:text-4xl md:text-5xl font-normal leading-snug sm:leading-tight tracking-tight text-white drop-shadow-sm break-words">
               {slide.title} {slide.titleItalic && <br className="hidden sm:inline" />}{' '}
               {slide.titleItalic && (
                 <span className="font-serif italic font-normal text-[#E5B56A]">
@@ -204,13 +203,13 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
               </p>
             )}
 
-            {/* Action Buttons: Single clean, full-width or auto CTA button on mobile, secondary button on larger screens */}
+            {/* Action Buttons: Both buttons visible and cleanly styled on mobile & desktop */}
             <div className="pt-2 sm:pt-4">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 max-w-sm sm:max-w-none">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3.5">
                 {slide.buttonText && (
                   <Link
                     href={slide.buttonLink || '/products'}
-                    className="w-full sm:w-auto min-h-[44px] px-6 sm:px-8 py-3 rounded-full bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs sm:text-sm font-bold tracking-wider uppercase shadow-lg hover:shadow-xl transition-all duration-300 group inline-flex items-center justify-center gap-2 border border-white/20 cursor-pointer text-center leading-none"
+                    className="min-h-[42px] sm:min-h-[46px] px-5 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#4E652B] hover:bg-[#3D5021] text-white text-[11px] sm:text-sm font-bold tracking-wider uppercase shadow-lg hover:shadow-xl transition-all duration-300 group inline-flex items-center justify-center gap-2 border border-white/20 cursor-pointer text-center leading-none"
                   >
                     <span>{slide.buttonText}</span>
                     <span className="group-hover:translate-x-1 transition-transform leading-none">→</span>
@@ -220,7 +219,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                 {slide.secondaryButtonText && (
                   <Link
                     href={slide.secondaryButtonLink || '/products'}
-                    className="hidden sm:inline-flex min-h-[44px] px-6 sm:px-8 py-3 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-300 items-center justify-center text-center cursor-pointer leading-none shadow-sm"
+                    className="inline-flex min-h-[42px] sm:min-h-[46px] px-5 sm:px-8 py-2.5 sm:py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/40 text-[11px] sm:text-sm font-bold tracking-wider uppercase transition-all duration-300 items-center justify-center text-center cursor-pointer leading-none shadow-sm"
                   >
                     <span>{slide.secondaryButtonText}</span>
                   </Link>

@@ -340,7 +340,7 @@ export default function HomePage() {
           </div>
 
           {/* Product Cards Grid: 2 columns on Mobile, 3 on Tablet, 4 on Desktop */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

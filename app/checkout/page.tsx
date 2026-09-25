@@ -12,6 +12,9 @@ export default function CheckoutPage() {
   const { customer, sendOtp, verifyOtp } = useCustomerAuth();
   const router = useRouter();
 
+  // Mobile Order Summary Accordion toggle
+  const [isOrderSummaryOpen, setIsOrderSummaryOpen] = useState(false);
+
   // Phone & OTP state
   const [phone, setPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -149,12 +152,14 @@ export default function CheckoutPage() {
 
     if (!customer && !phone) {
       setOrderError('Please enter and verify your mobile number first.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (!formData.fullName || !formData.address || !formData.city || !formData.pincode) {
       setShowAddressForm(true);
       setOrderError('Please complete your delivery address details.');
+      window.scrollTo({ top: 200, behavior: 'smooth' });
       return;
     }
 
@@ -224,16 +229,16 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-[80vh] bg-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center space-y-4">
-          <div className="text-6xl">🛒</div>
-          <h1 className="text-2xl font-bold text-stone-900">Your Basket is Empty</h1>
-          <p className="text-sm text-stone-600">
-            Explore our artisanal Indian mithais, roasted nuts, and stone-ground nut butters.
+      <div className="min-h-[80vh] bg-[#FAF7F2] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white p-8 sm:p-10 rounded-3xl border border-stone-200 text-center space-y-5 shadow-sm">
+          <div className="text-5xl">🛒</div>
+          <h1 className="font-serif text-2xl font-bold text-stone-900">Your Basket is Empty</h1>
+          <p className="text-xs sm:text-sm text-stone-600 font-light leading-relaxed">
+            Explore our handcrafted Indian mithais, roasted nuts, and stone-ground nut butters.
           </p>
           <Link
             href="/products"
-            className="inline-block px-8 py-3.5 rounded-md bg-[#1E2C14] text-white text-xs font-bold uppercase tracking-wider hover:bg-black transition-colors"
+            className="inline-block px-8 py-3.5 rounded-full bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-md"
           >
             Start Shopping →
           </Link>
@@ -243,115 +248,193 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#111111] font-sans antialiased pb-20">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1C1917] font-sans antialiased pb-32 lg:pb-24">
       
       {/* =========================================================================
-          TOP MINIMAL HEADER (EXACT KAPIVA CHECKOUT HEADER)
+          TOP CHECKOUT NAVBAR (Spacious, Clean with SSL Lock)
       ========================================================================= */}
-      <header className="border-b border-stone-200 bg-white sticky top-0 z-40">
+      <header className="border-b border-stone-200 bg-white sticky top-0 z-40 shadow-2xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link
             href="/cart"
-            className="inline-flex items-center gap-2 text-sm font-bold text-stone-800 hover:text-stone-600 transition-colors"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-stone-800 hover:text-[#4E652B] transition-colors"
           >
-            <span className="text-lg">←</span>
-            <span>Checkout</span>
+            <span className="text-base">←</span>
+            <span>Return to Cart</span>
           </Link>
 
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-black text-white px-3.5 py-1.5 rounded-sm font-sans tracking-[0.2em] font-extrabold text-xs uppercase">
-              NUTRI GHAR
+            <div className="bg-black text-white px-3 sm:px-4 py-1.5 rounded font-sans tracking-[0.18em] font-black text-xs sm:text-sm uppercase shadow-xs">
+              <span>NUTRI </span>
+              <span className="text-[#E5B56A]">GHAR</span>
             </div>
           </Link>
+
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#4E652B] bg-[#F1F6EC] px-2.5 py-1 rounded-full border border-[#D5E5C9]">
+            <span>🔒</span>
+            <span className="hidden sm:inline">100% Secure</span>
+          </div>
         </div>
       </header>
 
+      {/* =========================================================================
+          MOBILE COLLAPSIBLE ORDER SUMMARY ACCORDION (Visible only on mobile)
+      ========================================================================= */}
+      <div className="lg:hidden bg-white border-b border-stone-200 px-4 py-3 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setIsOrderSummaryOpen(!isOrderSummaryOpen)}
+          className="w-full flex items-center justify-between text-xs font-bold text-stone-800 cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <span>🛍️</span>
+            <span>Order Summary ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
+            <span className="text-stone-400 font-normal">{isOrderSummaryOpen ? '▲ Hide' : '▼ View'}</span>
+          </div>
+          <span className="font-serif text-sm font-extrabold text-[#1E382B]">
+            ₹{grandTotal.toFixed(2)}
+          </span>
+        </button>
+
+        {isOrderSummaryOpen && (
+          <div className="mt-4 pt-3 border-t border-stone-100 space-y-3 animate-fadeIn">
+            <div className="divide-y divide-stone-100 max-h-56 overflow-y-auto pr-1">
+              {items.map((item) => (
+                <div key={item.id} className="py-2.5 first:pt-0 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-50 border border-stone-200 shrink-0">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-stone-900 line-clamp-1">{item.name}</div>
+                      <div className="text-[11px] text-stone-500 font-light">
+                        Qty: {item.quantity} × ₹{item.price}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="font-serif text-xs font-bold text-stone-900">
+                    ₹{item.price * item.quantity}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs text-stone-600">
+              <span>Delivery Fee:</span>
+              <span className="font-semibold text-emerald-800">
+                {deliveryCharge === 0 ? 'FREE' : `₹${deliveryCharge}`}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
         
         {orderError && (
-          <div className="mb-6 p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold">
-            ⚠️ {orderError}
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold flex items-center gap-2 animate-fadeIn">
+            <span>⚠️</span>
+            <span>{orderError}</span>
           </div>
         )}
 
-        {/* 2-Column Kapiva Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* 2-Column Luxury Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
           
           {/* =========================================================================
-              LEFT COLUMN (60%): Verify Number + Coupons + Payment Method + Delivery
+              LEFT COLUMN: Stepped Checkout Form (Spacious Mobile Cards)
           ========================================================================= */}
-          <div className="lg:col-span-7 space-y-8">
+          <div className="lg:col-span-7 space-y-6">
             
-            {/* SECTION 1: VERIFY NUMBER TO PROCEED */}
-            <div className="space-y-3">
-              <h2 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">
-                Verify your number to proceed
-              </h2>
-              <p className="text-xs sm:text-sm text-stone-500 font-normal">
-                We&apos;ll fetch your saved addresses to make checkout quicker
-              </p>
+            {/* -------------------------------------------------------------
+                STEP 1: PHONE NUMBER & OTP VERIFICATION
+            ------------------------------------------------------------- */}
+            <div className="bg-white p-5 sm:p-7 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-full bg-[#1E382B] text-white text-xs font-bold flex items-center justify-center">
+                    1
+                  </div>
+                  <h2 className="text-base sm:text-lg font-bold text-stone-900">
+                    Contact &amp; Mobile Verification
+                  </h2>
+                </div>
+                {customer && (
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    ✓ Verified
+                  </span>
+                )}
+              </div>
 
               {customer ? (
-                <div className="p-4 rounded-lg bg-[#F5F8F2] border border-[#A8BD93] flex items-center justify-between text-xs sm:text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-emerald-700 font-bold">✓ Phone Verified:</span>
-                    <span className="font-bold text-stone-900">+91 {customer.phone || phone}</span>
+                <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 flex items-center justify-between text-xs sm:text-sm">
+                  <div className="space-y-0.5">
+                    <div className="text-[11px] text-stone-500 font-light">Verified mobile number</div>
+                    <div className="font-bold text-stone-900">+91 {customer.phone || phone}</div>
                   </div>
-                  <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded">
-                    Active
-                  </span>
+                  <span className="text-emerald-700 font-bold text-xs">Active Session</span>
                 </div>
               ) : !otpSent ? (
-                <form onSubmit={handleSendOtp} className="space-y-3">
+                <form onSubmit={handleSendOtp} className="space-y-4 pt-1">
+                  <p className="text-xs text-stone-500 font-light">
+                    Enter your 10-digit mobile number to quickly autofill your saved delivery details.
+                  </p>
+
                   <div className="flex gap-2">
                     <div className="relative flex-1">
+                      <span className="absolute left-3.5 top-3 text-xs font-bold text-stone-500">+91</span>
                       <input
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                        placeholder="Phone No."
+                        placeholder="Mobile Number"
                         required
                         maxLength={10}
-                        className="w-full h-12 px-4 border border-stone-300 rounded-md text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-800"
+                        className="w-full h-12 pl-12 pr-4 border border-stone-300 rounded-xl text-sm font-semibold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-[#4E652B] focus:ring-1 focus:ring-[#4E652B] transition-all bg-stone-50/50"
                       />
                     </div>
                     <button
                       type="submit"
                       disabled={authLoading || phone.length !== 10}
-                      className="w-14 h-12 bg-stone-300 hover:bg-[#5C7A38] text-white rounded-md flex items-center justify-center font-bold text-lg disabled:opacity-50 transition-colors cursor-pointer"
+                      className="px-5 h-12 bg-[#4E652B] hover:bg-[#3D5021] text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors disabled:opacity-40 cursor-pointer shrink-0"
                     >
-                      {authLoading ? '...' : '→'}
+                      {authLoading ? 'Sending...' : 'Get OTP →'}
                     </button>
                   </div>
 
-                  <label className="flex items-center gap-2 text-xs text-stone-600 cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs text-stone-600 cursor-pointer pt-1">
                     <input
                       type="checkbox"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="w-4 h-4 accent-[#5C7A38] rounded"
+                      className="w-4 h-4 accent-[#4E652B] rounded"
                     />
-                    <span>Continue with Nutri Ghar T&amp;C &amp; privacy policy</span>
+                    <span>Agree to Nutri Ghar T&amp;C and Privacy Policy</span>
                   </label>
 
-                  {/* Security Notice Pill */}
-                  <div className="p-2.5 rounded bg-[#F4F8F1] text-[11px] text-[#3B5A24] font-medium flex items-center gap-2">
-                    <span>🛡️</span>
-                    <span>We use your number only to get your saved addresses via OTP</span>
+                  <div className="p-3 rounded-xl bg-[#FAF7F2] text-[11px] text-stone-600 flex items-center gap-2 border border-stone-200/80">
+                    <span className="text-emerald-700 font-bold">🛡️</span>
+                    <span>We use your phone number only to send order updates &amp; OTP verification.</span>
                   </div>
                 </form>
               ) : (
                 /* Step 1.2: Enter OTP */
-                <form onSubmit={handleVerifyOtp} className="space-y-3">
+                <form onSubmit={handleVerifyOtp} className="space-y-4 pt-1">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-stone-700">Enter 6-digit OTP sent to +91 {phone}</span>
                     <button
                       type="button"
                       onClick={() => setOtpSent(false)}
-                      className="text-[#5C7A38] font-bold underline"
+                      className="text-[#4E652B] font-bold underline cursor-pointer"
                     >
-                      Change
+                      Change Number
                     </button>
                   </div>
 
@@ -364,24 +447,24 @@ export default function CheckoutPage() {
                       maxLength={6}
                       autoFocus
                       placeholder="••••••"
-                      className="flex-1 h-12 text-center text-xl font-bold tracking-[0.3em] font-mono border-2 border-[#5C7A38] rounded-md focus:outline-none bg-stone-50"
+                      className="flex-1 h-12 text-center text-xl font-bold tracking-[0.3em] font-mono border-2 border-[#4E652B] rounded-xl focus:outline-none bg-stone-50"
                     />
                     <button
                       type="submit"
                       disabled={authLoading || otpCode.length !== 6}
-                      className="px-6 h-12 bg-[#5C7A38] hover:bg-[#4E672F] text-white rounded-md font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                      className="px-6 h-12 bg-[#4E652B] hover:bg-[#3D5021] text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shrink-0"
                     >
                       Verify
                     </button>
                   </div>
 
                   {demoCode && (
-                    <div className="text-xs text-amber-800 bg-amber-50 p-2 rounded flex justify-between">
-                      <span>Demo OTP: <strong>{demoCode}</strong></span>
+                    <div className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex justify-between items-center">
+                      <span>Demo Test OTP: <strong>{demoCode}</strong></span>
                       <button
                         type="button"
                         onClick={() => setOtpCode(demoCode)}
-                        className="font-bold underline text-[#5C7A38]"
+                        className="font-bold underline text-[#4E652B] cursor-pointer"
                       >
                         Autofill
                       </button>
@@ -395,78 +478,33 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* SECTION 2: COUPONS */}
-            <div className="space-y-3 pt-4 border-t border-stone-200">
-              <div>
-                <h3 className="text-lg font-bold text-stone-900">Coupons</h3>
-                <p className="text-xs text-stone-500">
-                  Earn 5% Nutri Ghar Coins on every order.{' '}
-                  <Link href="/login" className="text-[#5C7A38] font-bold underline">
-                    Login Now
-                  </Link>
-                </p>
-              </div>
-
-              {/* Coupon input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  placeholder="Enter coupon code"
-                  className="flex-1 h-11 px-4 border border-stone-300 rounded-md text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none uppercase"
-                />
-                <button
-                  type="button"
-                  onClick={() => applyCouponHandler(couponCode)}
-                  className="px-6 h-11 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-md text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                >
-                  Apply
-                </button>
-              </div>
-
-              {/* Featured Voucher Badge */}
-              <div className="flex border border-stone-200 rounded-lg overflow-hidden bg-white shadow-2xs">
-                <div className="bg-[#5C7A38] text-white text-[10px] font-bold px-2 py-3 flex items-center justify-center [writing-mode:vertical-rl] rotate-180 uppercase tracking-widest">
-                  15% Off
-                </div>
-                <div className="flex-1 p-3 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                      <span>🏷️</span>
-                      <span>NUTRI15</span>
-                    </div>
-                    <div className="text-xs text-stone-500">Up to 15% off on all products</div>
+            {/* -------------------------------------------------------------
+                STEP 2: DOORSTEP DELIVERY ADDRESS
+            ------------------------------------------------------------- */}
+            <div className="bg-white p-5 sm:p-7 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-full bg-[#1E382B] text-white text-xs font-bold flex items-center justify-center">
+                    2
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => applyCouponHandler('NUTRI15')}
-                    className="text-xs font-bold text-[#5C7A38] hover:text-[#435B24] uppercase cursor-pointer"
-                  >
-                    {appliedCoupon === 'NUTRI15' ? '✓ Applied' : 'Apply'}
-                  </button>
+                  <h2 className="text-base sm:text-lg font-bold text-stone-900">
+                    Delivery Address
+                  </h2>
                 </div>
-              </div>
-            </div>
-
-            {/* SECTION 3: DELIVERY ADDRESS (Expandable/Clean) */}
-            <div className="space-y-4 pt-4 border-t border-stone-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-stone-900">Doorstep Delivery Address</h3>
                 <button
                   type="button"
                   onClick={() => setShowAddressForm(!showAddressForm)}
-                  className="text-xs font-bold text-[#5C7A38] underline cursor-pointer"
+                  className="text-xs font-bold text-[#4E652B] hover:text-[#3D5021] cursor-pointer underline"
                 >
-                  {showAddressForm ? 'Hide Details' : '+ Edit Address'}
+                  {showAddressForm ? 'Hide Form' : '+ Edit Address'}
                 </button>
               </div>
 
               {showAddressForm ? (
-                <div className="space-y-3 p-4 rounded-lg bg-stone-50 border border-stone-200 animate-fadeIn">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-4 pt-1 animate-fadeIn">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[11px] font-bold uppercase text-stone-700 mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         Full Name *
                       </label>
                       <input
@@ -476,28 +514,28 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         placeholder="e.g. Priya Sharma"
-                        className="w-full h-10 px-3 border border-stone-300 rounded text-sm bg-white focus:outline-none"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold uppercase text-stone-700 mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         Contact Phone *
                       </label>
                       <input
                         type="tel"
                         name="phone"
-                        value={formData.phone}
+                        value={formData.phone || phone}
                         onChange={handleInputChange}
                         required
-                        placeholder="9876543210"
-                        className="w-full h-10 px-3 border border-stone-300 rounded text-sm bg-white focus:outline-none"
+                        placeholder="10-digit mobile"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-stone-700 mb-1">
-                      Street Address / House No *
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
+                      Flat / House No / Street Address *
                     </label>
                     <input
                       type="text"
@@ -505,14 +543,15 @@ export default function CheckoutPage() {
                       value={formData.address}
                       onChange={handleInputChange}
                       required
-                      placeholder="House No, Apartment, Landmark"
-                      className="w-full h-10 px-3 border border-stone-300 rounded text-sm bg-white focus:outline-none"
+                      placeholder="e.g. Flat 402, Sunshine Heights, MG Road"
+                      className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  {/* Responsive City/State/Pincode grid: Stacks neatly on mobile */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                     <div>
-                      <label className="block text-[11px] font-bold uppercase text-stone-700 mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         City *
                       </label>
                       <input
@@ -521,11 +560,12 @@ export default function CheckoutPage() {
                         value={formData.city}
                         onChange={handleInputChange}
                         required
-                        className="w-full h-10 px-3 border border-stone-300 rounded text-sm bg-white focus:outline-none"
+                        placeholder="City"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold uppercase text-stone-700 mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         State *
                       </label>
                       <input
@@ -534,11 +574,12 @@ export default function CheckoutPage() {
                         value={formData.state}
                         onChange={handleInputChange}
                         required
-                        className="w-full h-10 px-3 border border-stone-300 rounded text-sm bg-white focus:outline-none"
+                        placeholder="State"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold uppercase text-stone-700 mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         PIN Code *
                       </label>
                       <input
@@ -548,39 +589,113 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         maxLength={6}
-                        className="w-full h-10 px-3 border border-stone-300 rounded text-sm bg-white focus:outline-none"
+                        placeholder="6-digit PIN"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-3.5 rounded-lg border border-dashed border-stone-300 text-xs text-stone-600 flex items-center justify-between">
-                  <span>
-                    {formData.address
-                      ? `${formData.address}, ${formData.city} - ${formData.pincode}`
-                      : 'No delivery address added yet'}
-                  </span>
+                <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 text-xs sm:text-sm text-stone-700 flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="font-bold text-stone-900">{formData.fullName || 'Recipient'}</div>
+                    <div className="text-stone-600 leading-relaxed">
+                      {formData.address ? (
+                        `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}`
+                      ) : (
+                        <span className="text-stone-400 italic">No delivery address specified yet</span>
+                      )}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowAddressForm(true)}
-                    className="font-bold text-[#5C7A38] uppercase"
+                    className="font-bold text-[#4E652B] hover:text-[#3D5021] text-xs shrink-0 cursor-pointer"
                   >
-                    Edit
+                    Change
                   </button>
                 </div>
               )}
             </div>
 
-            {/* SECTION 4: CHOOSE PAYMENT METHOD */}
-            <div className="space-y-4 pt-4 border-t border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900">Choose Payment Method</h3>
+            {/* -------------------------------------------------------------
+                STEP 3: COUPONS & SPECIAL OFFERS
+            ------------------------------------------------------------- */}
+            <div className="bg-white p-5 sm:p-7 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🏷️</span>
+                  <h3 className="text-base sm:text-lg font-bold text-stone-900">
+                    Apply Coupon Code
+                  </h3>
+                </div>
+                {appliedCoupon && (
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {appliedCoupon} Applied
+                  </span>
+                )}
+              </div>
 
-              <div className="border border-stone-300 rounded-xl overflow-hidden divide-y divide-stone-200">
+              {/* Coupon input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="Enter code (e.g. NUTRI15)"
+                  className="flex-1 h-11 px-3.5 border border-stone-300 rounded-xl text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-[#4E652B] uppercase bg-stone-50/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => applyCouponHandler(couponCode)}
+                  className="px-5 h-11 bg-stone-900 hover:bg-[#4E652B] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {/* Quick voucher card */}
+              <div className="flex border border-stone-200 rounded-2xl overflow-hidden bg-[#FAF7F2] p-3 items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#4E652B] text-white flex items-center justify-center font-bold text-xs">
+                    %
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-stone-900">NUTRI15</div>
+                    <div className="text-[11px] text-stone-500 font-light">Get 15% instant discount on all fresh batches</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => applyCouponHandler('NUTRI15')}
+                  className="px-3 py-1 bg-white hover:bg-stone-100 border border-stone-200 text-xs font-bold text-[#4E652B] rounded-lg transition-colors cursor-pointer"
+                >
+                  {appliedCoupon === 'NUTRI15' ? '✓ Applied' : 'Apply'}
+                </button>
+              </div>
+            </div>
+
+            {/* -------------------------------------------------------------
+                STEP 4: CHOOSE PAYMENT METHOD
+            ------------------------------------------------------------- */}
+            <div className="bg-white p-5 sm:p-7 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-stone-100">
+                <div className="w-6 h-6 rounded-full bg-[#1E382B] text-white text-xs font-bold flex items-center justify-center">
+                  3
+                </div>
+                <h2 className="text-base sm:text-lg font-bold text-stone-900">
+                  Select Payment Option
+                </h2>
+              </div>
+
+              <div className="space-y-3">
                 {/* Option 1: Pay Online */}
                 <label
                   onClick={() => setPaymentMethod('online')}
-                  className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
-                    paymentMethod === 'online' ? 'bg-[#FAFBF9]' : 'bg-white'
+                  className={`p-4 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all ${
+                    paymentMethod === 'online'
+                      ? 'border-[#4E652B] bg-[#F4F8F1]'
+                      : 'border-stone-200 bg-white hover:border-stone-300'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -589,16 +704,18 @@ export default function CheckoutPage() {
                       name="paymentMethod"
                       checked={paymentMethod === 'online'}
                       onChange={() => setPaymentMethod('online')}
-                      className="w-4 h-4 accent-[#5C7A38]"
+                      className="w-4 h-4 accent-[#4E652B]"
                     />
                     <div>
-                      <div className="text-sm font-bold text-stone-900">Pay online</div>
-                      <div className="text-xs text-[#B55B32] font-semibold">
-                        Save an additional 5%, up to Rs 100.
+                      <div className="text-xs sm:text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                        <span>Pay Online (UPI / GPay / PhonePe / Cards)</span>
+                      </div>
+                      <div className="text-[11px] text-[#9C5838] font-bold mt-0.5">
+                        ⚡ Extra 5% Instant Discount applied
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm font-bold text-stone-900">
+                  <div className="font-serif text-sm sm:text-base font-bold text-[#1E382B]">
                     ₹{(subtotal - couponDiscount - Math.round(subtotal * 0.05) + deliveryCharge).toFixed(2)}
                   </div>
                 </label>
@@ -606,8 +723,10 @@ export default function CheckoutPage() {
                 {/* Option 2: Cash on Delivery */}
                 <label
                   onClick={() => setPaymentMethod('cod')}
-                  className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
-                    paymentMethod === 'cod' ? 'bg-[#FAFBF9]' : 'bg-white'
+                  className={`p-4 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all ${
+                    paymentMethod === 'cod'
+                      ? 'border-[#4E652B] bg-[#F4F8F1]'
+                      : 'border-stone-200 bg-white hover:border-stone-300'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -616,59 +735,57 @@ export default function CheckoutPage() {
                       name="paymentMethod"
                       checked={paymentMethod === 'cod'}
                       onChange={() => setPaymentMethod('cod')}
-                      className="w-4 h-4 accent-[#5C7A38]"
+                      className="w-4 h-4 accent-[#4E652B]"
                     />
-                    <div className="text-sm font-bold text-stone-900">Cash on delivery</div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-bold text-stone-900">
+                        Cash on Delivery (COD)
+                      </div>
+                      <div className="text-[11px] text-stone-500 font-light">
+                        Pay cash when your order reaches your doorstep
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm font-bold text-stone-900">
+                  <div className="font-serif text-sm sm:text-base font-bold text-stone-900">
                     ₹{(subtotal - couponDiscount + deliveryCharge).toFixed(2)}
                   </div>
                 </label>
               </div>
 
-              {/* Online discount hint */}
-              {paymentMethod === 'online' && (
-                <p className="text-xs text-center text-[#B55B32] font-semibold">
-                  Enjoy the extra 5% online payment discount!
-                </p>
-              )}
+              {/* Desktop CTA Button */}
+              <div className="hidden lg:block pt-2">
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  disabled={isSubmitting}
+                  className="w-full h-14 rounded-2xl bg-[#4E652B] hover:bg-[#3D5021] text-white text-sm font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <span>Placing Your Order...</span>
+                  ) : (
+                    <span>Place Order • ₹{grandTotal.toFixed(2)} →</span>
+                  )}
+                </button>
+              </div>
 
-              {/* Main CTA Button */}
-              <button
-                type="button"
-                onClick={handlePlaceOrder}
-                disabled={isSubmitting}
-                className="w-full h-14 rounded-lg bg-[#5C7A38] hover:bg-[#4E672F] text-white text-sm font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isSubmitting ? (
-                  <span>Placing Order...</span>
-                ) : (
-                  <span>Place Order • ₹{grandTotal.toFixed(2)} →</span>
-                )}
-              </button>
-
-              {/* Trust Badges Bar (Kapiva Style) */}
-              <div className="pt-6 space-y-4">
-                <div className="text-center text-[10px] font-bold uppercase tracking-widest text-[#5C7A38]">
-                  🔒 100% SECURE PAYMENTS &amp; GUARANTEE
-                </div>
-
-                <div className="grid grid-cols-4 gap-2 text-center text-[11px] text-stone-600 font-medium">
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-xl">🚚</span>
-                    <span>Free Shipping above ₹500</span>
+              {/* Trust Badges Row */}
+              <div className="pt-4 border-t border-stone-100">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-[10px] sm:text-[11px] text-stone-600 font-medium">
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F2] flex flex-col items-center gap-1">
+                    <span className="text-base">🚚</span>
+                    <span>Free Shipping &gt;₹500</span>
                   </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-xl">🔄</span>
-                    <span>Fresh Batch Replacement</span>
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F2] flex flex-col items-center gap-1">
+                    <span className="text-base">🔄</span>
+                    <span>Fresh Batch Guarantee</span>
                   </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-xl">🌿</span>
-                    <span>100% All Natural</span>
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F2] flex flex-col items-center gap-1">
+                    <span className="text-base">🌿</span>
+                    <span>100% Pure Ghee</span>
                   </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-xl">👥</span>
-                    <span>Trusted by 10,000+</span>
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F2] flex flex-col items-center gap-1">
+                    <span className="text-base">🔒</span>
+                    <span>Secure Checkout</span>
                   </div>
                 </div>
               </div>
@@ -678,20 +795,23 @@ export default function CheckoutPage() {
           </div>
 
           {/* =========================================================================
-              RIGHT COLUMN (40%): Order Summary + Upsell + Price Summary Accordion
+              RIGHT COLUMN: Order Summary & Price Breakdown (Desktop Sticky)
           ========================================================================= */}
-          <div className="lg:col-span-5 space-y-6 sticky top-24">
+          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
             
             {/* 1. ORDER SUMMARY CARD */}
-            <div className="border border-stone-200 rounded-xl p-5 bg-white shadow-xs space-y-4">
-              <h3 className="text-lg font-bold text-stone-900">Order Summary</h3>
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 className="text-base font-bold text-stone-900">Order Summary</h3>
+                <span className="text-xs text-stone-500 font-medium">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+              </div>
 
               {/* Items List */}
               <div className="divide-y divide-stone-100 max-h-64 overflow-y-auto pr-1">
                 {items.map((item) => (
                   <div key={item.id} className="py-3 first:pt-0 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-stone-50 border border-stone-200 shrink-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-stone-50 border border-stone-200 shrink-0">
                         <Image
                           src={item.image}
                           alt={item.name}
@@ -700,26 +820,26 @@ export default function CheckoutPage() {
                           sizes="56px"
                         />
                       </div>
-                      <div>
-                        <div className="text-xs sm:text-sm font-bold text-stone-900 line-clamp-1">{item.name}</div>
-                        <div className="text-[11px] text-stone-500">
-                          Qty: {item.quantity} × ₹{item.price}
+                      <div className="min-w-0">
+                        <div className="text-xs sm:text-sm font-bold text-stone-900 truncate">{item.name}</div>
+                        <div className="text-[11px] text-stone-500 font-light">
+                          ₹{item.price} × {item.quantity}
                         </div>
                       </div>
                     </div>
 
-                    {/* Stepper */}
-                    <div className="flex items-center border border-stone-300 rounded-md">
+                    {/* Quantity Stepper */}
+                    <div className="flex items-center border border-stone-300 rounded-lg shrink-0">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-6 h-6 flex items-center justify-center text-xs text-stone-600 hover:bg-stone-100"
+                        className="w-7 h-7 flex items-center justify-center text-xs text-stone-600 hover:bg-stone-100 cursor-pointer"
                       >
                         −
                       </button>
                       <span className="w-6 text-center text-xs font-bold">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-6 h-6 flex items-center justify-center text-xs text-stone-600 hover:bg-stone-100"
+                        className="w-7 h-7 flex items-center justify-center text-xs text-stone-600 hover:bg-stone-100 cursor-pointer"
                       >
                         +
                       </button>
@@ -729,25 +849,83 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 2. ADD FOR BETTER RESULTS (Upsell Slider) */}
-            <div className="border border-stone-200 rounded-xl p-5 bg-white shadow-xs space-y-3">
+            {/* 2. PRICE SUMMARY ACCORDION */}
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-xs space-y-3.5 text-xs sm:text-sm">
+              <h4 className="text-base font-bold text-stone-900 pb-3 border-b border-stone-100">
+                Payment Summary
+              </h4>
+
+              <div className="space-y-2.5 text-stone-600">
+                <div className="flex justify-between">
+                  <span>Items Total (MRP):</span>
+                  <span className="font-semibold text-stone-900">₹{mrpTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-emerald-700 font-semibold">
+                  <span>Discount on MRP:</span>
+                  <span>- ₹{mrpDiscount.toFixed(2)}</span>
+                </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-emerald-700 font-semibold">
+                    <span>Coupon Discount ({appliedCoupon}):</span>
+                    <span>- ₹{couponDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {paymentMethod === 'online' && (
+                  <div className="flex justify-between text-emerald-700 font-semibold">
+                    <span>Online Payment (5% Off):</span>
+                    <span>- ₹{onlineDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span>Doorstep Delivery:</span>
+                  <span className="font-semibold text-stone-900">
+                    {deliveryCharge === 0 ? (
+                      <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded">FREE</span>
+                    ) : (
+                      `₹${deliveryCharge}`
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-stone-200 flex justify-between items-baseline text-stone-900">
+                <div>
+                  <span className="text-sm font-bold block">Grand Total:</span>
+                  <span className="text-[10px] text-stone-400 font-light">Inclusive of all taxes</span>
+                </div>
+                <span className="font-serif text-2xl font-extrabold text-[#1E382B]">
+                  ₹{grandTotal.toFixed(2)}
+                </span>
+              </div>
+
+              {/* Green Savings Ribbon */}
+              {totalSavings > 0 && (
+                <div className="p-3 rounded-2xl bg-[#EBF4E5] text-[#3B5A24] text-xs font-bold flex items-center justify-center gap-2">
+                  <span>🎉</span>
+                  <span>You are saving ₹{totalSavings} on this order!</span>
+                </div>
+              )}
+            </div>
+
+            {/* 3. ADD FOR BETTER RESULTS (Upsell) */}
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs space-y-3">
               <div>
-                <h4 className="text-sm font-bold text-stone-900">Add for better results</h4>
-                <p className="text-[11px] text-stone-500">Pair with your daily wellness routine</p>
+                <h4 className="text-xs sm:text-sm font-bold text-stone-900">Frequently Bought Together</h4>
+                <p className="text-[11px] text-stone-500 font-light">Pair with your daily wellness routine</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 {upsellItems.map((u) => (
-                  <div key={u.id} className="border border-stone-200 rounded-lg p-2.5 space-y-2 relative bg-stone-50/50">
+                  <div key={u.id} className="border border-stone-200 rounded-2xl p-2.5 space-y-2 relative bg-[#FAF7F2]">
                     <span className="absolute top-2 right-2 bg-emerald-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                       {u.discount}
                     </span>
-                    <div className="relative w-full h-24 rounded-md overflow-hidden bg-white">
+                    <div className="relative w-full h-24 rounded-xl overflow-hidden bg-white">
                       <Image src={u.image} alt={u.name} fill className="object-cover" sizes="120px" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-stone-900 truncate">{u.name}</div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-xs font-bold text-stone-900">₹{u.price}</span>
                         <span className="text-[10px] text-stone-400 line-through">₹{u.mrp}</span>
                       </div>
@@ -765,71 +943,12 @@ export default function CheckoutPage() {
                           1
                         )
                       }
-                      className="w-full py-1.5 bg-stone-900 hover:bg-[#5C7A38] text-white text-[11px] font-bold uppercase rounded transition-colors"
+                      className="w-full py-1.5 bg-[#4E652B] hover:bg-[#3D5021] text-white text-[10px] font-bold uppercase rounded-lg transition-colors cursor-pointer"
                     >
                       + ADD
                     </button>
                   </div>
                 ))}
-              </div>
-
-              {/* Nutri Ghar Coins Strip */}
-              <div className="pt-2 flex items-center justify-between text-xs text-stone-700 border-t border-stone-100">
-                <span>Earn 🪙 <strong>{coinsEarned} Nutri Ghar Coins</strong></span>
-                <span className="text-[10px] text-stone-500">(1 Coin = ₹1 Discount)</span>
-              </div>
-            </div>
-
-            {/* 3. PRICE SUMMARY ACCORDION */}
-            <div className="border border-stone-200 rounded-xl p-5 bg-white shadow-xs space-y-3 text-xs">
-              <h4 className="text-sm font-bold text-stone-900 pb-2 border-b border-stone-100">
-                Price Summary
-              </h4>
-
-              <div className="space-y-2 text-stone-600">
-                <div className="flex justify-between">
-                  <span>Total MRP:</span>
-                  <span className="font-semibold text-stone-900">₹{mrpTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-emerald-700 font-semibold">
-                  <span>Discount on MRP:</span>
-                  <span>- ₹{mrpDiscount.toFixed(2)}</span>
-                </div>
-                {appliedCoupon && (
-                  <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Coupon Discount ({appliedCoupon}):</span>
-                    <span>- ₹{couponDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-                {paymentMethod === 'online' && (
-                  <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Online Payment Discount (5%):</span>
-                    <span>- ₹{onlineDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span>Shipping (Free above ₹500):</span>
-                  <span className="font-semibold text-stone-900">
-                    {deliveryCharge === 0 ? <span className="text-emerald-700 font-bold">FREE</span> : `₹${deliveryCharge}`}
-                  </span>
-                </div>
-                <div className="flex justify-between text-[11px] text-stone-400">
-                  <span>GST (Inclusive):</span>
-                  <span>₹{((grandTotal * 0.05)).toFixed(2)}</span>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-stone-200 flex justify-between items-baseline text-stone-900">
-                <span className="text-sm font-bold">Grand Total:</span>
-                <span className="text-2xl font-extrabold text-stone-900">
-                  ₹{grandTotal.toFixed(2)}
-                </span>
-              </div>
-
-              {/* Green Savings Ribbon */}
-              <div className="p-2.5 rounded-lg bg-[#EBF4E5] text-[#3B5A24] text-xs font-bold flex items-center justify-center gap-2">
-                <span>🎉</span>
-                <span>You&apos;ll save ₹{totalSavings} on this order</span>
               </div>
             </div>
 
@@ -837,6 +956,31 @@ export default function CheckoutPage() {
 
         </div>
 
+      </div>
+
+      {/* =========================================================================
+          FIXED STICKY BOTTOM CHECKOUT ACTION BAR (Mobile Only)
+      ========================================================================= */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-stone-200 px-4 py-3 shadow-2xl flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold">Total Payable</div>
+          <div className="font-serif text-lg font-extrabold text-[#1E382B]">
+            ₹{grandTotal.toFixed(2)}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handlePlaceOrder}
+          disabled={isSubmitting}
+          className="flex-1 max-w-[220px] h-12 rounded-xl bg-[#4E652B] hover:bg-[#3D5021] active:scale-95 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+        >
+          {isSubmitting ? (
+            <span>Placing...</span>
+          ) : (
+            <span>Place Order →</span>
+          )}
+        </button>
       </div>
 
     </div>
