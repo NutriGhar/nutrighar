@@ -169,14 +169,14 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
 
         {/* Content Overlay */}
         <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
-          <div className="max-w-2xl text-white space-y-2.5 sm:space-y-4 animate-fadeIn" key={safeIndex}>
+          <div className="max-w-xl sm:max-w-2xl text-white space-y-3 sm:space-y-4 animate-fadeIn" key={safeIndex}>
             
             {/* Pill Tag & Mobile Badge */}
             <div className="flex flex-wrap items-center gap-2">
               {slide.tag && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[#FDF0A6] text-[10px] sm:text-xs font-extrabold tracking-[0.18em] uppercase border border-white/25">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FDF0A6]" />
-                  {slide.tag}
+                  <span>{slide.tag}</span>
                 </div>
               )}
               {slide.badgeText && (
@@ -188,7 +188,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
             </div>
 
             {/* Headline */}
-            <h1 className="font-serif text-xl sm:text-4xl lg:text-5xl font-normal leading-snug sm:leading-tight tracking-tight text-white drop-shadow-sm">
+            <h1 className="font-serif text-xl sm:text-3xl md:text-5xl font-normal leading-snug sm:leading-tight tracking-tight text-white drop-shadow-sm break-words">
               {slide.title} {slide.titleItalic && <br className="hidden sm:inline" />}{' '}
               {slide.titleItalic && (
                 <span className="font-serif italic font-normal text-[#E5B56A]">
@@ -199,31 +199,33 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
 
             {/* Subtitle */}
             {slide.subtitle && (
-              <p className="text-xs sm:text-sm lg:text-base text-stone-200 leading-relaxed max-w-lg font-light drop-shadow-xs line-clamp-2 sm:line-clamp-none">
+              <p className="text-xs sm:text-sm lg:text-base text-stone-200 leading-relaxed max-w-lg font-light drop-shadow-xs break-words line-clamp-3 sm:line-clamp-none">
                 {slide.subtitle}
               </p>
             )}
 
-            {/* Action Buttons (Clean & uncrowded on mobile) */}
-            <div className="flex items-center gap-2.5 pt-1 sm:pt-2">
-              {slide.buttonText && (
-                <Link
-                  href={slide.buttonLink || '/products'}
-                  className="px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-full bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs sm:text-sm font-bold tracking-wider uppercase text-center shadow-lg hover:shadow-xl transition-all duration-300 group inline-flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer"
-                >
-                  <span>{slide.buttonText}</span>
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
-              )}
-              
-              {slide.secondaryButtonText && (
-                <Link
-                  href={slide.secondaryButtonLink || '/products'}
-                  className="hidden sm:inline-flex px-4 sm:px-7 py-2.5 sm:py-3.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase text-center transition-all duration-300 cursor-pointer"
-                >
-                  {slide.secondaryButtonText}
-                </Link>
-              )}
+            {/* Action Buttons: Single clean, full-width or auto CTA button on mobile, secondary button on larger screens */}
+            <div className="pt-2 sm:pt-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 max-w-sm sm:max-w-none">
+                {slide.buttonText && (
+                  <Link
+                    href={slide.buttonLink || '/products'}
+                    className="w-full sm:w-auto min-h-[44px] px-6 sm:px-8 py-3 rounded-full bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs sm:text-sm font-bold tracking-wider uppercase shadow-lg hover:shadow-xl transition-all duration-300 group inline-flex items-center justify-center gap-2 border border-white/20 cursor-pointer text-center leading-none"
+                  >
+                    <span>{slide.buttonText}</span>
+                    <span className="group-hover:translate-x-1 transition-transform leading-none">→</span>
+                  </Link>
+                )}
+                
+                {slide.secondaryButtonText && (
+                  <Link
+                    href={slide.secondaryButtonLink || '/products'}
+                    className="hidden sm:inline-flex min-h-[44px] px-6 sm:px-8 py-3 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-300 items-center justify-center text-center cursor-pointer leading-none shadow-sm"
+                  >
+                    <span>{slide.secondaryButtonText}</span>
+                  </Link>
+                )}
+              </div>
             </div>
 
           </div>
