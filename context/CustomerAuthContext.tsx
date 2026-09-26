@@ -11,6 +11,7 @@ interface CustomerAuthContextType {
   verifyOtp: (phone: string, otp: string, name?: string) => Promise<{ success: boolean; error?: string }>;
   loginWithPassword: (emailOrPhone: string, password: string) => Promise<{ success: boolean; error?: string }>;
   registerWithPassword: (data: { name: string; email: string; password: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (data: { name?: string; email?: string; phone?: string; address?: string; city?: string; state?: string; postalCode?: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -109,6 +110,24 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     }
   };
 
+  const updateProfile = async (formData: { name?: string; email?: string; phone?: string; address?: string; city?: string; state?: string; postalCode?: string }) => {
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        setCustomer(data.user);
+        return { success: true };
+      }
+      return { success: false, error: data.error || 'Profile update failed' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Profile update error' };
+    }
+  };
+
   const logout = async () => {
     try {
       await fetch('/api/auth/session', { method: 'DELETE' });
@@ -128,6 +147,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
         verifyOtp,
         loginWithPassword,
         registerWithPassword,
+        updateProfile,
         logout,
         refreshSession,
       }}

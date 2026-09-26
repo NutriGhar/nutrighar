@@ -256,28 +256,28 @@ function LoginContent() {
             <div>
               {!otpSent ? (
                 <form onSubmit={handleSendOtp}>
-                  {authMode === 'register' && (
-                    <div style={{ marginBottom: '14px' }}>
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                        placeholder="Full Name"
-                        style={{
-                          width: '100%',
-                          height: '48px',
-                          padding: '0 16px',
-                          border: '1.5px solid #6E8B4C',
-                          borderRadius: '8px',
-                          fontSize: '15px',
-                          boxSizing: 'border-box',
-                          outline: 'none',
-                          color: '#222',
-                        }}
-                      />
-                    </div>
-                  )}
+                  {/* Optional/Required Name Field */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder={authMode === 'register' ? 'Full Name *' : 'Your Name (e.g. Apoorv)'}
+                      required={authMode === 'register'}
+                      style={{
+                        width: '100%',
+                        height: '48px',
+                        padding: '0 16px',
+                        border: '1.5px solid #6E8B4C',
+                        borderRadius: '8px',
+                        fontSize: '15px',
+                        boxSizing: 'border-box',
+                        outline: 'none',
+                        color: '#222',
+                        backgroundColor: '#FFFFFF',
+                      }}
+                    />
+                  </div>
 
                   {/* Field 1: India Box (Exact Kapiva Style) */}
                   <div

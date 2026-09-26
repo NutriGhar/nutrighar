@@ -24,31 +24,33 @@ export async function POST(request: Request) {
       );
     }
 
-    const displayName = name?.trim() || verification.name || `User +91 ${cleanPhone.slice(-4)}`;
-
     // Upsert customer in PostgreSQL database
     let customer = await prisma.customer.findFirst({
       where: { phone: cleanPhone },
     });
 
+    const passedName = name?.trim() || verification.name;
+    const isGenericName = customer?.name?.startsWith('User +91') || customer?.name === 'Customer';
+    const effectiveName = passedName || (customer && !isGenericName ? customer.name : 'Customer');
+
     if (!customer) {
       customer = await prisma.customer.create({
         data: {
           phone: cleanPhone,
-          name: displayName,
+          name: effectiveName,
           email: `${cleanPhone}@phone.nutrighar.com`,
         },
       });
-    } else if (name && !customer.name) {
+    } else if (passedName || (isGenericName && passedName)) {
       customer = await prisma.customer.update({
         where: { id: customer.id },
-        data: { name: displayName },
+        data: { name: effectiveName },
       });
     }
 
     const session: CustomerSession = {
       id: customer.id,
-      name: customer.name || displayName,
+      name: customer.name || effectiveName,
       email: customer.email,
       phone: customer.phone,
       address: customer.address,
