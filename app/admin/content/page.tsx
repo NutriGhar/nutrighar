@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { WebsiteContent, HeroSlideContent, DEFAULT_HERO_SLIDES } from '@/types/content';
+import { WebsiteContent, HeroSlideContent, DEFAULT_HERO_SLIDES, DEFAULT_CURATED_COLLECTIONS, CollectionCard } from '@/types/content';
 
 export default function AdminContentPage() {
   const [content, setContent] = useState<WebsiteContent | null>(null);
@@ -37,6 +37,9 @@ export default function AdminContentPage() {
           const loaded = data.data;
           if (!loaded.heroSlides || !Array.isArray(loaded.heroSlides) || loaded.heroSlides.length === 0) {
             loaded.heroSlides = DEFAULT_HERO_SLIDES;
+          }
+          if (!loaded.curatedCollections || !Array.isArray(loaded.curatedCollections.cards) || loaded.curatedCollections.cards.length === 0) {
+            loaded.curatedCollections = DEFAULT_CURATED_COLLECTIONS;
           }
           const merged = localSaved ? { ...loaded, ...localSaved } : loaded;
           setContent(merged);
@@ -214,6 +217,7 @@ export default function AdminContentPage() {
 
   const tabs: Array<{ id: keyof WebsiteContent; label: string; icon: string }> = [
     { id: 'heroSlides', label: 'Hero Carousel Slides', icon: '🎠' },
+    { id: 'curatedCollections', label: 'Curated Collections', icon: '🛍️' },
     { id: 'announcement', label: 'Announcement Bar', icon: '📢' },
     { id: 'brandStory', label: 'Brand Story & Philosophy', icon: '📖' },
     { id: 'contact', label: 'Contact & Support', icon: '📞' },
@@ -639,6 +643,334 @@ export default function AdminContentPage() {
               </div>
             )}
 
+          </div>
+        )}
+
+        {/* ================= CURATED COLLECTIONS ================= */}
+        {activeTab === 'curatedCollections' && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-[#1C1917]">
+                  Curated Collections (Homepage Category Grid)
+                </h2>
+                <p className="text-xs text-[#6B635B] font-light mt-0.5">
+                  Customize the 4 collection showcase cards shown under "Pure Food For Everyday Living" on the homepage.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('Reset Curated Collections cards to Nutri Ghar original defaults?')) {
+                    setContent({
+                      ...content,
+                      curatedCollections: DEFAULT_CURATED_COLLECTIONS,
+                    });
+                    showToast('Reset collections to defaults.');
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer self-start sm:self-auto"
+              >
+                ↺ Reset Defaults
+              </button>
+            </div>
+
+            {/* Section Header Settings */}
+            <div className="bg-[#FAF7F2] p-5 sm:p-6 rounded-2xl border border-[#E8E1D7] space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#9C5838] block">
+                Section Header &amp; Subtitle
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Eyebrow Pill Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={content.curatedCollections?.eyebrow || 'CURATED COLLECTIONS'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        curatedCollections: {
+                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                          eyebrow: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Section Heading
+                  </label>
+                  <input
+                    type="text"
+                    value={content.curatedCollections?.heading || 'Pure Food For Everyday Living'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        curatedCollections: {
+                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                          heading: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Section Description Paragraph
+                  </label>
+                  <textarea
+                    value={content.curatedCollections?.description || ''}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        curatedCollections: {
+                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                          description: e.target.value,
+                        },
+                      })
+                    }
+                    rows={2}
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 4 Collection Cards */}
+            <div className="space-y-6">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
+                Collection Cards ({(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).length} Cards)
+              </span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).map((card, idx) => (
+                  <div
+                    key={card.id || `col-card-${idx}`}
+                    className="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4 flex flex-col justify-between"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                        <span className="px-2.5 py-1 rounded-full bg-[#FAF7F2] text-[#9C5838] text-[10px] font-bold uppercase tracking-wider border border-[#E8E1D7]">
+                          Card #{idx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-stone-700">{card.title}</span>
+                      </div>
+
+                      {/* Image Preview & Upload */}
+                      <div className="space-y-2">
+                        <div className="relative h-44 w-full rounded-xl overflow-hidden bg-stone-100 border border-stone-200">
+                          {card.image && (
+                            <Image
+                              src={card.image}
+                              alt={card.title}
+                              fill
+                              className="object-cover"
+                              sizes="400px"
+                            />
+                          )}
+                          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow-xs">
+                            {card.tag || 'Tag'}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="border border-dashed border-stone-300 rounded-xl p-2 text-center bg-[#FAF7F2]">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              id={`card-upload-${idx}`}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onloadend = async () => {
+                                  const base64 = reader.result as string;
+                                  const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                                  currentCards[idx] = { ...currentCards[idx], image: base64 };
+                                  setContent({
+                                    ...content,
+                                    curatedCollections: {
+                                      ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                      cards: currentCards,
+                                    },
+                                  });
+                                  try {
+                                    const res = await fetch('/api/upload', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        name: `card-${idx}-${Date.now()}`,
+                                        type: file.type,
+                                        base64OrUrl: base64,
+                                      }),
+                                    });
+                                    const up = await res.json();
+                                    if (up.success && up.url) {
+                                      currentCards[idx] = { ...currentCards[idx], image: up.url };
+                                      setContent({
+                                        ...content,
+                                        curatedCollections: {
+                                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                          cards: currentCards,
+                                        },
+                                      });
+                                    }
+                                  } catch {
+                                    // keep base64
+                                  }
+                                  showToast(`Uploaded photo for Card #${idx + 1}!`);
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                              className="hidden"
+                            />
+                            <label
+                              htmlFor={`card-upload-${idx}`}
+                              className="cursor-pointer text-[10px] font-bold text-[#1E382B] flex items-center justify-center gap-1 py-1"
+                            >
+                              <span>📸</span>
+                              <span>Upload Photo</span>
+                            </label>
+                          </div>
+
+                          <input
+                            type="url"
+                            value={card.image}
+                            onChange={(e) => {
+                              const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                              currentCards[idx] = { ...currentCards[idx], image: e.target.value };
+                              setContent({
+                                ...content,
+                                curatedCollections: {
+                                  ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                  cards: currentCards,
+                                },
+                              });
+                            }}
+                            placeholder="Or paste image URL"
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-[11px] text-stone-800 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Card Text Settings */}
+                      <div className="space-y-2.5">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                              Pill Tag
+                            </label>
+                            <input
+                              type="text"
+                              value={card.tag}
+                              onChange={(e) => {
+                                const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                                currentCards[idx] = { ...currentCards[idx], tag: e.target.value };
+                                setContent({
+                                  ...content,
+                                  curatedCollections: {
+                                    ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                    cards: currentCards,
+                                  },
+                                });
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                              Category Slug
+                            </label>
+                            <input
+                              type="text"
+                              value={card.categorySlug}
+                              onChange={(e) => {
+                                const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                                currentCards[idx] = { ...currentCards[idx], categorySlug: e.target.value };
+                                setContent({
+                                  ...content,
+                                  curatedCollections: {
+                                    ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                    cards: currentCards,
+                                  },
+                                });
+                              }}
+                              placeholder="e.g. mithai"
+                              className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            Card Title
+                          </label>
+                          <input
+                            type="text"
+                            value={card.title}
+                            onChange={(e) => {
+                              const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                              currentCards[idx] = { ...currentCards[idx], title: e.target.value };
+                              setContent({
+                                ...content,
+                                curatedCollections: {
+                                  ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                  cards: currentCards,
+                                },
+                              });
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none font-bold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            Card Description
+                          </label>
+                          <textarea
+                            value={card.description}
+                            onChange={(e) => {
+                              const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                              currentCards[idx] = { ...currentCards[idx], description: e.target.value };
+                              setContent({
+                                ...content,
+                                curatedCollections: {
+                                  ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                  cards: currentCards,
+                                },
+                              });
+                            }}
+                            rows={2}
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-800 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleSaveSection('curatedCollections')}
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? 'Saving...' : '💾 Save Curated Collections'}
+              </button>
+            </div>
           </div>
         )}
 

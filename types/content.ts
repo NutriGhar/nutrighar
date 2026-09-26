@@ -82,6 +82,22 @@ export interface HeroSlideContent {
   badgeText?: string;
 }
 
+export interface CollectionCard {
+  id: string;
+  categorySlug: string;
+  tag: string;
+  title: string;
+  description: string;
+  image: string;
+}
+
+export interface CuratedCollectionsContent {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  cards: CollectionCard[];
+}
+
 export interface WebsiteContent {
   hero: {
     eyebrow: string;
@@ -93,6 +109,7 @@ export interface WebsiteContent {
     heroImage: string;
   };
   heroSlides: HeroSlideContent[];
+  curatedCollections?: CuratedCollectionsContent;
   announcement: {
     enabled: boolean;
     text: string;
@@ -127,6 +144,46 @@ export interface WebsiteContent {
     promoNote: string;
   };
 }
+
+export const DEFAULT_CURATED_COLLECTIONS: CuratedCollectionsContent = {
+  eyebrow: 'CURATED COLLECTIONS',
+  heading: 'Pure Food For Everyday Living',
+  description: 'From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.',
+  cards: [
+    {
+      id: 'col-mithai',
+      categorySlug: 'mithai',
+      tag: 'HERITAGE SWEETS',
+      title: 'Mithai & Ladoos',
+      description: 'Pure A2 desi cow ghee ladoos crafted with whole dry fruits.',
+      image: '/images/dry-fruit-ladoos-banner.jpg',
+    },
+    {
+      id: 'col-peanut-butter',
+      categorySlug: 'peanut-butter',
+      tag: 'STONE-GROUND',
+      title: 'Peanut Butter',
+      description: '100% slow-roasted peanuts stone-ground daily.',
+      image: '/images/peanut-butter-showcase.jpg',
+    },
+    {
+      id: 'col-protein-nutrition',
+      categorySlug: 'protein-nutrition',
+      tag: 'CLEAN PROTEIN',
+      title: 'Protein & Recovery',
+      description: 'Stone-ground nuts, seeds and clean protein superfood mix.',
+      image: '/images/clean-protein-pouch-banner.jpg',
+    },
+    {
+      id: 'col-healthy-snacks',
+      categorySlug: 'healthy-snacks',
+      tag: 'GUILT-FREE CRUNCH',
+      title: 'Healthy Snacks',
+      description: 'Slow-roasted California almonds, cashews and seed mixes.',
+      image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80',
+    },
+  ],
+};
 
 export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
   {

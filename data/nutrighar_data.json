@@ -473,6 +473,45 @@
       "heading": "A Little Goodness in Your Inbox.",
       "description": "Receive thoughtful wellness notes, seasonal kitchen recipes, and priority access to fresh batches.",
       "promoNote": "We respect your privacy. No spam, ever. Unsubscribe anytime."
+    },
+    "curatedCollections": {
+      "eyebrow": "CURATED COLLECTIONS",
+      "heading": "Pure Food For Everyday Living",
+      "description": "From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.",
+      "cards": [
+        {
+          "id": "col-mithai",
+          "categorySlug": "mithai",
+          "tag": "HERITAGE SWEETS",
+          "title": "Mithai & Ladoos",
+          "description": "Pure A2 desi cow ghee ladoos crafted with whole dry fruits.",
+          "image": "/images/dry-fruit-ladoos-banner.jpg"
+        },
+        {
+          "id": "col-peanut-butter",
+          "categorySlug": "peanut-butter",
+          "tag": "STONE-GROUND",
+          "title": "Peanut Butter",
+          "description": "100% slow-roasted peanuts stone-ground daily.",
+          "image": "/images/peanut-butter-showcase.jpg"
+        },
+        {
+          "id": "col-protein-nutrition",
+          "categorySlug": "protein-nutrition",
+          "tag": "CLEAN PROTEIN",
+          "title": "Protein & Recovery",
+          "description": "Stone-ground nuts, seeds and clean protein superfood mix.",
+          "image": "/images/clean-protein-pouch-banner.jpg"
+        },
+        {
+          "id": "col-healthy-snacks",
+          "categorySlug": "healthy-snacks",
+          "tag": "GUILT-FREE CRUNCH",
+          "title": "Healthy Snacks",
+          "description": "Slow-roasted California almonds, cashews and seed mixes.",
+          "image": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80"
+        }
+      ]
     }
   }
 }

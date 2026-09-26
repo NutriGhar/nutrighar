@@ -7,6 +7,7 @@ import { PRODUCTS as INITIAL_PRODUCTS } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import { useContent } from '@/context/ContentContext';
 import { Product } from '@/types/product';
+import { DEFAULT_CURATED_COLLECTIONS } from '@/types/content';
 import ProductCard from '@/components/ProductCard';
 import HeroCarousel from '@/components/HeroCarousel';
 
@@ -21,6 +22,7 @@ const DEFAULT_CONTENT = {
     storyImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1000&auto=format&fit=crop&q=80',
     quote: '“Food made with the warmth of a mother’s kitchen nourishes not just the body, but the soul.”',
   },
+  curatedCollections: DEFAULT_CURATED_COLLECTIONS,
   newsletter: {
     heading: 'A Little Goodness in Your Inbox.',
     description: 'Receive thoughtful wellness notes, seasonal kitchen recipes, and priority access to fresh batches.',
@@ -32,20 +34,21 @@ export default function HomePage() {
   const { addItem } = useCart();
   const { content: globalContent } = useContent();
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [content, setContent] = useState(DEFAULT_CONTENT);
+  const [content, setContent] = useState<any>(DEFAULT_CONTENT);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
   useEffect(() => {
     if (globalContent) {
-      setContent((prev) => ({
+      setContent((prev: any) => ({
         ...prev,
         ...globalContent,
         brandStory: {
           ...prev.brandStory,
           ...(globalContent.brandStory || {}),
         },
+        curatedCollections: globalContent.curatedCollections || prev.curatedCollections || DEFAULT_CURATED_COLLECTIONS,
         newsletter: {
           ...prev.newsletter,
           ...(globalContent.newsletter || {}),
@@ -179,152 +182,55 @@ export default function HomePage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-12 gap-3">
           <div>
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-1">
-              Curated Collections
+              {content?.curatedCollections?.eyebrow || 'Curated Collections'}
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-[#1C1917] tracking-tight">
-              Pure Food For Everyday Living
+              {content?.curatedCollections?.heading || 'Pure Food For Everyday Living'}
             </h2>
           </div>
           <p className="text-xs sm:text-base text-[#6B635B] max-w-md font-light">
-            From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.
+            {content?.curatedCollections?.description || 'From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.'}
           </p>
         </div>
 
-        {/* 4 Clean Category Cards Grid: 2-col on Mobile, 4-col on Desktop */}
+        {/* Dynamic 4 Category Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-          
-          {/* Category 1: Mithai & Ladoos */}
-          <Link
-            href="/products?category=mithai"
-            className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-          >
-            <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
-              <Image
-                src="/images/dry-fruit-ladoos-banner.jpg"
-                alt="Pure Desi Ghee Mithai and Ladoos"
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                sizes="(max-width: 640px) 50vw, 25vw"
-              />
-              <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs">
-                Heritage Sweets
+          {(content?.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).map((card: any) => (
+            <Link
+              key={card.id || card.title}
+              href={`/products?category=${encodeURIComponent(card.categorySlug || 'all')}`}
+              className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+            >
+              <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
+                <Image
+                  src={card.image}
+                  alt={card.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 640px) 50vw, 25vw"
+                />
+                {card.tag && (
+                  <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs">
+                    {card.tag}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="p-3 sm:p-5 flex flex-col justify-between flex-1">
-              <div>
-                <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
-                  Mithai &amp; Ladoos
-                </h3>
-                <p className="text-[11px] sm:text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
-                  Pure A2 desi cow ghee ladoos crafted with whole dry fruits.
-                </p>
+              <div className="p-3 sm:p-5 flex flex-col justify-between flex-1">
+                <div>
+                  <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
+                    {card.title}
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
+                    {card.description}
+                  </p>
+                </div>
+                <div className="pt-2 sm:pt-4 mt-2 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
+                  <span>Explore</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
               </div>
-              <div className="pt-2 sm:pt-4 mt-2 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
-                <span>Explore</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Category 2: Peanut Butter */}
-          <Link
-            href="/products?category=peanut-butter"
-            className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-          >
-            <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
-              <Image
-                src="/images/peanut-butter-showcase.jpg"
-                alt="Stone-Ground Peanut Butter"
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                sizes="(max-width: 640px) 50vw, 25vw"
-              />
-              <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs">
-                Stone-Ground
-              </div>
-            </div>
-            <div className="p-3 sm:p-5 flex flex-col justify-between flex-1">
-              <div>
-                <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
-                  Peanut Butter
-                </h3>
-                <p className="text-[11px] sm:text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
-                  100% slow-roasted peanuts stone-ground daily.
-                </p>
-              </div>
-              <div className="pt-2 sm:pt-4 mt-2 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
-                <span>Explore</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Category 3: High Protein */}
-          <Link
-            href="/products?category=protein-nutrition"
-            className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-          >
-            <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
-              <Image
-                src="/images/clean-protein-pouch-banner.jpg"
-                alt="High Protein and Recovery Nutrition"
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                sizes="(max-width: 640px) 50vw, 25vw"
-              />
-              <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs">
-                Clean Protein
-              </div>
-            </div>
-            <div className="p-3 sm:p-5 flex flex-col justify-between flex-1">
-              <div>
-                <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
-                  Clean Protein &amp; Recovery
-                </h3>
-                <p className="text-[11px] sm:text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
-                  Stone-ground nuts, seeds and clean protein superfood mix.
-                </p>
-              </div>
-              <div className="pt-2 sm:pt-4 mt-2 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
-                <span>Explore</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Category 4: Healthy Snacks */}
-          <Link
-            href="/products?category=healthy-snacks"
-            className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-          >
-            <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
-              <Image
-                src="https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80"
-                alt="Healthy Roasted Snacks and Dry Fruits"
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                sizes="(max-width: 640px) 50vw, 25vw"
-              />
-              <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs">
-                Guilt-Free Crunch
-              </div>
-            </div>
-            <div className="p-3 sm:p-5 flex flex-col justify-between flex-1">
-              <div>
-                <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
-                  Healthy Snacks
-                </h3>
-                <p className="text-[11px] sm:text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
-                  Slow-roasted California almonds, cashews and seed mixes.
-                </p>
-              </div>
-              <div className="pt-2 sm:pt-4 mt-2 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
-                <span>Explore</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </div>
-          </Link>
-
+            </Link>
+          ))}
         </div>
       </section>
 
