@@ -1,4 +1,4 @@
-﻿export interface Category {
+export interface Category {
   id: string;
   name: string;
   slug: string;
@@ -165,7 +165,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
     buttonLink: '/products?category=mithai',
     secondaryButtonText: 'Discover Flavours',
     secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=1400&auto=format&fit=crop&q=85',
+    image: '/images/dry-fruit-ladoos-banner.jpg',
     badgeText: 'Pure Cow Ghee',
   },
   {
