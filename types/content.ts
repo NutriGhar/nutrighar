@@ -139,8 +139,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
     buttonLink: '/products?category=protein-nutrition',
     secondaryButtonText: 'Explore Collections',
     secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1400&auto=format&fit=crop&q=85',
-    badgeText: '12g Protein / Piece',
+    image: '/images/clean-protein-pouch-banner.jpg',
+    badgeText: 'Pure Nuts & Seeds Blend',
   },
   {
     id: 'dry-fruits-nuts',
