@@ -11,6 +11,7 @@ import {
   DEFAULT_TESTIMONIALS,
   CollectionCard,
   TestimonialItem,
+  CuratedCollectionsContent,
   ProductSpotlightContent,
   TestimonialsContent,
 } from '@/types/content';
@@ -44,22 +45,57 @@ export default function AdminContentPage() {
         setIsLoading(true);
         const res = await fetch(`/api/content?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.data) {
           const loaded = data.data;
-          if (!loaded.heroSlides || !Array.isArray(loaded.heroSlides) || loaded.heroSlides.length === 0) {
-            loaded.heroSlides = DEFAULT_HERO_SLIDES;
+          const merged: WebsiteContent = {
+            ...loaded,
+            heroSlides: (loaded.heroSlides && Array.isArray(loaded.heroSlides) && loaded.heroSlides.length > 0)
+              ? loaded.heroSlides
+              : DEFAULT_HERO_SLIDES,
+            curatedCollections: {
+              ...DEFAULT_CURATED_COLLECTIONS,
+              ...(loaded.curatedCollections || {}),
+              cards: (loaded.curatedCollections?.cards && Array.isArray(loaded.curatedCollections.cards) && loaded.curatedCollections.cards.length > 0)
+                ? loaded.curatedCollections.cards
+                : DEFAULT_CURATED_COLLECTIONS.cards,
+            },
+            productSpotlight: {
+              ...DEFAULT_PRODUCT_SPOTLIGHT,
+              ...(loaded.productSpotlight || {}),
+            },
+            testimonials: {
+              ...DEFAULT_TESTIMONIALS,
+              ...(loaded.testimonials || {}),
+              items: (loaded.testimonials?.items && Array.isArray(loaded.testimonials.items) && loaded.testimonials.items.length > 0)
+                ? loaded.testimonials.items
+                : DEFAULT_TESTIMONIALS.items,
+            },
+          };
+          if (localSaved) {
+            setContent({
+              ...merged,
+              ...localSaved,
+              curatedCollections: {
+                ...DEFAULT_CURATED_COLLECTIONS,
+                ...(merged.curatedCollections || {}),
+                ...(localSaved.curatedCollections || {}),
+                cards: localSaved.curatedCollections?.cards || merged.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards,
+              },
+              productSpotlight: {
+                ...DEFAULT_PRODUCT_SPOTLIGHT,
+                ...(merged.productSpotlight || {}),
+                ...(localSaved.productSpotlight || {}),
+              },
+              testimonials: {
+                ...DEFAULT_TESTIMONIALS,
+                ...(merged.testimonials || {}),
+                ...(localSaved.testimonials || {}),
+                items: localSaved.testimonials?.items || merged.testimonials?.items || DEFAULT_TESTIMONIALS.items,
+              },
+            });
+          } else {
+            setContent(merged);
           }
-          if (!loaded.curatedCollections || !Array.isArray(loaded.curatedCollections.cards) || loaded.curatedCollections.cards.length === 0) {
-            loaded.curatedCollections = DEFAULT_CURATED_COLLECTIONS;
-          }
-          if (!loaded.productSpotlight) {
-            loaded.productSpotlight = DEFAULT_PRODUCT_SPOTLIGHT;
-          }
-          if (!loaded.testimonials || !Array.isArray(loaded.testimonials.items) || loaded.testimonials.items.length === 0) {
-            loaded.testimonials = DEFAULT_TESTIMONIALS;
-          }
-          const merged = localSaved ? { ...loaded, ...localSaved } : loaded;
-          setContent(merged);
         }
       } catch (err: any) {
         if (!localSaved) {
@@ -129,6 +165,93 @@ export default function AdminContentPage() {
     const targetIdx = selectedSlideIndex >= updated.length ? 0 : selectedSlideIndex;
     updated[targetIdx] = { ...updated[targetIdx], ...fields };
     setContent({ ...content, heroSlides: updated });
+  };
+
+  // -------------------------------------------------------------
+  // PRODUCT SPOTLIGHT HELPER FUNCTIONS
+  // -------------------------------------------------------------
+  const spotlight = {
+    ...DEFAULT_PRODUCT_SPOTLIGHT,
+    ...(content?.productSpotlight || {}),
+  };
+
+  const updateProductSpotlight = (fields: Partial<ProductSpotlightContent>) => {
+    if (!content) return;
+    setContent((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        productSpotlight: {
+          ...DEFAULT_PRODUCT_SPOTLIGHT,
+          ...(prev.productSpotlight || {}),
+          ...fields,
+        },
+      };
+    });
+  };
+
+  // -------------------------------------------------------------
+  // CURATED COLLECTIONS HELPER FUNCTIONS
+  // -------------------------------------------------------------
+  const curatedCollections = {
+    ...DEFAULT_CURATED_COLLECTIONS,
+    ...(content?.curatedCollections || {}),
+    cards: (content?.curatedCollections?.cards && Array.isArray(content.curatedCollections.cards) && content.curatedCollections.cards.length > 0)
+      ? content.curatedCollections.cards
+      : DEFAULT_CURATED_COLLECTIONS.cards,
+  };
+
+  const updateCuratedCollections = (fields: Partial<CuratedCollectionsContent>) => {
+    if (!content) return;
+    setContent((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        curatedCollections: {
+          ...DEFAULT_CURATED_COLLECTIONS,
+          ...(prev.curatedCollections || {}),
+          ...fields,
+        },
+      };
+    });
+  };
+
+  const updateCollectionCard = (index: number, cardFields: Partial<CollectionCard>) => {
+    const cards = [...curatedCollections.cards];
+    cards[index] = { ...cards[index], ...cardFields };
+    updateCuratedCollections({ cards });
+  };
+
+  // -------------------------------------------------------------
+  // TESTIMONIALS HELPER FUNCTIONS
+  // -------------------------------------------------------------
+  const testimonials = {
+    ...DEFAULT_TESTIMONIALS,
+    ...(content?.testimonials || {}),
+    items: (content?.testimonials?.items && Array.isArray(content.testimonials.items) && content.testimonials.items.length > 0)
+      ? content.testimonials.items
+      : DEFAULT_TESTIMONIALS.items,
+  };
+
+  const updateTestimonials = (fields: Partial<TestimonialsContent>) => {
+    if (!content) return;
+    setContent((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        testimonials: {
+          ...DEFAULT_TESTIMONIALS,
+          ...(prev.testimonials || {}),
+          ...fields,
+        },
+      };
+    });
+  };
+
+  const updateTestimonialItem = (index: number, itemFields: Partial<TestimonialItem>) => {
+    const items = [...testimonials.items];
+    items[index] = { ...items[index], ...itemFields };
+    updateTestimonials({ items });
   };
 
   const handleSlideImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -682,7 +805,6 @@ export default function AdminContentPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
                     const newCard: CollectionCard = {
                       id: `col-card-${Date.now()}`,
                       categorySlug: 'all',
@@ -691,12 +813,8 @@ export default function AdminContentPage() {
                       description: 'Describe the wholesome collection and ingredients.',
                       image: '/images/dry-fruit-ladoo-product.jpg',
                     };
-                    setContent({
-                      ...content,
-                      curatedCollections: {
-                        ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                        cards: [...currentCards, newCard],
-                      },
+                    updateCuratedCollections({
+                      cards: [...curatedCollections.cards, newCard],
                     });
                     showToast('Added a new Collection Card! You can now edit its photo, tag, title, and link.');
                   }}
@@ -709,10 +827,7 @@ export default function AdminContentPage() {
                   type="button"
                   onClick={() => {
                     if (confirm('Reset Curated Collections cards to Nutri Ghar original defaults?')) {
-                      setContent({
-                        ...content,
-                        curatedCollections: DEFAULT_CURATED_COLLECTIONS,
-                      });
+                      updateCuratedCollections(DEFAULT_CURATED_COLLECTIONS);
                       showToast('Reset collections to defaults.');
                     }
                   }}
@@ -736,16 +851,9 @@ export default function AdminContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={content.curatedCollections?.eyebrow || 'CURATED COLLECTIONS'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        curatedCollections: {
-                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                          eyebrow: e.target.value,
-                        },
-                      })
-                    }
+                    value={curatedCollections.eyebrow ?? ''}
+                    onChange={(e) => updateCuratedCollections({ eyebrow: e.target.value })}
+                    placeholder="e.g. CURATED COLLECTIONS"
                     className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                   />
                 </div>
@@ -756,16 +864,9 @@ export default function AdminContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={content.curatedCollections?.heading || 'Pure Food For Everyday Living'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        curatedCollections: {
-                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                          heading: e.target.value,
-                        },
-                      })
-                    }
+                    value={curatedCollections.heading ?? ''}
+                    onChange={(e) => updateCuratedCollections({ heading: e.target.value })}
+                    placeholder="e.g. Pure Food For Everyday Living"
                     className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                   />
                 </div>
@@ -775,17 +876,10 @@ export default function AdminContentPage() {
                     Section Description Paragraph
                   </label>
                   <textarea
-                    value={content.curatedCollections?.description || ''}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        curatedCollections: {
-                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                          description: e.target.value,
-                        },
-                      })
-                    }
+                    value={curatedCollections.description ?? ''}
+                    onChange={(e) => updateCuratedCollections({ description: e.target.value })}
                     rows={2}
+                    placeholder="Describe your collections..."
                     className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                   />
                 </div>
@@ -795,11 +889,11 @@ export default function AdminContentPage() {
             {/* Collection Cards */}
             <div className="space-y-6">
               <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
-                Collection Cards ({(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).length} Cards)
+                Collection Cards ({curatedCollections.cards.length} Cards)
               </span>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).map((card, idx) => (
+                {curatedCollections.cards.map((card, idx) => (
                   <div
                     key={card.id || `col-card-${idx}`}
                     className="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4 flex flex-col justify-between"
@@ -811,19 +905,12 @@ export default function AdminContentPage() {
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-stone-700">{card.title}</span>
-                          {(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).length > 1 && (
+                          {curatedCollections.cards.length > 1 && (
                             <button
                               type="button"
                               onClick={() => {
-                                const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
-                                const filtered = currentCards.filter((_, i) => i !== idx);
-                                setContent({
-                                  ...content,
-                                  curatedCollections: {
-                                    ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                    cards: filtered,
-                                  },
-                                });
+                                const filtered = curatedCollections.cards.filter((_, i) => i !== idx);
+                                updateCuratedCollections({ cards: filtered });
                                 showToast('Removed collection card.');
                               }}
                               className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer ml-2"
@@ -863,15 +950,7 @@ export default function AdminContentPage() {
                                 const reader = new FileReader();
                                 reader.onloadend = async () => {
                                   const base64 = reader.result as string;
-                                  const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
-                                  currentCards[idx] = { ...currentCards[idx], image: base64 };
-                                  setContent({
-                                    ...content,
-                                    curatedCollections: {
-                                      ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                      cards: currentCards,
-                                    },
-                                  });
+                                  updateCollectionCard(idx, { image: base64 });
                                   try {
                                     const res = await fetch('/api/upload', {
                                       method: 'POST',
@@ -884,14 +963,7 @@ export default function AdminContentPage() {
                                     });
                                     const up = await res.json();
                                     if (up.success && up.url) {
-                                      currentCards[idx] = { ...currentCards[idx], image: up.url };
-                                      setContent({
-                                        ...content,
-                                        curatedCollections: {
-                                          ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                          cards: currentCards,
-                                        },
-                                      });
+                                      updateCollectionCard(idx, { image: up.url });
                                     }
                                   } catch {
                                     // keep base64
@@ -913,18 +985,8 @@ export default function AdminContentPage() {
 
                           <input
                             type="url"
-                            value={card.image}
-                            onChange={(e) => {
-                              const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
-                              currentCards[idx] = { ...currentCards[idx], image: e.target.value };
-                              setContent({
-                                ...content,
-                                curatedCollections: {
-                                  ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                  cards: currentCards,
-                                },
-                              });
-                            }}
+                            value={card.image ?? ''}
+                            onChange={(e) => updateCollectionCard(idx, { image: e.target.value })}
                             placeholder="Or paste image URL"
                             className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-[11px] text-stone-800 focus:outline-none"
                           />
@@ -940,18 +1002,8 @@ export default function AdminContentPage() {
                             </label>
                             <input
                               type="text"
-                              value={card.tag}
-                              onChange={(e) => {
-                                const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
-                                currentCards[idx] = { ...currentCards[idx], tag: e.target.value };
-                                setContent({
-                                  ...content,
-                                  curatedCollections: {
-                                    ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                    cards: currentCards,
-                                  },
-                                });
-                              }}
+                              value={card.tag ?? ''}
+                              onChange={(e) => updateCollectionCard(idx, { tag: e.target.value })}
                               className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
                             />
                           </div>
@@ -962,18 +1014,8 @@ export default function AdminContentPage() {
                             </label>
                             <input
                               type="text"
-                              value={card.categorySlug}
-                              onChange={(e) => {
-                                const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
-                                currentCards[idx] = { ...currentCards[idx], categorySlug: e.target.value };
-                                setContent({
-                                  ...content,
-                                  curatedCollections: {
-                                    ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                    cards: currentCards,
-                                  },
-                                });
-                              }}
+                              value={card.categorySlug ?? ''}
+                              onChange={(e) => updateCollectionCard(idx, { categorySlug: e.target.value })}
                               placeholder="e.g. mithai"
                               className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
                             />
@@ -986,18 +1028,8 @@ export default function AdminContentPage() {
                           </label>
                           <input
                             type="text"
-                            value={card.title}
-                            onChange={(e) => {
-                              const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
-                              currentCards[idx] = { ...currentCards[idx], title: e.target.value };
-                              setContent({
-                                ...content,
-                                curatedCollections: {
-                                  ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                  cards: currentCards,
-                                },
-                              });
-                            }}
+                            value={card.title ?? ''}
+                            onChange={(e) => updateCollectionCard(idx, { title: e.target.value })}
                             className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none font-bold"
                           />
                         </div>
@@ -1007,18 +1039,8 @@ export default function AdminContentPage() {
                             Card Description
                           </label>
                           <textarea
-                            value={card.description}
-                            onChange={(e) => {
-                              const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
-                              currentCards[idx] = { ...currentCards[idx], description: e.target.value };
-                              setContent({
-                                ...content,
-                                curatedCollections: {
-                                  ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
-                                  cards: currentCards,
-                                },
-                              });
-                            }}
+                            value={card.description ?? ''}
+                            onChange={(e) => updateCollectionCard(idx, { description: e.target.value })}
                             rows={2}
                             className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-800 focus:outline-none"
                           />
@@ -1060,10 +1082,7 @@ export default function AdminContentPage() {
                 type="button"
                 onClick={() => {
                   if (confirm('Reset Product Spotlight to Nutri Ghar original defaults?')) {
-                    setContent({
-                      ...content,
-                      productSpotlight: DEFAULT_PRODUCT_SPOTLIGHT,
-                    });
+                    updateProductSpotlight(DEFAULT_PRODUCT_SPOTLIGHT);
                     showToast('Reset product spotlight to defaults.');
                   }
                 }}
@@ -1083,14 +1102,14 @@ export default function AdminContentPage() {
 
                 <div className="relative h-64 w-full rounded-xl overflow-hidden bg-stone-100 border border-stone-200">
                   <Image
-                    src={content.productSpotlight?.image || DEFAULT_PRODUCT_SPOTLIGHT.image}
-                    alt={content.productSpotlight?.heading || 'Spotlight preview'}
+                    src={spotlight.image || DEFAULT_PRODUCT_SPOTLIGHT.image}
+                    alt={spotlight.heading || 'Spotlight preview'}
                     fill
                     className="object-cover"
                     sizes="400px"
                   />
                   <div className="absolute top-3 left-3 bg-[#9C5838] text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm">
-                    {content.productSpotlight?.tag || 'Signature Feature'}
+                    {spotlight.tag || 'Signature Feature'}
                   </div>
                 </div>
 
@@ -1106,13 +1125,7 @@ export default function AdminContentPage() {
                         const reader = new FileReader();
                         reader.onloadend = async () => {
                           const base64 = reader.result as string;
-                          setContent({
-                            ...content,
-                            productSpotlight: {
-                              ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                              image: base64,
-                            },
-                          });
+                          updateProductSpotlight({ image: base64 });
                           try {
                             const res = await fetch('/api/upload', {
                               method: 'POST',
@@ -1125,13 +1138,7 @@ export default function AdminContentPage() {
                             });
                             const up = await res.json();
                             if (up.success && up.url) {
-                              setContent({
-                                ...content,
-                                productSpotlight: {
-                                  ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                                  image: up.url,
-                                },
-                              });
+                              updateProductSpotlight({ image: up.url });
                             }
                           } catch {
                             // keep base64
@@ -1158,16 +1165,8 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="url"
-                      value={content.productSpotlight?.image || ''}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            image: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.image ?? ''}
+                      onChange={(e) => updateProductSpotlight({ image: e.target.value })}
                       placeholder="/images/dry-fruit-ladoo-product.jpg"
                       className="w-full px-3 py-2 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
                     />
@@ -1188,16 +1187,9 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.eyebrow || 'PRODUCT SPOTLIGHT'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            eyebrow: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.eyebrow ?? ''}
+                      onChange={(e) => updateProductSpotlight({ eyebrow: e.target.value })}
+                      placeholder="e.g. PRODUCT SPOTLIGHT"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
                   </div>
@@ -1208,16 +1200,9 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.tag || 'Signature Feature'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            tag: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.tag ?? ''}
+                      onChange={(e) => updateProductSpotlight({ tag: e.target.value })}
+                      placeholder="e.g. Signature Feature"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
                   </div>
@@ -1228,16 +1213,9 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.heading || 'Protein Power Ladoo'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            heading: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.heading ?? ''}
+                      onChange={(e) => updateProductSpotlight({ heading: e.target.value })}
+                      placeholder="e.g. Protein Power Ladoo"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B] font-bold"
                     />
                   </div>
@@ -1248,16 +1226,9 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.headingItalic || 'Traditional Taste. Modern Nutrition.'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            headingItalic: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.headingItalic ?? ''}
+                      onChange={(e) => updateProductSpotlight({ headingItalic: e.target.value })}
+                      placeholder="e.g. Traditional Taste. Modern Nutrition."
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
                   </div>
@@ -1267,17 +1238,10 @@ export default function AdminContentPage() {
                       Story &amp; Ingredient Narrative
                     </label>
                     <textarea
-                      value={content.productSpotlight?.description || ''}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            description: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.description ?? ''}
+                      onChange={(e) => updateProductSpotlight({ description: e.target.value })}
                       rows={3}
+                      placeholder="Describe ingredients and nutritional benefits..."
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
                   </div>
@@ -1289,16 +1253,8 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.protein || '12g'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            protein: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.protein ?? ''}
+                      onChange={(e) => updateProductSpotlight({ protein: e.target.value })}
                       placeholder="e.g. 12g"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
@@ -1310,16 +1266,8 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.sugar || '0g'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            sugar: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.sugar ?? ''}
+                      onChange={(e) => updateProductSpotlight({ sugar: e.target.value })}
                       placeholder="e.g. 0g"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
@@ -1331,16 +1279,8 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.ghee || '100%'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            ghee: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.ghee ?? ''}
+                      onChange={(e) => updateProductSpotlight({ ghee: e.target.value })}
                       placeholder="e.g. 100%"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
@@ -1352,16 +1292,8 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.freshness || 'Weekly'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            freshness: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.freshness ?? ''}
+                      onChange={(e) => updateProductSpotlight({ freshness: e.target.value })}
                       placeholder="e.g. Weekly"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
@@ -1373,16 +1305,8 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="number"
-                      value={content.productSpotlight?.price || 349}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            price: Number(e.target.value),
-                          },
-                        })
-                      }
+                      value={spotlight.price ?? 349}
+                      onChange={(e) => updateProductSpotlight({ price: e.target.value === '' ? 0 : Number(e.target.value) })}
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B] font-bold"
                     />
                   </div>
@@ -1393,16 +1317,35 @@ export default function AdminContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={content.productSpotlight?.priceNote || 'Price per 400g Box'}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          productSpotlight: {
-                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
-                            priceNote: e.target.value,
-                          },
-                        })
-                      }
+                      value={spotlight.priceNote ?? ''}
+                      onChange={(e) => updateProductSpotlight({ priceNote: e.target.value })}
+                      placeholder="e.g. Price per 400g Box"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Button CTA Text
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.buttonText ?? ''}
+                      onChange={(e) => updateProductSpotlight({ buttonText: e.target.value })}
+                      placeholder="e.g. Add to Cart"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Target Product Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.productSlug ?? ''}
+                      onChange={(e) => updateProductSpotlight({ productSlug: e.target.value })}
+                      placeholder="e.g. dry-fruit-ladoo"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                     />
                   </div>
@@ -1440,7 +1383,6 @@ export default function AdminContentPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
                     const newItem: TestimonialItem = {
                       id: `test-${Date.now()}`,
                       name: 'Customer Name',
@@ -1449,12 +1391,8 @@ export default function AdminContentPage() {
                       rating: 5,
                       review: 'Write verified feedback here...',
                     };
-                    setContent({
-                      ...content,
-                      testimonials: {
-                        ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                        items: [...currentItems, newItem],
-                      },
+                    updateTestimonials({
+                      items: [...testimonials.items, newItem],
                     });
                     showToast('Added a new review card!');
                   }}
@@ -1467,10 +1405,7 @@ export default function AdminContentPage() {
                   type="button"
                   onClick={() => {
                     if (confirm('Reset Customer Testimonials to Nutri Ghar original defaults?')) {
-                      setContent({
-                        ...content,
-                        testimonials: DEFAULT_TESTIMONIALS,
-                      });
+                      updateTestimonials(DEFAULT_TESTIMONIALS);
                       showToast('Reset testimonials to defaults.');
                     }
                   }}
@@ -1494,16 +1429,9 @@ export default function AdminContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={content.testimonials?.eyebrow || 'VERIFIED EXPERIENCES'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        testimonials: {
-                          ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                          eyebrow: e.target.value,
-                        },
-                      })
-                    }
+                    value={testimonials.eyebrow ?? ''}
+                    onChange={(e) => updateTestimonials({ eyebrow: e.target.value })}
+                    placeholder="e.g. VERIFIED EXPERIENCES"
                     className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                   />
                 </div>
@@ -1514,16 +1442,9 @@ export default function AdminContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={content.testimonials?.heading || 'Loved Across Indian Homes'}
-                    onChange={(e) =>
-                      setContent({
-                        ...content,
-                        testimonials: {
-                          ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                          heading: e.target.value,
-                        },
-                      })
-                    }
+                    value={testimonials.heading ?? ''}
+                    onChange={(e) => updateTestimonials({ heading: e.target.value })}
+                    placeholder="e.g. Loved Across Indian Homes"
                     className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                   />
                 </div>
@@ -1533,11 +1454,11 @@ export default function AdminContentPage() {
             {/* Review Cards Grid */}
             <div className="space-y-4">
               <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
-                Testimonial Cards ({(content.testimonials?.items || DEFAULT_TESTIMONIALS.items).length} Reviews)
+                Testimonial Cards ({testimonials.items.length} Reviews)
               </span>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {(content.testimonials?.items || DEFAULT_TESTIMONIALS.items).map((item, idx) => (
+                {testimonials.items.map((item, idx) => (
                   <div
                     key={item.id || `test-${idx}`}
                     className="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4 flex flex-col justify-between"
@@ -1547,19 +1468,12 @@ export default function AdminContentPage() {
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#9C5838]">
                           Review #{idx + 1}
                         </span>
-                        {(content.testimonials?.items || DEFAULT_TESTIMONIALS.items).length > 1 && (
+                        {testimonials.items.length > 1 && (
                           <button
                             type="button"
                             onClick={() => {
-                              const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
-                              const filtered = currentItems.filter((_, i) => i !== idx);
-                              setContent({
-                                ...content,
-                                testimonials: {
-                                  ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                                  items: filtered,
-                                },
-                              });
+                              const filtered = testimonials.items.filter((_, i) => i !== idx);
+                              updateTestimonials({ items: filtered });
                               showToast('Removed review.');
                             }}
                             className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer"
@@ -1575,18 +1489,8 @@ export default function AdminContentPage() {
                           Star Rating (1 - 5 Stars)
                         </label>
                         <select
-                          value={item.rating || 5}
-                          onChange={(e) => {
-                            const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
-                            currentItems[idx] = { ...currentItems[idx], rating: Number(e.target.value) };
-                            setContent({
-                              ...content,
-                              testimonials: {
-                                ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                                items: currentItems,
-                              },
-                            });
-                          }}
+                          value={item.rating ?? 5}
+                          onChange={(e) => updateTestimonialItem(idx, { rating: Number(e.target.value) })}
                           className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-amber-600 font-bold focus:outline-none"
                         >
                           <option value={5}>★★★★★ (5 Stars - Exceptional)</option>
@@ -1601,18 +1505,8 @@ export default function AdminContentPage() {
                           Customer Review Quote
                         </label>
                         <textarea
-                          value={item.review}
-                          onChange={(e) => {
-                            const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
-                            currentItems[idx] = { ...currentItems[idx], review: e.target.value };
-                            setContent({
-                              ...content,
-                              testimonials: {
-                                ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                                items: currentItems,
-                              },
-                            });
-                          }}
+                          value={item.review ?? ''}
+                          onChange={(e) => updateTestimonialItem(idx, { review: e.target.value })}
                           rows={3}
                           className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] italic focus:outline-none"
                         />
@@ -1626,18 +1520,8 @@ export default function AdminContentPage() {
                           </label>
                           <input
                             type="text"
-                            value={item.name}
-                            onChange={(e) => {
-                              const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
-                              currentItems[idx] = { ...currentItems[idx], name: e.target.value };
-                              setContent({
-                                ...content,
-                                testimonials: {
-                                  ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                                  items: currentItems,
-                                },
-                              });
-                            }}
+                            value={item.name ?? ''}
+                            onChange={(e) => updateTestimonialItem(idx, { name: e.target.value })}
                             className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] font-bold focus:outline-none"
                           />
                         </div>
@@ -1648,18 +1532,8 @@ export default function AdminContentPage() {
                           </label>
                           <input
                             type="text"
-                            value={item.location || ''}
-                            onChange={(e) => {
-                              const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
-                              currentItems[idx] = { ...currentItems[idx], location: e.target.value };
-                              setContent({
-                                ...content,
-                                testimonials: {
-                                  ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                                  items: currentItems,
-                                },
-                              });
-                            }}
+                            value={item.location ?? ''}
+                            onChange={(e) => updateTestimonialItem(idx, { location: e.target.value })}
                             placeholder="e.g. Mumbai"
                             className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] focus:outline-none"
                           />
@@ -1672,18 +1546,8 @@ export default function AdminContentPage() {
                         </label>
                         <input
                           type="text"
-                          value={item.product}
-                          onChange={(e) => {
-                            const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
-                            currentItems[idx] = { ...currentItems[idx], product: e.target.value };
-                            setContent({
-                              ...content,
-                              testimonials: {
-                                ...(content.testimonials || DEFAULT_TESTIMONIALS),
-                                items: currentItems,
-                              },
-                            });
-                          }}
+                          value={item.product ?? ''}
+                          onChange={(e) => updateTestimonialItem(idx, { product: e.target.value })}
                           placeholder="e.g. Besan Ladoo"
                           className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] focus:outline-none"
                         />

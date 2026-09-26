@@ -1195,7 +1195,30 @@ export async function updateOrderStatus(
 
 export async function getWebsiteContent(): Promise<WebsiteContent> {
   const store = getStoreData();
-  return store.content || JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
+  const raw = store.content || {};
+  return {
+    ...DEFAULT_WEBSITE_CONTENT,
+    ...raw,
+    hero: { ...DEFAULT_WEBSITE_CONTENT.hero, ...(raw.hero || {}) },
+    productSpotlight: { ...DEFAULT_PRODUCT_SPOTLIGHT, ...(raw.productSpotlight || {}) },
+    curatedCollections: {
+      ...DEFAULT_CURATED_COLLECTIONS,
+      ...(raw.curatedCollections || {}),
+      cards: (raw.curatedCollections?.cards && Array.isArray(raw.curatedCollections.cards) && raw.curatedCollections.cards.length > 0)
+        ? raw.curatedCollections.cards
+        : DEFAULT_CURATED_COLLECTIONS.cards,
+    },
+    testimonials: {
+      ...DEFAULT_TESTIMONIALS,
+      ...(raw.testimonials || {}),
+      items: (raw.testimonials?.items && Array.isArray(raw.testimonials.items) && raw.testimonials.items.length > 0)
+        ? raw.testimonials.items
+        : DEFAULT_TESTIMONIALS.items,
+    },
+    heroSlides: (raw.heroSlides && Array.isArray(raw.heroSlides) && raw.heroSlides.length > 0)
+      ? raw.heroSlides
+      : DEFAULT_HERO_SLIDES,
+  };
 }
 
 export async function updateWebsiteContent(section: keyof WebsiteContent, data: any): Promise<WebsiteContent> {
