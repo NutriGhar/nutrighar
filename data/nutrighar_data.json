@@ -520,9 +520,9 @@
       "description": "Reimagining India's timeless post-meal sweet as an everyday functional superfood. Handcrafted with clean protein, stone-ground oats, roasted California almonds, and 100% pure desi cow ghee.",
       "protein": "12g",
       "sugar": "0g",
-      "ghee": "100%",
+      "ghee": "10%",
       "freshness": "Weekly",
-      "price": 349,
+      "price": 0,
       "priceNote": "Price per 400g Box",
       "image": "/images/dry-fruit-ladoo-product.jpg",
       "tag": "Signature Feature",
@@ -559,5 +559,6 @@
         }
       ]
     }
-  }
+  },
+  "subscribers": []
 }
