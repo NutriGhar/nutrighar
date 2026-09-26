@@ -7,6 +7,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
 import { useContent } from '@/context/ContentContext';
+import { Product } from '@/types/product';
+
+const POPULAR_SEARCHES = ['Besan Ladoo', 'Peanut Butter', 'Clean Protein', 'Dry Fruit Ladoo', 'Pure Desi Ghee', 'Healthy Snacks'];
 
 export default function Navbar() {
   const { getItemCount, getTotal } = useCart();
@@ -17,6 +20,8 @@ export default function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [itemCount, setItemCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
   const router = useRouter();
@@ -74,6 +79,38 @@ export default function Navbar() {
     }
   };
 
+  // Fetch catalog for instantaneous 0ms live search
+  useEffect(() => {
+    async function loadCatalog() {
+      try {
+        const res = await fetch('/api/products');
+        const json = await res.json();
+        const list: Product[] = Array.isArray(json) ? json : json.data || json.products || [];
+        setCatalogProducts(list);
+      } catch (e) {
+        console.error('Failed to load products for live search:', e);
+      }
+    }
+    loadCatalog();
+  }, []);
+
+  // Live filter results as user types
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const q = searchQuery.toLowerCase().trim();
+    const filtered = catalogProducts.filter((p) => {
+      const nameMatch = p.name?.toLowerCase().includes(q);
+      const descMatch = p.description?.toLowerCase().includes(q);
+      const catMatch = p.categorySlug?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q);
+      const ingMatch = Array.isArray(p.ingredients) && p.ingredients.some((ing) => ing.toLowerCase().includes(q));
+      return nameMatch || descMatch || catMatch || ingMatch;
+    });
+    setSearchResults(filtered);
+  }, [searchQuery, catalogProducts]);
+
   // Close dropdowns on route change
   useEffect(() => {
     setIsMenuOpen(false);
@@ -82,10 +119,22 @@ export default function Navbar() {
     setIsSearchOpen(false);
   }, [pathname]);
 
-  // Focus search input when search is opened
+  // Focus search input and listen to Escape key when search is opened
   useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+    if (isSearchOpen) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsSearchOpen(false);
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        clearTimeout(timer);
+      };
     }
   }, [isSearchOpen]);
 
@@ -540,35 +589,22 @@ export default function Navbar() {
 
         </div>
 
-        {/* Expandable Clean Search Bar (Slides down smoothly when Search Icon is clicked) */}
-        {isSearchOpen && (
-          <div className="py-2.5 px-2 border-t border-stone-100 bg-[#FAF7F2] animate-slideDown flex items-center justify-center">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full max-w-2xl mx-auto">
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search ladoos, peanut butter, protein mixes..."
-                className="w-full pl-4 pr-20 py-2.5 bg-white border-2 border-[#4E652B] rounded-full text-xs sm:text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:outline-none shadow-md"
-              />
-              <button
-                type="submit"
-                className="absolute right-8 px-3 py-1 bg-[#4E652B] text-white hover:bg-[#3D5021] text-[11px] font-bold uppercase tracking-wider rounded-full transition-colors cursor-pointer"
-              >
-                Go
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsSearchOpen(false)}
-                className="absolute right-2.5 w-5 h-5 rounded-full hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
-                aria-label="Close search"
-              >
-                ✕
-              </button>
-            </form>
-          </div>
-        )}
+        {/* Mobile Sticky Search Bar (Permanent on all mobile screens for easy 1-tap searching) */}
+        <div className="lg:hidden px-4 pb-2.5 pt-0.5 bg-white border-t border-stone-100">
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            className="w-full flex items-center justify-between px-3.5 py-2 bg-[#FAF7F2] hover:bg-stone-100 border border-stone-200/90 rounded-full text-stone-500 text-xs shadow-2xs transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[#4E652B] text-sm">🔍</span>
+              <span className="truncate text-stone-600 font-medium">Search ladoos, peanut butter, protein...</span>
+            </div>
+            <span className="shrink-0 bg-[#E7F0AB] text-[#243513] text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Search
+            </span>
+          </button>
+        </div>
 
       </div>
 
@@ -615,17 +651,23 @@ export default function Navbar() {
             {/* Scrollable Drawer Body */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               
-              {/* Drawer Search Box */}
-              <form onSubmit={handleSearchSubmit} className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products & recipes..."
-                  className="w-full pl-9 pr-4 py-2.5 bg-[#FAF7F2] border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#4E652B]"
-                />
-                <span className="absolute left-3 top-2.5 text-stone-400 text-sm">🔍</span>
-              </form>
+              {/* Drawer Search Trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsSearchOpen(true);
+                }}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#FAF7F2] hover:bg-stone-100 border border-stone-300/80 rounded-xl text-xs text-stone-600 transition-colors cursor-pointer shadow-2xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-sm text-[#4E652B]">🔍</span>
+                  <span className="font-semibold text-stone-700">Search products &amp; recipes...</span>
+                </div>
+                <span className="text-[10px] font-bold text-[#4E652B] bg-[#E7F0AB] px-2 py-0.5 rounded-full uppercase">
+                  Search
+                </span>
+              </button>
 
               {/* Login / Customer Card */}
               {customer ? (
@@ -1005,6 +1047,314 @@ export default function Navbar() {
               </div>
 
             </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* Luxury Instant Live Search Overlay Modal */}
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-stone-900/60 backdrop-blur-sm flex flex-col items-center justify-start p-3 sm:p-6 md:p-8 animate-fadeIn overflow-y-auto"
+          onClick={() => setIsSearchOpen(false)}
+        >
+          <div
+            className="bg-white w-full max-w-3xl rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col my-2 sm:my-6 max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Search Input Bar */}
+            <form onSubmit={handleSearchSubmit} className="p-3 sm:p-5 border-b border-stone-200 bg-white">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="relative flex-1 flex items-center">
+                  <span className="absolute left-3 sm:left-4 text-stone-400 text-base sm:text-lg">
+                    🔍
+                  </span>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search mithai, peanut butter, clean protein..."
+                    className="w-full pl-10 sm:pl-12 pr-10 py-3 sm:py-3.5 bg-[#FAF7F2] hover:bg-stone-100/80 focus:bg-white border border-stone-300 focus:border-[#4E652B] rounded-xl sm:rounded-2xl text-xs sm:text-sm md:text-base font-semibold text-stone-900 placeholder:text-stone-400 outline-none transition-all shadow-inner"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-600 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                      title="Clear search"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className="hidden sm:inline-flex items-center justify-center px-5 py-3.5 bg-[#4E652B] hover:bg-[#3D5021] text-white font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl sm:rounded-2xl transition-colors cursor-pointer shadow-sm shrink-0"
+                >
+                  Search
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(false)}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center text-sm sm:text-base font-bold transition-colors cursor-pointer shrink-0"
+                  aria-label="Close Search"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Trending Quick Chips */}
+              <div className="flex items-center gap-1.5 sm:gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar text-xs">
+                <span className="text-[10px] sm:text-xs font-bold text-stone-400 uppercase tracking-wider shrink-0 mr-1">
+                  🔥 Trending:
+                </span>
+                {POPULAR_SEARCHES.map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => setSearchQuery(term)}
+                    className="px-2.5 sm:px-3 py-1 bg-[#FAF7F2] hover:bg-[#E7F0AB] hover:text-[#243513] text-stone-700 rounded-full text-[11px] sm:text-xs font-medium border border-stone-200 transition-colors whitespace-nowrap cursor-pointer shrink-0"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </form>
+
+            {/* Scrollable Results / Recommendations Area */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FAF7F2]/40">
+              {searchQuery.trim() ? (
+                <div>
+                  {/* Results Header */}
+                  <div className="flex items-center justify-between mb-3.5 px-1">
+                    <span className="text-xs sm:text-sm font-bold text-stone-700">
+                      {searchResults.length > 0 ? (
+                        <>
+                          Found <span className="text-[#4E652B] font-extrabold">{searchResults.length}</span> {searchResults.length === 1 ? 'item' : 'items'} for &ldquo;{searchQuery}&rdquo;
+                        </>
+                      ) : (
+                        `No items found for "${searchQuery}"`
+                      )}
+                    </span>
+                    {searchResults.length > 0 && (
+                      <Link
+                        href={`/products?search=${encodeURIComponent(searchQuery)}`}
+                        onClick={() => setIsSearchOpen(false)}
+                        className="text-xs font-bold text-[#4E652B] hover:underline"
+                      >
+                        View in Catalog →
+                      </Link>
+                    )}
+                  </div>
+
+                  {searchResults.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {searchResults.map((product) => (
+                        <Link
+                          key={product.id}
+                          href={`/products/${product.id}`}
+                          onClick={() => setIsSearchOpen(false)}
+                          className="bg-white p-3 rounded-2xl border border-stone-200/90 hover:border-[#4E652B] hover:shadow-md transition-all flex items-center gap-3.5 group cursor-pointer"
+                        >
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-stone-100 shrink-0 border border-stone-100">
+                            {product.image ? (
+                              <Image
+                                src={product.image}
+                                alt={product.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform"
+                                sizes="80px"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xl bg-stone-200 text-stone-400">
+                                🥣
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[9px] uppercase font-bold tracking-wider text-[#9C5838] block truncate">
+                              {product.category || 'NutriGhar Homemade'}
+                            </span>
+                            <h4 className="font-bold text-xs sm:text-sm text-stone-900 truncate group-hover:text-[#4E652B] transition-colors">
+                              {product.name}
+                            </h4>
+                            <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
+                              {product.description}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className="font-black text-xs sm:text-sm text-[#4E652B]">
+                                ₹{product.price}
+                              </span>
+                              {product.originalPrice && product.originalPrice > product.price && (
+                                <span className="text-[10px] text-stone-400 line-through">
+                                  ₹{product.originalPrice}
+                                </span>
+                              )}
+                              {product.rating && (
+                                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded flex items-center gap-0.5 ml-auto">
+                                  ★ {product.rating}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 px-4 bg-white rounded-2xl border border-stone-200 space-y-3">
+                      <div className="text-4xl">🔍</div>
+                      <h4 className="text-sm sm:text-base font-bold text-stone-800">
+                        No products found matching &ldquo;{searchQuery}&rdquo;
+                      </h4>
+                      <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                        Check your spelling or explore our popular homemade nutrition categories below.
+                      </p>
+                      <div className="pt-2 flex flex-wrap justify-center gap-2">
+                        {POPULAR_SEARCHES.slice(0, 4).map((term) => (
+                          <button
+                            key={term}
+                            type="button"
+                            onClick={() => setSearchQuery(term)}
+                            className="px-3 py-1.5 bg-[#FAF7F2] hover:bg-[#E7F0AB] text-stone-800 text-xs font-semibold rounded-full border border-stone-300 transition-colors cursor-pointer"
+                          >
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Empty / Initial State: Category & Best Sellers Discovery */
+                <div className="space-y-6">
+                  {/* Category Fast Shortcuts */}
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-stone-500 mb-3 px-1">
+                      Explore Categories
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <Link
+                        href="/products?category=mithai"
+                        onClick={() => setIsSearchOpen(false)}
+                        className="p-3.5 bg-white hover:bg-[#FAF7F2] border border-stone-200/90 hover:border-[#4E652B] rounded-2xl transition-all flex items-center gap-3 group shadow-2xs"
+                      >
+                        <span className="text-2xl p-2 bg-amber-50 rounded-xl">🍯</span>
+                        <div>
+                          <div className="font-bold text-xs text-stone-900 group-hover:text-[#4E652B]">
+                            Pure Ghee Mithai
+                          </div>
+                          <div className="text-[10px] text-stone-500">Ladoos &amp; Treats</div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/products?category=peanut-butter"
+                        onClick={() => setIsSearchOpen(false)}
+                        className="p-3.5 bg-white hover:bg-[#FAF7F2] border border-stone-200/90 hover:border-[#4E652B] rounded-2xl transition-all flex items-center gap-3 group shadow-2xs"
+                      >
+                        <span className="text-2xl p-2 bg-amber-50 rounded-xl">🥜</span>
+                        <div>
+                          <div className="font-bold text-xs text-stone-900 group-hover:text-[#4E652B]">
+                            Peanut Butter
+                          </div>
+                          <div className="text-[10px] text-stone-500">Stone-ground, 100% pure</div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/products?category=protein-nutrition"
+                        onClick={() => setIsSearchOpen(false)}
+                        className="p-3.5 bg-white hover:bg-[#FAF7F2] border border-stone-200/90 hover:border-[#4E652B] rounded-2xl transition-all flex items-center gap-3 group shadow-2xs"
+                      >
+                        <span className="text-2xl p-2 bg-emerald-50 rounded-xl">🌿</span>
+                        <div>
+                          <div className="font-bold text-xs text-stone-900 group-hover:text-[#4E652B]">
+                            Clean Protein
+                          </div>
+                          <div className="text-[10px] text-stone-500">Zero artificial additives</div>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Featured / Best Sellers Preview */}
+                  {catalogProducts.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-stone-500">
+                          Popular NutriGhar Favorites
+                        </h4>
+                        <Link
+                          href="/products"
+                          onClick={() => setIsSearchOpen(false)}
+                          className="text-[11px] font-bold text-[#4E652B] hover:underline"
+                        >
+                          View All ({catalogProducts.length}) →
+                        </Link>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {catalogProducts.slice(0, 4).map((p) => (
+                          <Link
+                            key={p.id}
+                            href={`/products/${p.id}`}
+                            onClick={() => setIsSearchOpen(false)}
+                            className="bg-white p-3 rounded-2xl border border-stone-200/90 hover:border-[#4E652B] hover:shadow-sm transition-all flex items-center gap-3 group"
+                          >
+                            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-stone-100 shrink-0 border border-stone-100">
+                              {p.image ? (
+                                <Image
+                                  src={p.image}
+                                  alt={p.name}
+                                  fill
+                                  className="object-cover group-hover:scale-105 transition-transform"
+                                  sizes="56px"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-lg bg-stone-200">
+                                  🥣
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-bold text-xs text-stone-900 truncate group-hover:text-[#4E652B]">
+                                {p.name}
+                              </h5>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="font-black text-xs text-[#4E652B]">₹{p.price}</span>
+                                {p.rating && (
+                                  <span className="text-[10px] text-amber-600 font-semibold">★ {p.rating}</span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs text-stone-400 group-hover:text-[#4E652B] group-hover:translate-x-0.5 transition-all">
+                              →
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 sm:p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-between text-[11px] text-stone-500">
+              <span className="hidden sm:inline">
+                💡 Tip: Press <kbd className="px-1.5 py-0.5 bg-white border border-stone-300 rounded font-mono text-[10px]">ESC</kbd> anytime to close search.
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(false)}
+                className="text-stone-600 hover:text-stone-900 font-bold uppercase tracking-wider text-xs ml-auto cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
 
           </div>
         </div>
