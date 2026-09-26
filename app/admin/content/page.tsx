@@ -1304,9 +1304,24 @@ export default function AdminContentPage() {
                       Price (₹)
                     </label>
                     <input
-                      type="number"
-                      value={spotlight.price ?? 349}
-                      onChange={(e) => updateProductSpotlight({ price: e.target.value === '' ? 0 : Number(e.target.value) })}
+                      type="text"
+                      inputMode="numeric"
+                      value={
+                        spotlight.price === undefined || spotlight.price === null || spotlight.price === ''
+                          ? ''
+                          : String(spotlight.price).replace(/^0+(?=\d)/, '')
+                      }
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/[^0-9]/g, '');
+                        const cleanDigits = digitsOnly.replace(/^0+(?=\d)/, '');
+                        updateProductSpotlight({ price: cleanDigits });
+                      }}
+                      onBlur={() => {
+                        const current = String(spotlight.price || '').replace(/^0+(?=\d)/, '');
+                        const parsed = parseInt(current, 10);
+                        updateProductSpotlight({ price: isNaN(parsed) || parsed <= 0 ? 349 : parsed });
+                      }}
+                      placeholder="e.g. 599"
                       className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B] font-bold"
                     />
                   </div>

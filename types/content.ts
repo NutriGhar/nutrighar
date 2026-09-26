@@ -122,7 +122,7 @@ export interface ProductSpotlightContent {
   sugar: string;
   ghee: string;
   freshness: string;
-  price: number;
+  price: number | string;
   priceNote: string;
   image: string;
   tag: string;
