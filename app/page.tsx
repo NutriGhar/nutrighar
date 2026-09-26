@@ -200,7 +200,7 @@ export default function HomePage() {
           >
             <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80"
+                src="/images/dry-fruit-ladoos-banner.jpg"
                 alt="Pure Desi Ghee Mithai and Ladoos"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -233,7 +233,7 @@ export default function HomePage() {
           >
             <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80"
+                src="/images/peanut-butter-showcase.jpg"
                 alt="Stone-Ground Peanut Butter"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -266,23 +266,23 @@ export default function HomePage() {
           >
             <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80"
+                src="/images/clean-protein-pouch-banner.jpg"
                 alt="High Protein and Recovery Nutrition"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 640px) 50vw, 25vw"
               />
               <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs">
-                High Protein
+                Clean Protein
               </div>
             </div>
             <div className="p-3 sm:p-5 flex flex-col justify-between flex-1">
               <div>
                 <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
-                  Protein &amp; Recovery
+                  Clean Protein &amp; Recovery
                 </h3>
                 <p className="text-[11px] sm:text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
-                  12g+ clean protein per piece with roasted nuts.
+                  Stone-ground nuts, seeds and clean protein superfood mix.
                 </p>
               </div>
               <div className="pt-2 sm:pt-4 mt-2 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
