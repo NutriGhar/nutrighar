@@ -1063,44 +1063,62 @@ export default function Navbar() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top Search Input Bar */}
-            <form onSubmit={handleSearchSubmit} className="p-3 sm:p-5 border-b border-stone-200 bg-white">
+            <form onSubmit={handleSearchSubmit} className="p-3.5 sm:p-5 border-b border-stone-200 bg-white">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="relative flex-1 flex items-center">
-                  <span className="absolute left-3 sm:left-4 text-stone-400 text-base sm:text-lg">
-                    🔍
-                  </span>
+                
+                {/* Search Bar Container (Flex Layout to guarantee 0 text-overlap) */}
+                <div className="flex-1 flex items-center bg-[#FAF7F2] border-2 border-stone-300/90 focus-within:border-[#4E652B] focus-within:bg-white rounded-xl sm:rounded-2xl px-3.5 sm:px-4 py-2.5 sm:py-3 transition-all shadow-inner gap-2.5 sm:gap-3">
+                  <svg
+                    className="w-5 h-5 text-[#4E652B] shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                    />
+                  </svg>
+
                   <input
                     ref={searchInputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search mithai, peanut butter, clean protein..."
-                    className="w-full pl-10 sm:pl-12 pr-10 py-3 sm:py-3.5 bg-[#FAF7F2] hover:bg-stone-100/80 focus:bg-white border border-stone-300 focus:border-[#4E652B] rounded-xl sm:rounded-2xl text-xs sm:text-sm md:text-base font-semibold text-stone-900 placeholder:text-stone-400 outline-none transition-all shadow-inner"
+                    className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm sm:text-base font-semibold text-stone-900 placeholder:text-stone-400 p-0 focus:ring-0"
                   />
+
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-600 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
-                      title="Clear search"
+                      className="w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-600 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer shrink-0"
+                      title="Clear search query"
+                      aria-label="Clear"
                     >
                       ✕
                     </button>
                   )}
                 </div>
 
+                {/* Submit Search Button */}
                 <button
                   type="submit"
-                  className="hidden sm:inline-flex items-center justify-center px-5 py-3.5 bg-[#4E652B] hover:bg-[#3D5021] text-white font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl sm:rounded-2xl transition-colors cursor-pointer shadow-sm shrink-0"
+                  className="hidden sm:inline-flex items-center justify-center px-5 py-3 sm:py-3.5 bg-[#4E652B] hover:bg-[#3D5021] text-white font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl sm:rounded-2xl transition-colors cursor-pointer shadow-xs shrink-0"
                 >
                   Search
                 </button>
 
+                {/* Close Search Modal Button */}
                 <button
                   type="button"
                   onClick={() => setIsSearchOpen(false)}
                   className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center text-sm sm:text-base font-bold transition-colors cursor-pointer shrink-0"
                   aria-label="Close Search"
+                  title="Close (ESC)"
                 >
                   ✕
                 </button>
