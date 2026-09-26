@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { WebsiteContent, HeroSlideContent, DEFAULT_HERO_SLIDES, DEFAULT_CURATED_COLLECTIONS, CollectionCard } from '@/types/content';
+import {
+  WebsiteContent,
+  HeroSlideContent,
+  DEFAULT_HERO_SLIDES,
+  DEFAULT_CURATED_COLLECTIONS,
+  DEFAULT_PRODUCT_SPOTLIGHT,
+  DEFAULT_TESTIMONIALS,
+  CollectionCard,
+  TestimonialItem,
+  ProductSpotlightContent,
+  TestimonialsContent,
+} from '@/types/content';
 
 export default function AdminContentPage() {
   const [content, setContent] = useState<WebsiteContent | null>(null);
@@ -40,6 +51,12 @@ export default function AdminContentPage() {
           }
           if (!loaded.curatedCollections || !Array.isArray(loaded.curatedCollections.cards) || loaded.curatedCollections.cards.length === 0) {
             loaded.curatedCollections = DEFAULT_CURATED_COLLECTIONS;
+          }
+          if (!loaded.productSpotlight) {
+            loaded.productSpotlight = DEFAULT_PRODUCT_SPOTLIGHT;
+          }
+          if (!loaded.testimonials || !Array.isArray(loaded.testimonials.items) || loaded.testimonials.items.length === 0) {
+            loaded.testimonials = DEFAULT_TESTIMONIALS;
           }
           const merged = localSaved ? { ...loaded, ...localSaved } : loaded;
           setContent(merged);
@@ -218,6 +235,8 @@ export default function AdminContentPage() {
   const tabs: Array<{ id: keyof WebsiteContent; label: string; icon: string }> = [
     { id: 'heroSlides', label: 'Hero Carousel Slides', icon: '🎠' },
     { id: 'curatedCollections', label: 'Curated Collections', icon: '🛍️' },
+    { id: 'productSpotlight', label: 'Product Spotlight (Protein Ladoo)', icon: '✨' },
+    { id: 'testimonials', label: 'Loved Across India (Testimonials)', icon: '💬' },
     { id: 'announcement', label: 'Announcement Bar', icon: '📢' },
     { id: 'brandStory', label: 'Brand Story & Philosophy', icon: '📖' },
     { id: 'contact', label: 'Contact & Support', icon: '📞' },
@@ -969,6 +988,670 @@ export default function AdminContentPage() {
                 className="px-6 py-2.5 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? 'Saving...' : '💾 Save Curated Collections'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= PRODUCT SPOTLIGHT ================= */}
+        {activeTab === 'productSpotlight' && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-[#1C1917]">
+                  Product Spotlight (Signature Feature)
+                </h2>
+                <p className="text-xs text-[#6B635B] font-light mt-0.5">
+                  Customize the editorial showcase box on the homepage (Protein Power Ladoo photo, macros, price, and copy).
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('Reset Product Spotlight to Nutri Ghar original defaults?')) {
+                    setContent({
+                      ...content,
+                      productSpotlight: DEFAULT_PRODUCT_SPOTLIGHT,
+                    });
+                    showToast('Reset product spotlight to defaults.');
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer self-start sm:self-auto"
+              >
+                ↺ Reset Defaults
+              </button>
+            </div>
+
+            {/* Spotlight Preview & Image Upload */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Image Preview & Upload */}
+              <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
+                  Product Spotlight Photography
+                </span>
+
+                <div className="relative h-64 w-full rounded-xl overflow-hidden bg-stone-100 border border-stone-200">
+                  <Image
+                    src={content.productSpotlight?.image || DEFAULT_PRODUCT_SPOTLIGHT.image}
+                    alt={content.productSpotlight?.heading || 'Spotlight preview'}
+                    fill
+                    className="object-cover"
+                    sizes="400px"
+                  />
+                  <div className="absolute top-3 left-3 bg-[#9C5838] text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm">
+                    {content.productSpotlight?.tag || 'Signature Feature'}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="border border-dashed border-stone-300 rounded-xl p-3 text-center bg-[#FAF7F2]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="spotlight-upload"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          const base64 = reader.result as string;
+                          setContent({
+                            ...content,
+                            productSpotlight: {
+                              ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                              image: base64,
+                            },
+                          });
+                          try {
+                            const res = await fetch('/api/upload', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                name: `spotlight-${Date.now()}`,
+                                type: file.type,
+                                base64OrUrl: base64,
+                              }),
+                            });
+                            const up = await res.json();
+                            if (up.success && up.url) {
+                              setContent({
+                                ...content,
+                                productSpotlight: {
+                                  ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                                  image: up.url,
+                                },
+                              });
+                            }
+                          } catch {
+                            // keep base64
+                          }
+                          showToast('Uploaded Product Spotlight image!');
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="spotlight-upload"
+                      className="cursor-pointer text-xs font-bold text-[#1E382B] flex flex-col items-center justify-center gap-1"
+                    >
+                      <span className="text-xl">📸</span>
+                      <span>Click to Upload New Photo</span>
+                      <span className="text-[10px] text-stone-500 font-light">Supports JPG, PNG, WebP</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                      Or Paste Image Web URL
+                    </label>
+                    <input
+                      type="url"
+                      value={content.productSpotlight?.image || ''}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            image: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="/images/dry-fruit-ladoo-product.jpg"
+                      className="w-full px-3 py-2 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Text, Macros, and Price Form */}
+              <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#9C5838] block">
+                  Copy, Macro Stats &amp; Pricing
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Eyebrow Tag
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.eyebrow || 'PRODUCT SPOTLIGHT'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            eyebrow: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Badge Label
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.tag || 'Signature Feature'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            tag: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Product Name / Heading
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.heading || 'Protein Power Ladoo'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            heading: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B] font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Italic Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.headingItalic || 'Traditional Taste. Modern Nutrition.'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            headingItalic: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Story &amp; Ingredient Narrative
+                    </label>
+                    <textarea
+                      value={content.productSpotlight?.description || ''}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            description: e.target.value,
+                          },
+                        })
+                      }
+                      rows={3}
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  {/* 4 Macro stats */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Protein Value
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.protein || '12g'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            protein: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="e.g. 12g"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Refined Sugar Value
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.sugar || '0g'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            sugar: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="e.g. 0g"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Desi Ghee Value
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.ghee || '100%'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            ghee: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="e.g. 100%"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Batch Freshness Note
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.freshness || 'Weekly'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            freshness: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="e.g. Weekly"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={content.productSpotlight?.price || 349}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            price: Number(e.target.value),
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B] font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Price Note / Unit
+                    </label>
+                    <input
+                      type="text"
+                      value={content.productSpotlight?.priceNote || 'Price per 400g Box'}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          productSpotlight: {
+                            ...(content.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT),
+                            priceNote: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSection('productSpotlight')}
+                    disabled={isSaving}
+                    className="px-6 py-2.5 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSaving ? 'Saving...' : '💾 Save Product Spotlight'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= TESTIMONIALS (LOVED ACROSS INDIA) ================= */}
+        {activeTab === 'testimonials' && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-[#1C1917]">
+                  Loved Across Indian Homes (Customer Testimonials)
+                </h2>
+                <p className="text-xs text-[#6B635B] font-light mt-0.5">
+                  Manage the customer reviews section displayed on the homepage. Edit names, cities, star ratings, and review texts.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
+                    const newItem: TestimonialItem = {
+                      id: `test-${Date.now()}`,
+                      name: 'Customer Name',
+                      location: 'City',
+                      product: 'Product Name',
+                      rating: 5,
+                      review: 'Write verified feedback here...',
+                    };
+                    setContent({
+                      ...content,
+                      testimonials: {
+                        ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                        items: [...currentItems, newItem],
+                      },
+                    });
+                    showToast('Added a new review card!');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                >
+                  + Add Testimonial
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Reset Customer Testimonials to Nutri Ghar original defaults?')) {
+                      setContent({
+                        ...content,
+                        testimonials: DEFAULT_TESTIMONIALS,
+                      });
+                      showToast('Reset testimonials to defaults.');
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  ↺ Reset Defaults
+                </button>
+              </div>
+            </div>
+
+            {/* Section Header Settings */}
+            <div className="bg-[#FAF7F2] p-5 sm:p-6 rounded-2xl border border-[#E8E1D7] space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#9C5838] block">
+                Section Header
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Eyebrow Pill Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={content.testimonials?.eyebrow || 'VERIFIED EXPERIENCES'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        testimonials: {
+                          ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                          eyebrow: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Section Heading
+                  </label>
+                  <input
+                    type="text"
+                    value={content.testimonials?.heading || 'Loved Across Indian Homes'}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        testimonials: {
+                          ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                          heading: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Review Cards Grid */}
+            <div className="space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
+                Testimonial Cards ({(content.testimonials?.items || DEFAULT_TESTIMONIALS.items).length} Reviews)
+              </span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {(content.testimonials?.items || DEFAULT_TESTIMONIALS.items).map((item, idx) => (
+                  <div
+                    key={item.id || `test-${idx}`}
+                    className="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4 flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#9C5838]">
+                          Review #{idx + 1}
+                        </span>
+                        {(content.testimonials?.items || DEFAULT_TESTIMONIALS.items).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
+                              const filtered = currentItems.filter((_, i) => i !== idx);
+                              setContent({
+                                ...content,
+                                testimonials: {
+                                  ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                                  items: filtered,
+                                },
+                              });
+                              showToast('Removed review.');
+                            }}
+                            className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Star Rating */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          Star Rating (1 - 5 Stars)
+                        </label>
+                        <select
+                          value={item.rating || 5}
+                          onChange={(e) => {
+                            const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
+                            currentItems[idx] = { ...currentItems[idx], rating: Number(e.target.value) };
+                            setContent({
+                              ...content,
+                              testimonials: {
+                                ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                                items: currentItems,
+                              },
+                            });
+                          }}
+                          className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-amber-600 font-bold focus:outline-none"
+                        >
+                          <option value={5}>★★★★★ (5 Stars - Exceptional)</option>
+                          <option value={4}>★★★★☆ (4 Stars - Great)</option>
+                          <option value={3}>★★★☆☆ (3 Stars - Good)</option>
+                        </select>
+                      </div>
+
+                      {/* Review Text */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          Customer Review Quote
+                        </label>
+                        <textarea
+                          value={item.review}
+                          onChange={(e) => {
+                            const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
+                            currentItems[idx] = { ...currentItems[idx], review: e.target.value };
+                            setContent({
+                              ...content,
+                              testimonials: {
+                                ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                                items: currentItems,
+                              },
+                            });
+                          }}
+                          rows={3}
+                          className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] italic focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Customer Name, Location & Product */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            Customer Name
+                          </label>
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => {
+                              const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
+                              currentItems[idx] = { ...currentItems[idx], name: e.target.value };
+                              setContent({
+                                ...content,
+                                testimonials: {
+                                  ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                                  items: currentItems,
+                                },
+                              });
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] font-bold focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            City / Location
+                          </label>
+                          <input
+                            type="text"
+                            value={item.location || ''}
+                            onChange={(e) => {
+                              const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
+                              currentItems[idx] = { ...currentItems[idx], location: e.target.value };
+                              setContent({
+                                ...content,
+                                testimonials: {
+                                  ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                                  items: currentItems,
+                                },
+                              });
+                            }}
+                            placeholder="e.g. Mumbai"
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          Product Purchased
+                        </label>
+                        <input
+                          type="text"
+                          value={item.product}
+                          onChange={(e) => {
+                            const currentItems = [...(content.testimonials?.items || DEFAULT_TESTIMONIALS.items)];
+                            currentItems[idx] = { ...currentItems[idx], product: e.target.value };
+                            setContent({
+                              ...content,
+                              testimonials: {
+                                ...(content.testimonials || DEFAULT_TESTIMONIALS),
+                                items: currentItems,
+                              },
+                            });
+                          }}
+                          placeholder="e.g. Besan Ladoo"
+                          className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleSaveSection('testimonials')}
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? 'Saving...' : '💾 Save Testimonials'}
               </button>
             </div>
           </div>

@@ -106,6 +106,38 @@ export interface CuratedCollectionsContent {
   cards: CollectionCard[];
 }
 
+export interface TestimonialItem {
+  id: string;
+  name: string;
+  location: string;
+  product: string;
+  rating: number;
+  review: string;
+}
+
+export interface TestimonialsContent {
+  eyebrow: string;
+  heading: string;
+  items: TestimonialItem[];
+}
+
+export interface ProductSpotlightContent {
+  eyebrow: string;
+  heading: string;
+  headingItalic: string;
+  description: string;
+  protein: string;
+  sugar: string;
+  ghee: string;
+  freshness: string;
+  price: number;
+  priceNote: string;
+  image: string;
+  tag: string;
+  buttonText: string;
+  productSlug?: string;
+}
+
 export interface WebsiteContent {
   hero: {
     eyebrow: string;
@@ -118,6 +150,8 @@ export interface WebsiteContent {
   };
   heroSlides: HeroSlideContent[];
   curatedCollections?: CuratedCollectionsContent;
+  productSpotlight?: ProductSpotlightContent;
+  testimonials?: TestimonialsContent;
   announcement: {
     enabled: boolean;
     text: string;
@@ -152,6 +186,54 @@ export interface WebsiteContent {
     promoNote: string;
   };
 }
+
+export const DEFAULT_PRODUCT_SPOTLIGHT: ProductSpotlightContent = {
+  eyebrow: 'PRODUCT SPOTLIGHT',
+  heading: 'Protein Power Ladoo',
+  headingItalic: 'Traditional Taste. Modern Nutrition.',
+  description: 'Reimagining India\'s timeless post-meal sweet as an everyday functional superfood. Handcrafted with clean protein, stone-ground oats, roasted California almonds, and 100% pure desi cow ghee.',
+  protein: '12g',
+  sugar: '0g',
+  ghee: '100%',
+  freshness: 'Weekly',
+  price: 349,
+  priceNote: 'Price per 400g Box',
+  image: '/images/dry-fruit-ladoo-product.jpg',
+  tag: 'Signature Feature',
+  buttonText: 'Add to Cart',
+  productSlug: 'dry-fruit-ladoo',
+};
+
+export const DEFAULT_TESTIMONIALS: TestimonialsContent = {
+  eyebrow: 'VERIFIED EXPERIENCES',
+  heading: 'Loved Across Indian Homes',
+  items: [
+    {
+      id: 'test-1',
+      name: 'Priya Sharma',
+      location: 'Mumbai',
+      product: 'Besan Ladoo',
+      rating: 5,
+      review: 'The Besan Ladoos taste exactly like the ones my grandmother prepared during festivals. Pure ghee aroma with zero artificial aftertaste.',
+    },
+    {
+      id: 'test-2',
+      name: 'Rajesh Kumar',
+      location: 'Bengaluru',
+      product: 'Creamy Peanut Butter',
+      rating: 5,
+      review: 'Finding a peanut butter that doesn\'t use added palm oil or sugar was impossible until Nutri Ghar. It has become my morning gym staple.',
+    },
+    {
+      id: 'test-3',
+      name: 'Anjali Verma',
+      location: 'Delhi NCR',
+      product: 'Protein Power Ladoo',
+      rating: 5,
+      review: 'The Protein Power Ladoos are genuinely incredible. 12g of protein in something that tastes like a traditional delicacy is genius.',
+    },
+  ],
+};
 
 export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
   {
@@ -203,7 +285,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
     buttonLink: '/products?category=peanut-butter',
     secondaryButtonText: 'All Spreads',
     secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=1400&auto=format&fit=crop&q=85',
+    image: '/images/peanut-butter-banner.jpg',
     badgeText: 'Stone-Ground Daily',
   },
   {
@@ -240,7 +322,7 @@ export const DEFAULT_CURATED_COLLECTIONS: CuratedCollectionsContent = {
       tag: 'STONE-GROUND',
       title: 'Peanut Butter',
       description: '100% slow-roasted peanuts stone-ground daily.',
-      image: '/images/peanut-butter-showcase.jpg',
+      image: '/images/peanut-butter-banner.jpg',
     },
     {
       id: 'col-protein-nutrition',
@@ -273,6 +355,8 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   heroSlides: DEFAULT_HERO_SLIDES,
   curatedCollections: DEFAULT_CURATED_COLLECTIONS,
+  productSpotlight: DEFAULT_PRODUCT_SPOTLIGHT,
+  testimonials: DEFAULT_TESTIMONIALS,
   announcement: {
     enabled: true,
     text: 'Freshly Made • Wholesome Ingredients • Delivered with Care',
@@ -581,6 +665,7 @@ interface StoreData {
   categories: Category[];
   orders: Order[];
   content: WebsiteContent;
+  subscribers?: string[];
 }
 
 let inMemoryStore: StoreData | null = null;
@@ -604,6 +689,7 @@ function getStoreData(): StoreData {
           categories: parsed.categories,
           orders: Array.isArray(parsed.orders) ? parsed.orders : [],
           content: parsed.content || DEFAULT_WEBSITE_CONTENT,
+          subscribers: Array.isArray(parsed.subscribers) ? parsed.subscribers : [],
         };
         return inMemoryStore;
       }
@@ -618,6 +704,7 @@ function getStoreData(): StoreData {
     categories: DEFAULT_CATEGORIES,
     orders: [],
     content: DEFAULT_WEBSITE_CONTENT,
+    subscribers: [],
   };
 
   inMemoryStore = initialData;
@@ -1191,5 +1278,35 @@ export async function getAdminStats() {
     lowStockProducts,
     recentOrders,
   };
+}
+
+// -------------------------------------------------------------
+// NEWSLETTER SUBSCRIBERS
+// -------------------------------------------------------------
+
+export async function addSubscriber(email: string): Promise<{ success: boolean; message: string; isNew: boolean }> {
+  if (!email || !email.includes('@')) {
+    return { success: false, message: 'Invalid email address provided', isNew: false };
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const store = getStoreData();
+  if (!store.subscribers) {
+    store.subscribers = [];
+  }
+
+  if (store.subscribers.includes(cleanEmail)) {
+    return { success: true, message: 'You are already subscribed to Nutri Ghar updates!', isNew: false };
+  }
+
+  store.subscribers.push(cleanEmail);
+  saveStoreData(store);
+
+  return { success: true, message: 'Thank you for subscribing to Nutri Ghar wellness notes & batch updates!', isNew: true };
+}
+
+export async function getSubscribers(): Promise<string[]> {
+  const store = getStoreData();
+  return store.subscribers || [];
 }
 

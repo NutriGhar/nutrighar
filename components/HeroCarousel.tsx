@@ -69,7 +69,7 @@ const HERO_SLIDES: HeroSlide[] = [
     buttonLink: '/products?category=peanut-butter',
     secondaryButtonText: 'All Spreads',
     secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=1400&auto=format&fit=crop&q=85',
+    image: '/images/peanut-butter-banner.jpg',
     badgeText: 'Stone-Ground Daily',
   },
   {

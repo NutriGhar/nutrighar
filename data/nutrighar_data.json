@@ -301,7 +301,7 @@
       "name": "Peanut Butter",
       "slug": "peanut-butter",
       "description": "100% stone-ground natural nut butters with zero palm oil or chemical preservatives.",
-      "image": "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80",
+      "image": "/images/peanut-butter-banner.jpg",
       "icon": "🥜",
       "isActive": true,
       "createdAt": "2026-09-26T05:00:29.109Z",
@@ -424,7 +424,7 @@
         "buttonLink": "/products?category=peanut-butter",
         "secondaryButtonText": "All Spreads",
         "secondaryButtonLink": "/products",
-        "image": "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=1400&auto=format&fit=crop&q=85",
+        "image": "/images/peanut-butter-banner.jpg",
         "badgeText": "Stone-Ground Daily"
       },
       {
@@ -493,7 +493,7 @@
           "tag": "STONE-GROUND",
           "title": "Peanut Butter",
           "description": "100% slow-roasted peanuts stone-ground daily.",
-          "image": "/images/peanut-butter-showcase.jpg"
+          "image": "/images/peanut-butter-banner.jpg"
         },
         {
           "id": "col-protein-nutrition",
@@ -510,6 +510,52 @@
           "title": "Healthy Snacks",
           "description": "Slow-roasted California almonds, cashews and seed mixes.",
           "image": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80"
+        }
+      ]
+    },
+    "productSpotlight": {
+      "eyebrow": "PRODUCT SPOTLIGHT",
+      "heading": "Protein Power Ladoo",
+      "headingItalic": "Traditional Taste. Modern Nutrition.",
+      "description": "Reimagining India's timeless post-meal sweet as an everyday functional superfood. Handcrafted with clean protein, stone-ground oats, roasted California almonds, and 100% pure desi cow ghee.",
+      "protein": "12g",
+      "sugar": "0g",
+      "ghee": "100%",
+      "freshness": "Weekly",
+      "price": 349,
+      "priceNote": "Price per 400g Box",
+      "image": "/images/dry-fruit-ladoo-product.jpg",
+      "tag": "Signature Feature",
+      "buttonText": "Add to Cart",
+      "productSlug": "dry-fruit-ladoo"
+    },
+    "testimonials": {
+      "eyebrow": "VERIFIED EXPERIENCES",
+      "heading": "Loved Across Indian Homes",
+      "items": [
+        {
+          "id": "test-1",
+          "name": "Priya Sharma",
+          "location": "Mumbai",
+          "product": "Besan Ladoo",
+          "rating": 5,
+          "review": "The Besan Ladoos taste exactly like the ones my grandmother prepared during festivals. Pure ghee aroma with zero artificial aftertaste."
+        },
+        {
+          "id": "test-2",
+          "name": "Rajesh Kumar",
+          "location": "Bengaluru",
+          "product": "Creamy Peanut Butter",
+          "rating": 5,
+          "review": "Finding a peanut butter that doesn't use added palm oil or sugar was impossible until Nutri Ghar. It has become my morning gym staple."
+        },
+        {
+          "id": "test-3",
+          "name": "Anjali Verma",
+          "location": "Delhi NCR",
+          "product": "Protein Power Ladoo",
+          "rating": 5,
+          "review": "The Protein Power Ladoos are genuinely incredible. 12g of protein in something that tastes like a traditional delicacy is genius."
         }
       ]
     }

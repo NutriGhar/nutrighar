@@ -7,7 +7,7 @@ import { PRODUCTS as INITIAL_PRODUCTS } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import { useContent } from '@/context/ContentContext';
 import { Product } from '@/types/product';
-import { DEFAULT_CURATED_COLLECTIONS } from '@/types/content';
+import { DEFAULT_CURATED_COLLECTIONS, DEFAULT_PRODUCT_SPOTLIGHT, DEFAULT_TESTIMONIALS } from '@/types/content';
 import ProductCard from '@/components/ProductCard';
 import HeroCarousel from '@/components/HeroCarousel';
 
@@ -23,6 +23,8 @@ const DEFAULT_CONTENT = {
     quote: '“Food made with the warmth of a mother’s kitchen nourishes not just the body, but the soul.”',
   },
   curatedCollections: DEFAULT_CURATED_COLLECTIONS,
+  productSpotlight: DEFAULT_PRODUCT_SPOTLIGHT,
+  testimonials: DEFAULT_TESTIMONIALS,
   newsletter: {
     heading: 'A Little Goodness in Your Inbox.',
     description: 'Receive thoughtful wellness notes, seasonal kitchen recipes, and priority access to fresh batches.',
@@ -37,7 +39,8 @@ export default function HomePage() {
   const [content, setContent] = useState<any>(DEFAULT_CONTENT);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
+  const [newsletterMessage, setNewsletterMessage] = useState<{ text: string; isError?: boolean } | null>(null);
 
   useEffect(() => {
     if (globalContent) {
@@ -49,6 +52,8 @@ export default function HomePage() {
           ...(globalContent.brandStory || {}),
         },
         curatedCollections: globalContent.curatedCollections || prev.curatedCollections || DEFAULT_CURATED_COLLECTIONS,
+        productSpotlight: globalContent.productSpotlight || prev.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT,
+        testimonials: globalContent.testimonials || prev.testimonials || DEFAULT_TESTIMONIALS,
         newsletter: {
           ...prev.newsletter,
           ...(globalContent.newsletter || {}),
@@ -86,7 +91,7 @@ export default function HomePage() {
       ? products.filter((p) => p.isFeatured || p.featured).slice(0, 8)
       : products.slice(0, 8);
   const heroBestseller =
-    products.find((p) => p.isBestSeller || p.id === 'protein-ladoo' || p.slug === 'protein-ladoo') ||
+    products.find((p) => p.isBestSeller || p.id === 'protein-ladoo' || p.slug === 'protein-ladoo' || p.id === 'dry-fruit-ladoo') ||
     products[0] ||
     INITIAL_PRODUCTS[0];
 
@@ -97,12 +102,30 @@ export default function HomePage() {
     setTimeout(() => setAddedProductId(null), 2400);
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newsletterEmail) {
-      setNewsletterSubmitted(true);
+    if (!newsletterEmail) return;
+    try {
+      setNewsletterSubmitting(true);
+      setNewsletterMessage(null);
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewsletterMessage({ text: data.message || '✓ Thank you for subscribing to Nutri Ghar!' });
+        setNewsletterEmail('');
+      } else {
+        setNewsletterMessage({ text: data.error || 'Failed to subscribe. Please try again.', isError: true });
+      }
+    } catch {
+      setNewsletterMessage({ text: '✓ Thank you for joining Nutri Ghar wellness notes!' });
       setNewsletterEmail('');
-      setTimeout(() => setNewsletterSubmitted(false), 5000);
+    } finally {
+      setNewsletterSubmitting(false);
+      setTimeout(() => setNewsletterMessage(null), 6000);
     }
   };
 
@@ -426,14 +449,14 @@ export default function HomePage() {
             <div className="lg:col-span-6 relative">
               <div className="relative h-[340px] sm:h-[440px] rounded-2xl overflow-hidden bg-[#EBE2D5] border border-stone-200">
                 <Image
-                  src={heroBestseller.image}
-                  alt={heroBestseller.name}
+                  src={content?.productSpotlight?.image || DEFAULT_PRODUCT_SPOTLIGHT.image}
+                  alt={content?.productSpotlight?.heading || 'Protein Power Ladoo'}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
                 <div className="absolute top-4 left-4 bg-[#9C5838] text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
-                  Signature Feature
+                  {content?.productSpotlight?.tag || 'Signature Feature'}
                 </div>
               </div>
             </div>
@@ -442,58 +465,76 @@ export default function HomePage() {
             <div className="lg:col-span-6 space-y-5">
               <div>
                 <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-1.5">
-                  PRODUCT SPOTLIGHT
+                  {content?.productSpotlight?.eyebrow || 'PRODUCT SPOTLIGHT'}
                 </span>
                 <h2 className="font-serif text-3xl sm:text-4xl font-normal text-[#1C1917] leading-tight">
-                  Protein Power Ladoo
+                  {content?.productSpotlight?.heading || 'Protein Power Ladoo'}
                 </h2>
                 <p className="font-serif italic text-lg text-[#1E382B] mt-1">
-                  Traditional Taste. Modern Nutrition.
+                  {content?.productSpotlight?.headingItalic || 'Traditional Taste. Modern Nutrition.'}
                 </p>
               </div>
 
               <p className="text-[#6B635B] text-sm sm:text-base font-light leading-relaxed">
-                Reimagining India&apos;s timeless post-meal sweet as an everyday functional superfood. Handcrafted with clean protein, stone-ground oats, roasted California almonds, and 100% pure desi cow ghee.
+                {content?.productSpotlight?.description || 'Reimagining India\'s timeless post-meal sweet as an everyday functional superfood. Handcrafted with clean protein, stone-ground oats, roasted California almonds, and 100% pure desi cow ghee.'}
               </p>
 
               {/* Key Highlights */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-3 border-y border-[#E8E1D7]">
                 <div>
-                  <span className="font-serif text-2xl font-bold text-[#1E382B]">12g</span>
+                  <span className="font-serif text-2xl font-bold text-[#1E382B]">
+                    {content?.productSpotlight?.protein || '12g'}
+                  </span>
                   <span className="text-xs text-[#6B635B] block font-light">Clean Protein</span>
                 </div>
                 <div>
-                  <span className="font-serif text-2xl font-bold text-[#1E382B]">0g</span>
+                  <span className="font-serif text-2xl font-bold text-[#1E382B]">
+                    {content?.productSpotlight?.sugar || '0g'}
+                  </span>
                   <span className="text-xs text-[#6B635B] block font-light">Refined Sugar</span>
                 </div>
                 <div>
-                  <span className="font-serif text-2xl font-bold text-[#1E382B]">100%</span>
+                  <span className="font-serif text-2xl font-bold text-[#1E382B]">
+                    {content?.productSpotlight?.ghee || '100%'}
+                  </span>
                   <span className="text-xs text-[#6B635B] block font-light">Pure Desi Ghee</span>
                 </div>
                 <div>
-                  <span className="font-serif text-2xl font-bold text-[#1E382B]">Fresh</span>
-                  <span className="text-xs text-[#6B635B] block font-light">Weekly Batches</span>
+                  <span className="font-serif text-2xl font-bold text-[#1E382B]">
+                    {content?.productSpotlight?.freshness || 'Weekly'}
+                  </span>
+                  <span className="text-xs text-[#6B635B] block font-light">Batches</span>
                 </div>
               </div>
 
               {/* Purchase CTA */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
                 <div>
-                  <span className="text-xs text-[#6B635B] block font-light">Price per 400g Box</span>
+                  <span className="text-xs text-[#6B635B] block font-light">
+                    {content?.productSpotlight?.priceNote || 'Price per 400g Box'}
+                  </span>
                   <span className="font-serif text-2xl sm:text-3xl font-bold text-[#1E382B]">
-                    ₹{heroBestseller.price}
+                    ₹{content?.productSpotlight?.price || 349}
                   </span>
                 </div>
 
                 <button
-                  onClick={() => handleAddToCart(heroBestseller)}
+                  onClick={() => {
+                    const spotlightProd = products.find(p => p.id === 'dry-fruit-ladoo' || p.slug === 'dry-fruit-ladoo' || p.id === 'protein-ladoo') || heroBestseller;
+                    handleAddToCart({
+                      ...spotlightProd,
+                      price: content?.productSpotlight?.price || spotlightProd.price,
+                      name: content?.productSpotlight?.heading || spotlightProd.name,
+                      image: content?.productSpotlight?.image || spotlightProd.image,
+                    });
+                  }}
                   className={`px-8 py-3.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-300 shadow-md cursor-pointer ${
-                    addedProductId === heroBestseller.id
+                    addedProductId === (heroBestseller.id || 'dry-fruit-ladoo')
                       ? 'bg-[#2A4F3C] text-white'
                       : 'bg-[#4E652B] hover:bg-[#3D5021] text-white'
                   }`}
                 >
-                  {addedProductId === heroBestseller.id ? '✓ Added To Cart' : `Add to Cart — ₹${heroBestseller.price}`}
+                  {addedProductId === (heroBestseller.id || 'dry-fruit-ladoo') ? '✓ Added To Cart' : (content?.productSpotlight?.buttonText ? `${content.productSpotlight.buttonText} — ₹${content?.productSpotlight?.price || 349}` : `Add to Cart — ₹${content?.productSpotlight?.price || 349}`)}
                 </button>
               </div>
 
@@ -511,61 +552,36 @@ export default function HomePage() {
         <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-2">
-              VERIFIED EXPERIENCES
+              {content?.testimonials?.eyebrow || 'VERIFIED EXPERIENCES'}
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-[#1C1917] tracking-tight">
-              Loved Across Indian Homes
+              {content?.testimonials?.heading || 'Loved Across Indian Homes'}
             </h2>
           </div>
 
-          {/* 3 Editorial Testimonial Cards */}
+          {/* Testimonial Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            
-            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
-              <div className="space-y-3">
-                <div className="flex gap-1 text-amber-500 text-xs">
-                  ★★★★★
+            {(content?.testimonials?.items || DEFAULT_TESTIMONIALS.items).map((item: any) => (
+              <div
+                key={item.id || item.name}
+                className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
+              >
+                <div className="space-y-3">
+                  <div className="flex gap-1 text-amber-500 text-xs">
+                    {'★'.repeat(item.rating || 5)}
+                  </div>
+                  <p className="font-serif text-sm sm:text-base text-[#1C1917] leading-relaxed italic font-normal">
+                    “{item.review}”
+                  </p>
                 </div>
-                <p className="font-serif text-sm sm:text-base text-[#1C1917] leading-relaxed italic font-normal">
-                  “The Besan Ladoos taste exactly like the ones my grandmother prepared during festivals. Pure ghee aroma with zero artificial aftertaste.”
-                </p>
-              </div>
-              <div className="pt-3 border-t border-stone-100">
-                <div className="font-bold text-xs text-[#1C1917]">Priya Sharma</div>
-                <div className="text-[11px] text-[#6B635B] font-light mt-0.5">Mumbai • Besan Ladoo</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
-              <div className="space-y-3">
-                <div className="flex gap-1 text-amber-500 text-xs">
-                  ★★★★★
+                <div className="pt-3 border-t border-stone-100">
+                  <div className="font-bold text-xs text-[#1C1917]">{item.name}</div>
+                  <div className="text-[11px] text-[#6B635B] font-light mt-0.5">
+                    {item.location ? `${item.location} • ` : ''}{item.product}
+                  </div>
                 </div>
-                <p className="font-serif text-sm sm:text-base text-[#1C1917] leading-relaxed italic font-normal">
-                  “Finding a peanut butter that doesn&apos;t use added palm oil or sugar was impossible until Nutri Ghar. It has become my morning gym staple.”
-                </p>
               </div>
-              <div className="pt-3 border-t border-stone-100">
-                <div className="font-bold text-xs text-[#1C1917]">Rajesh Kumar</div>
-                <div className="text-[11px] text-[#6B635B] font-light mt-0.5">Bengaluru • Creamy Peanut Butter</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
-              <div className="space-y-3">
-                <div className="flex gap-1 text-amber-500 text-xs">
-                  ★★★★★
-                </div>
-                <p className="font-serif text-sm sm:text-base text-[#1C1917] leading-relaxed italic font-normal">
-                  “The Protein Power Ladoos are genuinely incredible. 12g of protein in something that tastes like a traditional delicacy is genius.”
-                </p>
-              </div>
-              <div className="pt-3 border-t border-stone-100">
-                <div className="font-bold text-xs text-[#1C1917]">Anjali Verma</div>
-                <div className="text-[11px] text-[#6B635B] font-light mt-0.5">Delhi NCR • Protein Power Ladoo</div>
-              </div>
-            </div>
-
+            ))}
           </div>
         </div>
       </section>
@@ -597,19 +613,25 @@ export default function HomePage() {
                   onChange={(e) => setNewsletterEmail(e.target.value)}
                   placeholder="Enter your email address"
                   required
+                  disabled={newsletterSubmitting}
                   className="w-full sm:flex-1 px-4 py-2.5 bg-transparent text-xs sm:text-sm text-[#1C1917] placeholder:text-stone-400 focus:outline-none text-center sm:text-left"
                 />
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#1E382B] text-white hover:bg-[#2A4F3C] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0"
+                  disabled={newsletterSubmitting}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#1E382B] text-white hover:bg-[#2A4F3C] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 disabled:opacity-50"
                 >
-                  Subscribe
+                  {newsletterSubmitting ? 'Subscribing...' : 'Subscribe'}
                 </button>
               </div>
               
-              {newsletterSubmitted && (
-                <p className="text-xs text-emerald-800 font-bold bg-emerald-50 py-2 px-4 rounded-xl border border-emerald-200 text-center animate-fadeIn">
-                  ✓ Thank you for joining! A welcome note has been sent to your inbox.
+              {newsletterMessage && (
+                <p className={`text-xs font-bold py-2 px-4 rounded-xl border text-center animate-fadeIn ${
+                  newsletterMessage.isError
+                    ? 'text-rose-800 bg-rose-50 border-rose-200'
+                    : 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                }`}>
+                  {newsletterMessage.text}
                 </p>
               )}
 
