@@ -32,6 +32,9 @@ export async function PUT(request: Request) {
     const validSections: Array<keyof WebsiteContent> = [
       'hero',
       'heroSlides',
+      'curatedCollections',
+      'productSpotlight',
+      'testimonials',
       'announcement',
       'brandStory',
       'contact',

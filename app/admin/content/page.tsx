@@ -674,25 +674,53 @@ export default function AdminContentPage() {
                   Curated Collections (Homepage Category Grid)
                 </h2>
                 <p className="text-xs text-[#6B635B] font-light mt-0.5">
-                  Customize the 4 collection showcase cards shown under "Pure Food For Everyday Living" on the homepage.
+                  Customize the collection showcase cards shown under "Pure Food For Everyday Living" on the homepage. Add new categories, upload custom photography, and link directly to category or product pages.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm('Reset Curated Collections cards to Nutri Ghar original defaults?')) {
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                    const newCard: CollectionCard = {
+                      id: `col-card-${Date.now()}`,
+                      categorySlug: 'all',
+                      tag: 'NEW COLLECTION',
+                      title: 'Collection Title',
+                      description: 'Describe the wholesome collection and ingredients.',
+                      image: '/images/dry-fruit-ladoo-product.jpg',
+                    };
                     setContent({
                       ...content,
-                      curatedCollections: DEFAULT_CURATED_COLLECTIONS,
+                      curatedCollections: {
+                        ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                        cards: [...currentCards, newCard],
+                      },
                     });
-                    showToast('Reset collections to defaults.');
-                  }
-                }}
-                className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer self-start sm:self-auto"
-              >
-                ↺ Reset Defaults
-              </button>
+                    showToast('Added a new Collection Card! You can now edit its photo, tag, title, and link.');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                >
+                  + Add Collection Card
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Reset Curated Collections cards to Nutri Ghar original defaults?')) {
+                      setContent({
+                        ...content,
+                        curatedCollections: DEFAULT_CURATED_COLLECTIONS,
+                      });
+                      showToast('Reset collections to defaults.');
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer self-start sm:self-auto"
+                >
+                  ↺ Reset Defaults
+                </button>
+              </div>
             </div>
 
             {/* Section Header Settings */}
@@ -764,7 +792,7 @@ export default function AdminContentPage() {
               </div>
             </div>
 
-            {/* 4 Collection Cards */}
+            {/* Collection Cards */}
             <div className="space-y-6">
               <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
                 Collection Cards ({(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).length} Cards)
@@ -781,7 +809,29 @@ export default function AdminContentPage() {
                         <span className="px-2.5 py-1 rounded-full bg-[#FAF7F2] text-[#9C5838] text-[10px] font-bold uppercase tracking-wider border border-[#E8E1D7]">
                           Card #{idx + 1}
                         </span>
-                        <span className="text-xs font-bold text-stone-700">{card.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-stone-700">{card.title}</span>
+                          {(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentCards = [...(content.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards)];
+                                const filtered = currentCards.filter((_, i) => i !== idx);
+                                setContent({
+                                  ...content,
+                                  curatedCollections: {
+                                    ...(content.curatedCollections || DEFAULT_CURATED_COLLECTIONS),
+                                    cards: filtered,
+                                  },
+                                });
+                                showToast('Removed collection card.');
+                              }}
+                              className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer ml-2"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Image Preview & Upload */}

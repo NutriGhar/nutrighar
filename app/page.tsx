@@ -216,8 +216,8 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Dynamic 4 Category Cards Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        {/* Dynamic Category Cards Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
           {(content?.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).map((card: any) => (
             <Link
               key={card.id || card.title}
