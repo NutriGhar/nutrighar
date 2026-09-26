@@ -1,12 +1,16 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import CartItemComponent from '@/components/CartItem';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Product } from '@/types/product';
 
 export default function CartPage() {
-  const { items, getTotal, clearCart } = useCart();
+  const { items, getTotal, clearCart, addItem } = useCart();
+  const [upsells, setUpsells] = useState<Product[]>([]);
+  const [addedItemIds, setAddedItemIds] = useState<{ [key: string]: boolean }>({});
 
   const subtotal = getTotal();
   const mrpTotal = Math.round(subtotal * 1.12);
@@ -15,25 +19,34 @@ export default function CartPage() {
   const total = subtotal + deliveryCharge;
   const savings = mrpDiscount + (deliveryCharge === 0 ? 60 : 0);
 
-  // Upsell products
-  const upsells = [
-    {
-      id: 'coconut-ladoo',
-      name: 'Fresh Coconut Ladoo',
-      price: 279,
-      mrp: 319,
-      image: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=400&auto=format&fit=crop&q=80',
-      discount: '13% OFF',
-    },
-    {
-      id: 'protein-energy-bites',
-      name: 'Protein Energy Bites',
-      price: 279,
-      mrp: 319,
-      image: 'https://images.unsplash.com/photo-1514733670139-4d87a1941d55?w=400&auto=format&fit=crop&q=80',
-      discount: '13% OFF',
-    },
-  ];
+  // Fetch real products from catalog for dynamic recommendations
+  useEffect(() => {
+    async function fetchUpsells() {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        const allProducts = Array.isArray(data) ? data : data.products || [];
+        if (allProducts.length > 0) {
+          // Filter out items already in the basket
+          const available = allProducts.filter(
+            (p: Product) => !items.some((cartItem) => cartItem.id === p.id)
+          );
+          setUpsells(available.length > 0 ? available.slice(0, 4) : allProducts.slice(0, 2));
+        }
+      } catch (e) {
+        console.error('Error fetching upsell products:', e);
+      }
+    }
+    fetchUpsells();
+  }, [items]);
+
+  const handleAddUpsell = (product: Product) => {
+    addItem(product, 1);
+    setAddedItemIds((prev) => ({ ...prev, [product.id]: true }));
+    setTimeout(() => {
+      setAddedItemIds((prev) => ({ ...prev, [product.id]: false }));
+    }, 1500);
+  };
 
   if (items.length === 0) {
     return (
@@ -126,38 +139,89 @@ export default function CartPage() {
             )}
 
             {/* You May Also Like (Upsell) */}
-            <div className="border border-stone-200 rounded-xl bg-white shadow-xs p-5 space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-stone-900">You may also like</h3>
-                <p className="text-[11px] text-stone-400">Pair with your order for better wellness results</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {upsells.map((u) => (
-                  <div key={u.id} className="border border-stone-200 rounded-lg p-3 space-y-2 relative bg-stone-50/50">
-                    <span className="absolute top-2.5 right-2.5 bg-emerald-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                      {u.discount}
-                    </span>
-                    <div className="relative w-full h-28 rounded-lg overflow-hidden bg-white border border-stone-100">
-                      <Image src={u.image} alt={u.name} fill className="object-cover" sizes="200px" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-stone-900 line-clamp-1">{u.name}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-sm font-bold text-stone-900">₹{u.price}</span>
-                        <span className="text-[10px] text-stone-400 line-through">₹{u.mrp}</span>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/products/${u.id}`}
-                      className="block w-full py-2 bg-stone-900 hover:bg-[#5C7A38] text-white text-[11px] font-bold uppercase text-center rounded transition-colors"
-                    >
-                      + ADD
-                    </Link>
+            {upsells.length > 0 && (
+              <div className="border border-stone-200 rounded-2xl bg-white shadow-xs p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-stone-900">You May Also Like</h3>
+                    <p className="text-[11px] text-stone-500">Pure, healthy additions recommended for your order</p>
                   </div>
-                ))}
+                  <Link href="/products" className="text-xs font-bold text-[#4E652B] hover:underline">
+                    View All →
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {upsells.map((u) => {
+                    const originalPrice = u.originalPrice || Math.round(u.price * 1.15);
+                    const discountPercent = Math.round(((originalPrice - u.price) / originalPrice) * 100);
+                    const isAdded = !!addedItemIds[u.id];
+
+                    return (
+                      <div
+                        key={u.id}
+                        className="border border-stone-200/90 rounded-2xl p-3.5 space-y-3 relative bg-[#FAF7F2]/40 hover:shadow-md transition-all group flex flex-col justify-between"
+                      >
+                        {discountPercent > 0 && (
+                          <span className="absolute top-3 right-3 z-10 bg-[#E7F0AB] text-[#243513] text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">
+                            {discountPercent}% OFF
+                          </span>
+                        )}
+
+                        <div>
+                          <Link href={`/products/${u.id}`} className="block relative w-full h-32 rounded-xl overflow-hidden bg-white border border-stone-200/60 mb-2.5">
+                            <Image
+                              src={u.image || '/images/nutrighar-clean-protein-pouch-square.jpg'}
+                              alt={u.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              sizes="(max-width: 768px) 100vw, 250px"
+                            />
+                          </Link>
+
+                          <Link href={`/products/${u.id}`} className="block">
+                            <h4 className="text-xs font-bold text-stone-900 line-clamp-1 hover:text-[#4E652B] transition-colors">
+                              {u.name}
+                            </h4>
+                          </Link>
+
+                          <div className="flex items-baseline gap-2 mt-1">
+                            <span className="text-sm font-extrabold text-[#1E382B]">₹{u.price}</span>
+                            {originalPrice > u.price && (
+                              <span className="text-xs text-stone-400 line-through">₹{originalPrice}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Interactive Proper Green Clickable Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleAddUpsell(u)}
+                          className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-95 ${
+                            isAdded
+                              ? 'bg-[#2E5E16] text-white shadow-inner'
+                              : 'bg-[#4E652B] hover:bg-[#3D5021] text-white hover:shadow-md'
+                          }`}
+                        >
+                          {isAdded ? (
+                            <>
+                              <span className="text-sm">✓</span>
+                              <span>Added to Basket</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-sm font-black">+</span>
+                              <span>ADD TO CART</span>
+                            </>
+                          )}
+                        </button>
+
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 
