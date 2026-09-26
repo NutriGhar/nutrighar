@@ -113,4 +113,36 @@ export async function getCustomerSession(): Promise<CustomerSession | null> {
   }
 }
 
+import bcrypt from 'bcryptjs';
+
+/**
+ * Hash customer password with bcrypt and 10 salt rounds
+ */
+export async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password.trim(), 10);
+}
+
+/**
+ * Verify customer password against stored hash (with legacy auto-upgrade support)
+ */
+export async function verifyPassword(
+  password: string,
+  storedHash?: string | null
+): Promise<{ valid: boolean; needsRehash: boolean }> {
+  if (!storedHash) return { valid: false, needsRehash: false };
+
+  // If storedHash is a bcrypt hash (starts with $2a$ or $2b$)
+  if (storedHash.startsWith('$2a$') || storedHash.startsWith('$2b$') || storedHash.startsWith('$2y$')) {
+    const valid = await bcrypt.compare(password.trim(), storedHash);
+    return { valid, needsRehash: false };
+  }
+
+  // Fallback for pre-existing plain text development passwords
+  if (storedHash === password.trim()) {
+    return { valid: true, needsRehash: true };
+  }
+
+  return { valid: false, needsRehash: false };
+}
+
 export { CUSTOMER_COOKIE_NAME };

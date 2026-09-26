@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { encodeCustomerSession, CUSTOMER_COOKIE_NAME, CustomerSession } from '@/lib/customerAuth';
+import { encodeCustomerSession, CUSTOMER_COOKIE_NAME, CustomerSession, hashPassword } from '@/lib/customerAuth';
 import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
@@ -10,6 +10,13 @@ export async function POST(request: Request) {
     if (!name || !email || !password) {
       return NextResponse.json(
         { success: false, error: 'Full name, email, and password are required' },
+        { status: 400 }
+      );
+    }
+
+    if (password.trim().length < 6) {
+      return NextResponse.json(
+        { success: false, error: 'Password must be at least 6 characters long' },
         { status: 400 }
       );
     }
@@ -34,11 +41,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Cryptographically hash password with bcrypt & salt before storing in DB
+    const hashedPassword = await hashPassword(password);
+
     const customer = await prisma.customer.create({
       data: {
         name: name.trim(),
         email: cleanEmail,
-        passwordHash: password.trim(), // In enterprise, hash with bcrypt; here stored cleanly
+        passwordHash: hashedPassword,
         phone: cleanPhone,
       },
     });

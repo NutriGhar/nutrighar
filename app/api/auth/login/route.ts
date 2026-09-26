@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { encodeCustomerSession, CUSTOMER_COOKIE_NAME, CustomerSession } from '@/lib/customerAuth';
+import { encodeCustomerSession, CUSTOMER_COOKIE_NAME, CustomerSession, verifyPassword, hashPassword } from '@/lib/customerAuth';
 import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
@@ -33,11 +33,29 @@ export async function POST(request: Request) {
       );
     }
 
-    if (customer.passwordHash && customer.passwordHash !== password.trim()) {
+    if (!customer.passwordHash) {
+      return NextResponse.json(
+        { success: false, error: 'This account was created via Mobile OTP. Please sign in with OTP.' },
+        { status: 401 }
+      );
+    }
+
+    const result = await verifyPassword(password, customer.passwordHash);
+
+    if (!result.valid) {
       return NextResponse.json(
         { success: false, error: 'Incorrect password. Please try again or sign in via Mobile OTP.' },
         { status: 401 }
       );
+    }
+
+    // Auto-upgrade legacy plain-text password to bcrypt hash on successful login
+    if (result.needsRehash) {
+      const newHash = await hashPassword(password);
+      await prisma.customer.update({
+        where: { id: customer.id },
+        data: { passwordHash: newHash },
+      }).catch((e) => console.error('Failed to auto-upgrade legacy password hash:', e));
     }
 
     const session: CustomerSession = {
