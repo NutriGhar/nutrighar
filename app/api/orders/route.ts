@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getOrders, createOrder } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+};
+
 // GET: Fetch orders with status filter
 export async function GET(request: Request) {
   try {
@@ -8,11 +17,11 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || undefined;
 
     const orders = await getOrders(status);
-    return NextResponse.json({ success: true, data: orders });
+    return NextResponse.json({ success: true, data: orders }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch orders' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }
@@ -25,7 +34,7 @@ export async function POST(request: Request) {
     if (!body.customerName || !body.customerEmail || !body.customerPhone || !body.addressLine1 || !body.items?.length) {
       return NextResponse.json(
         { success: false, error: 'Customer information, delivery address, and ordered items are required.' },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -49,11 +58,11 @@ export async function POST(request: Request) {
       })),
     });
 
-    return NextResponse.json({ success: true, data: order }, { status: 201 });
+    return NextResponse.json({ success: true, data: order }, { status: 201, headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to create order' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }

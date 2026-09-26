@@ -28,7 +28,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     async function loadProduct() {
       try {
         setIsLoading(true);
-        const res = await fetch(`/api/products/${productId}`);
+        const res = await fetch(`/api/products/${productId}?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
 
         if (data.success && data.data) {
@@ -41,7 +41,7 @@ export default function ProductDetailPage({ params }: PageProps) {
           });
 
           // Fetch related products
-          const relRes = await fetch(`/api/products?category=${p.categorySlug || p.category}&active=true`);
+          const relRes = await fetch(`/api/products?category=${p.categorySlug || p.category}&active=true&t=${Date.now()}`, { cache: 'no-store' });
           const relData = await relRes.json();
           if (relData.success && relData.data) {
             setRelatedProducts(

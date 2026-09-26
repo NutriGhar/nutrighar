@@ -2,7 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { WebsiteContent, HeroSlideContent, DEFAULT_HERO_SLIDES } from '@/lib/db';
+import {
+  WebsiteContent,
+  HeroSlideContent,
+  DEFAULT_HERO_SLIDES,
+  DEFAULT_CURATED_COLLECTIONS,
+  DEFAULT_PRODUCT_SPOTLIGHT,
+  DEFAULT_TESTIMONIALS,
+  CollectionCard,
+  TestimonialItem,
+  CuratedCollectionsContent,
+  ProductSpotlightContent,
+  TestimonialsContent,
+} from '@/types/content';
 
 export default function AdminContentPage() {
   const [content, setContent] = useState<WebsiteContent | null>(null);
@@ -31,15 +43,59 @@ export default function AdminContentPage() {
 
       try {
         setIsLoading(true);
-        const res = await fetch('/api/content');
+        const res = await fetch(`/api/content?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.data) {
           const loaded = data.data;
-          if (!loaded.heroSlides || !Array.isArray(loaded.heroSlides) || loaded.heroSlides.length === 0) {
-            loaded.heroSlides = DEFAULT_HERO_SLIDES;
+          const merged: WebsiteContent = {
+            ...loaded,
+            heroSlides: (loaded.heroSlides && Array.isArray(loaded.heroSlides) && loaded.heroSlides.length > 0)
+              ? loaded.heroSlides
+              : DEFAULT_HERO_SLIDES,
+            curatedCollections: {
+              ...DEFAULT_CURATED_COLLECTIONS,
+              ...(loaded.curatedCollections || {}),
+              cards: (loaded.curatedCollections?.cards && Array.isArray(loaded.curatedCollections.cards) && loaded.curatedCollections.cards.length > 0)
+                ? loaded.curatedCollections.cards
+                : DEFAULT_CURATED_COLLECTIONS.cards,
+            },
+            productSpotlight: {
+              ...DEFAULT_PRODUCT_SPOTLIGHT,
+              ...(loaded.productSpotlight || {}),
+            },
+            testimonials: {
+              ...DEFAULT_TESTIMONIALS,
+              ...(loaded.testimonials || {}),
+              items: (loaded.testimonials?.items && Array.isArray(loaded.testimonials.items) && loaded.testimonials.items.length > 0)
+                ? loaded.testimonials.items
+                : DEFAULT_TESTIMONIALS.items,
+            },
+          };
+          if (localSaved) {
+            setContent({
+              ...merged,
+              ...localSaved,
+              curatedCollections: {
+                ...DEFAULT_CURATED_COLLECTIONS,
+                ...(merged.curatedCollections || {}),
+                ...(localSaved.curatedCollections || {}),
+                cards: localSaved.curatedCollections?.cards || merged.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards,
+              },
+              productSpotlight: {
+                ...DEFAULT_PRODUCT_SPOTLIGHT,
+                ...(merged.productSpotlight || {}),
+                ...(localSaved.productSpotlight || {}),
+              },
+              testimonials: {
+                ...DEFAULT_TESTIMONIALS,
+                ...(merged.testimonials || {}),
+                ...(localSaved.testimonials || {}),
+                items: localSaved.testimonials?.items || merged.testimonials?.items || DEFAULT_TESTIMONIALS.items,
+              },
+            });
+          } else {
+            setContent(merged);
           }
-          const merged = localSaved ? { ...loaded, ...localSaved } : loaded;
-          setContent(merged);
         }
       } catch (err: any) {
         if (!localSaved) {
@@ -111,17 +167,122 @@ export default function AdminContentPage() {
     setContent({ ...content, heroSlides: updated });
   };
 
+  // -------------------------------------------------------------
+  // PRODUCT SPOTLIGHT HELPER FUNCTIONS
+  // -------------------------------------------------------------
+  const spotlight = {
+    ...DEFAULT_PRODUCT_SPOTLIGHT,
+    ...(content?.productSpotlight || {}),
+  };
+
+  const updateProductSpotlight = (fields: Partial<ProductSpotlightContent>) => {
+    if (!content) return;
+    setContent((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        productSpotlight: {
+          ...DEFAULT_PRODUCT_SPOTLIGHT,
+          ...(prev.productSpotlight || {}),
+          ...fields,
+        },
+      };
+    });
+  };
+
+  // -------------------------------------------------------------
+  // CURATED COLLECTIONS HELPER FUNCTIONS
+  // -------------------------------------------------------------
+  const curatedCollections = {
+    ...DEFAULT_CURATED_COLLECTIONS,
+    ...(content?.curatedCollections || {}),
+    cards: (content?.curatedCollections?.cards && Array.isArray(content.curatedCollections.cards) && content.curatedCollections.cards.length > 0)
+      ? content.curatedCollections.cards
+      : DEFAULT_CURATED_COLLECTIONS.cards,
+  };
+
+  const updateCuratedCollections = (fields: Partial<CuratedCollectionsContent>) => {
+    if (!content) return;
+    setContent((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        curatedCollections: {
+          ...DEFAULT_CURATED_COLLECTIONS,
+          ...(prev.curatedCollections || {}),
+          ...fields,
+        },
+      };
+    });
+  };
+
+  const updateCollectionCard = (index: number, cardFields: Partial<CollectionCard>) => {
+    const cards = [...curatedCollections.cards];
+    cards[index] = { ...cards[index], ...cardFields };
+    updateCuratedCollections({ cards });
+  };
+
+  // -------------------------------------------------------------
+  // TESTIMONIALS HELPER FUNCTIONS
+  // -------------------------------------------------------------
+  const testimonials = {
+    ...DEFAULT_TESTIMONIALS,
+    ...(content?.testimonials || {}),
+    items: (content?.testimonials?.items && Array.isArray(content.testimonials.items) && content.testimonials.items.length > 0)
+      ? content.testimonials.items
+      : DEFAULT_TESTIMONIALS.items,
+  };
+
+  const updateTestimonials = (fields: Partial<TestimonialsContent>) => {
+    if (!content) return;
+    setContent((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        testimonials: {
+          ...DEFAULT_TESTIMONIALS,
+          ...(prev.testimonials || {}),
+          ...fields,
+        },
+      };
+    });
+  };
+
+  const updateTestimonialItem = (index: number, itemFields: Partial<TestimonialItem>) => {
+    const items = [...testimonials.items];
+    items[index] = { ...items[index], ...itemFields };
+    updateTestimonials({ items });
+  };
+
   const handleSlideImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploadingImage(true);
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       const base64Url = reader.result as string;
       updateActiveSlide({ image: base64Url });
-      setIsUploadingImage(false);
-      showToast('Image uploaded and set for this slide!');
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `slide-${selectedSlideIndex}-${Date.now()}`,
+            type: file.type,
+            base64OrUrl: base64Url,
+          }),
+        });
+        const uploadData = await res.json();
+        if (uploadData.success && uploadData.url) {
+          updateActiveSlide({ image: uploadData.url });
+        }
+      } catch {
+        // Keep base64
+      } finally {
+        setIsUploadingImage(false);
+        showToast('Image uploaded and set for this slide!');
+      }
     };
     reader.onerror = () => {
       setIsUploadingImage(false);
@@ -196,6 +357,9 @@ export default function AdminContentPage() {
 
   const tabs: Array<{ id: keyof WebsiteContent; label: string; icon: string }> = [
     { id: 'heroSlides', label: 'Hero Carousel Slides', icon: '🎠' },
+    { id: 'curatedCollections', label: 'Curated Collections', icon: '🛍️' },
+    { id: 'productSpotlight', label: 'Product Spotlight (Protein Ladoo)', icon: '✨' },
+    { id: 'testimonials', label: 'Loved Across India (Testimonials)', icon: '💬' },
     { id: 'announcement', label: 'Announcement Bar', icon: '📢' },
     { id: 'brandStory', label: 'Brand Story & Philosophy', icon: '📖' },
     { id: 'contact', label: 'Contact & Support', icon: '📞' },
@@ -624,6 +788,804 @@ export default function AdminContentPage() {
           </div>
         )}
 
+        {/* ================= CURATED COLLECTIONS ================= */}
+        {activeTab === 'curatedCollections' && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-[#1C1917]">
+                  Curated Collections (Homepage Category Grid)
+                </h2>
+                <p className="text-xs text-[#6B635B] font-light mt-0.5">
+                  Customize the collection showcase cards shown under "Pure Food For Everyday Living" on the homepage. Add new categories, upload custom photography, and link directly to category or product pages.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newCard: CollectionCard = {
+                      id: `col-card-${Date.now()}`,
+                      categorySlug: 'all',
+                      tag: 'NEW COLLECTION',
+                      title: 'Collection Title',
+                      description: 'Describe the wholesome collection and ingredients.',
+                      image: '/images/dry-fruit-ladoo-product.jpg',
+                    };
+                    updateCuratedCollections({
+                      cards: [...curatedCollections.cards, newCard],
+                    });
+                    showToast('Added a new Collection Card! You can now edit its photo, tag, title, and link.');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                >
+                  + Add Collection Card
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Reset Curated Collections cards to Nutri Ghar original defaults?')) {
+                      updateCuratedCollections(DEFAULT_CURATED_COLLECTIONS);
+                      showToast('Reset collections to defaults.');
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer self-start sm:self-auto"
+                >
+                  ↺ Reset Defaults
+                </button>
+              </div>
+            </div>
+
+            {/* Section Header Settings */}
+            <div className="bg-[#FAF7F2] p-5 sm:p-6 rounded-2xl border border-[#E8E1D7] space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#9C5838] block">
+                Section Header &amp; Subtitle
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Eyebrow Pill Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={curatedCollections.eyebrow ?? ''}
+                    onChange={(e) => updateCuratedCollections({ eyebrow: e.target.value })}
+                    placeholder="e.g. CURATED COLLECTIONS"
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Section Heading
+                  </label>
+                  <input
+                    type="text"
+                    value={curatedCollections.heading ?? ''}
+                    onChange={(e) => updateCuratedCollections({ heading: e.target.value })}
+                    placeholder="e.g. Pure Food For Everyday Living"
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Section Description Paragraph
+                  </label>
+                  <textarea
+                    value={curatedCollections.description ?? ''}
+                    onChange={(e) => updateCuratedCollections({ description: e.target.value })}
+                    rows={2}
+                    placeholder="Describe your collections..."
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Collection Cards */}
+            <div className="space-y-6">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
+                Collection Cards ({curatedCollections.cards.length} Cards)
+              </span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {curatedCollections.cards.map((card, idx) => (
+                  <div
+                    key={card.id || `col-card-${idx}`}
+                    className="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4 flex flex-col justify-between"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                        <span className="px-2.5 py-1 rounded-full bg-[#FAF7F2] text-[#9C5838] text-[10px] font-bold uppercase tracking-wider border border-[#E8E1D7]">
+                          Card #{idx + 1}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-stone-700">{card.title}</span>
+                          {curatedCollections.cards.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const filtered = curatedCollections.cards.filter((_, i) => i !== idx);
+                                updateCuratedCollections({ cards: filtered });
+                                showToast('Removed collection card.');
+                              }}
+                              className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer ml-2"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Image Preview & Upload */}
+                      <div className="space-y-2">
+                        <div className="relative h-44 w-full rounded-xl overflow-hidden bg-stone-100 border border-stone-200">
+                          {card.image && (
+                            <Image
+                              src={card.image}
+                              alt={card.title}
+                              fill
+                              className="object-cover"
+                              sizes="400px"
+                            />
+                          )}
+                          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow-xs">
+                            {card.tag || 'Tag'}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="border border-dashed border-stone-300 rounded-xl p-2 text-center bg-[#FAF7F2]">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              id={`card-upload-${idx}`}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onloadend = async () => {
+                                  const base64 = reader.result as string;
+                                  updateCollectionCard(idx, { image: base64 });
+                                  try {
+                                    const res = await fetch('/api/upload', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        name: `card-${idx}-${Date.now()}`,
+                                        type: file.type,
+                                        base64OrUrl: base64,
+                                      }),
+                                    });
+                                    const up = await res.json();
+                                    if (up.success && up.url) {
+                                      updateCollectionCard(idx, { image: up.url });
+                                    }
+                                  } catch {
+                                    // keep base64
+                                  }
+                                  showToast(`Uploaded photo for Card #${idx + 1}!`);
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                              className="hidden"
+                            />
+                            <label
+                              htmlFor={`card-upload-${idx}`}
+                              className="cursor-pointer text-[10px] font-bold text-[#1E382B] flex items-center justify-center gap-1 py-1"
+                            >
+                              <span>📸</span>
+                              <span>Upload Photo</span>
+                            </label>
+                          </div>
+
+                          <input
+                            type="url"
+                            value={card.image ?? ''}
+                            onChange={(e) => updateCollectionCard(idx, { image: e.target.value })}
+                            placeholder="Or paste image URL"
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-[11px] text-stone-800 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Card Text Settings */}
+                      <div className="space-y-2.5">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                              Pill Tag
+                            </label>
+                            <input
+                              type="text"
+                              value={card.tag ?? ''}
+                              onChange={(e) => updateCollectionCard(idx, { tag: e.target.value })}
+                              className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                              Category Slug
+                            </label>
+                            <input
+                              type="text"
+                              value={card.categorySlug ?? ''}
+                              onChange={(e) => updateCollectionCard(idx, { categorySlug: e.target.value })}
+                              placeholder="e.g. mithai"
+                              className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            Card Title
+                          </label>
+                          <input
+                            type="text"
+                            value={card.title ?? ''}
+                            onChange={(e) => updateCollectionCard(idx, { title: e.target.value })}
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none font-bold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            Card Description
+                          </label>
+                          <textarea
+                            value={card.description ?? ''}
+                            onChange={(e) => updateCollectionCard(idx, { description: e.target.value })}
+                            rows={2}
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-800 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleSaveSection('curatedCollections')}
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? 'Saving...' : '💾 Save Curated Collections'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= PRODUCT SPOTLIGHT ================= */}
+        {activeTab === 'productSpotlight' && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-[#1C1917]">
+                  Product Spotlight (Signature Feature)
+                </h2>
+                <p className="text-xs text-[#6B635B] font-light mt-0.5">
+                  Customize the editorial showcase box on the homepage (Protein Power Ladoo photo, macros, price, and copy).
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('Reset Product Spotlight to Nutri Ghar original defaults?')) {
+                    updateProductSpotlight(DEFAULT_PRODUCT_SPOTLIGHT);
+                    showToast('Reset product spotlight to defaults.');
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer self-start sm:self-auto"
+              >
+                ↺ Reset Defaults
+              </button>
+            </div>
+
+            {/* Spotlight Preview & Image Upload */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Image Preview & Upload */}
+              <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
+                  Product Spotlight Photography
+                </span>
+
+                <div className="relative h-64 w-full rounded-xl overflow-hidden bg-stone-100 border border-stone-200">
+                  <Image
+                    src={spotlight.image || DEFAULT_PRODUCT_SPOTLIGHT.image}
+                    alt={spotlight.heading || 'Spotlight preview'}
+                    fill
+                    className="object-cover"
+                    sizes="400px"
+                  />
+                  <div className="absolute top-3 left-3 bg-[#9C5838] text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm">
+                    {spotlight.tag || 'Signature Feature'}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="border border-dashed border-stone-300 rounded-xl p-3 text-center bg-[#FAF7F2]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="spotlight-upload"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          const base64 = reader.result as string;
+                          updateProductSpotlight({ image: base64 });
+                          try {
+                            const res = await fetch('/api/upload', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                name: `spotlight-${Date.now()}`,
+                                type: file.type,
+                                base64OrUrl: base64,
+                              }),
+                            });
+                            const up = await res.json();
+                            if (up.success && up.url) {
+                              updateProductSpotlight({ image: up.url });
+                            }
+                          } catch {
+                            // keep base64
+                          }
+                          showToast('Uploaded Product Spotlight image!');
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="spotlight-upload"
+                      className="cursor-pointer text-xs font-bold text-[#1E382B] flex flex-col items-center justify-center gap-1"
+                    >
+                      <span className="text-xl">📸</span>
+                      <span>Click to Upload New Photo</span>
+                      <span className="text-[10px] text-stone-500 font-light">Supports JPG, PNG, WebP</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                      Or Paste Image Web URL
+                    </label>
+                    <input
+                      type="url"
+                      value={spotlight.image ?? ''}
+                      onChange={(e) => updateProductSpotlight({ image: e.target.value })}
+                      placeholder="/images/dry-fruit-ladoo-product.jpg"
+                      className="w-full px-3 py-2 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Text, Macros, and Price Form */}
+              <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#9C5838] block">
+                  Copy, Macro Stats &amp; Pricing
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Eyebrow Tag
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.eyebrow ?? ''}
+                      onChange={(e) => updateProductSpotlight({ eyebrow: e.target.value })}
+                      placeholder="e.g. PRODUCT SPOTLIGHT"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Badge Label
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.tag ?? ''}
+                      onChange={(e) => updateProductSpotlight({ tag: e.target.value })}
+                      placeholder="e.g. Signature Feature"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Product Name / Heading
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.heading ?? ''}
+                      onChange={(e) => updateProductSpotlight({ heading: e.target.value })}
+                      placeholder="e.g. Protein Power Ladoo"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B] font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Italic Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.headingItalic ?? ''}
+                      onChange={(e) => updateProductSpotlight({ headingItalic: e.target.value })}
+                      placeholder="e.g. Traditional Taste. Modern Nutrition."
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Story &amp; Ingredient Narrative
+                    </label>
+                    <textarea
+                      value={spotlight.description ?? ''}
+                      onChange={(e) => updateProductSpotlight({ description: e.target.value })}
+                      rows={3}
+                      placeholder="Describe ingredients and nutritional benefits..."
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  {/* 4 Macro stats */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Protein Value
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.protein ?? ''}
+                      onChange={(e) => updateProductSpotlight({ protein: e.target.value })}
+                      placeholder="e.g. 12g"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Refined Sugar Value
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.sugar ?? ''}
+                      onChange={(e) => updateProductSpotlight({ sugar: e.target.value })}
+                      placeholder="e.g. 0g"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Desi Ghee Value
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.ghee ?? ''}
+                      onChange={(e) => updateProductSpotlight({ ghee: e.target.value })}
+                      placeholder="e.g. 100%"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Batch Freshness Note
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.freshness ?? ''}
+                      onChange={(e) => updateProductSpotlight({ freshness: e.target.value })}
+                      placeholder="e.g. Weekly"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Price (₹)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={
+                        spotlight.price === undefined || spotlight.price === null || spotlight.price === ''
+                          ? ''
+                          : String(spotlight.price).replace(/^0+(?=\d)/, '')
+                      }
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/[^0-9]/g, '');
+                        const cleanDigits = digitsOnly.replace(/^0+(?=\d)/, '');
+                        updateProductSpotlight({ price: cleanDigits });
+                      }}
+                      onBlur={() => {
+                        const current = String(spotlight.price || '').replace(/^0+(?=\d)/, '');
+                        const parsed = parseInt(current, 10);
+                        updateProductSpotlight({ price: isNaN(parsed) || parsed <= 0 ? 349 : parsed });
+                      }}
+                      placeholder="e.g. 599"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B] font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Price Note / Unit
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.priceNote ?? ''}
+                      onChange={(e) => updateProductSpotlight({ priceNote: e.target.value })}
+                      placeholder="e.g. Price per 400g Box"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Button CTA Text
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.buttonText ?? ''}
+                      onChange={(e) => updateProductSpotlight({ buttonText: e.target.value })}
+                      placeholder="e.g. Add to Cart"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                      Target Product Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={spotlight.productSlug ?? ''}
+                      onChange={(e) => updateProductSpotlight({ productSlug: e.target.value })}
+                      placeholder="e.g. dry-fruit-ladoo"
+                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSection('productSpotlight')}
+                    disabled={isSaving}
+                    className="px-6 py-2.5 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSaving ? 'Saving...' : '💾 Save Product Spotlight'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= TESTIMONIALS (LOVED ACROSS INDIA) ================= */}
+        {activeTab === 'testimonials' && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-[#1C1917]">
+                  Loved Across Indian Homes (Customer Testimonials)
+                </h2>
+                <p className="text-xs text-[#6B635B] font-light mt-0.5">
+                  Manage the customer reviews section displayed on the homepage. Edit names, cities, star ratings, and review texts.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newItem: TestimonialItem = {
+                      id: `test-${Date.now()}`,
+                      name: 'Customer Name',
+                      location: 'City',
+                      product: 'Product Name',
+                      rating: 5,
+                      review: 'Write verified feedback here...',
+                    };
+                    updateTestimonials({
+                      items: [...testimonials.items, newItem],
+                    });
+                    showToast('Added a new review card!');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                >
+                  + Add Testimonial
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Reset Customer Testimonials to Nutri Ghar original defaults?')) {
+                      updateTestimonials(DEFAULT_TESTIMONIALS);
+                      showToast('Reset testimonials to defaults.');
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  ↺ Reset Defaults
+                </button>
+              </div>
+            </div>
+
+            {/* Section Header Settings */}
+            <div className="bg-[#FAF7F2] p-5 sm:p-6 rounded-2xl border border-[#E8E1D7] space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#9C5838] block">
+                Section Header
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Eyebrow Pill Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={testimonials.eyebrow ?? ''}
+                    onChange={(e) => updateTestimonials({ eyebrow: e.target.value })}
+                    placeholder="e.g. VERIFIED EXPERIENCES"
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1">
+                    Section Heading
+                  </label>
+                  <input
+                    type="text"
+                    value={testimonials.heading ?? ''}
+                    onChange={(e) => updateTestimonials({ heading: e.target.value })}
+                    placeholder="e.g. Loved Across Indian Homes"
+                    className="w-full px-3.5 py-2 bg-white border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Review Cards Grid */}
+            <div className="space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
+                Testimonial Cards ({testimonials.items.length} Reviews)
+              </span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {testimonials.items.map((item, idx) => (
+                  <div
+                    key={item.id || `test-${idx}`}
+                    className="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-xs space-y-4 flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#9C5838]">
+                          Review #{idx + 1}
+                        </span>
+                        {testimonials.items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const filtered = testimonials.items.filter((_, i) => i !== idx);
+                              updateTestimonials({ items: filtered });
+                              showToast('Removed review.');
+                            }}
+                            className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Star Rating */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          Star Rating (1 - 5 Stars)
+                        </label>
+                        <select
+                          value={item.rating ?? 5}
+                          onChange={(e) => updateTestimonialItem(idx, { rating: Number(e.target.value) })}
+                          className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-amber-600 font-bold focus:outline-none"
+                        >
+                          <option value={5}>★★★★★ (5 Stars - Exceptional)</option>
+                          <option value={4}>★★★★☆ (4 Stars - Great)</option>
+                          <option value={3}>★★★☆☆ (3 Stars - Good)</option>
+                        </select>
+                      </div>
+
+                      {/* Review Text */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          Customer Review Quote
+                        </label>
+                        <textarea
+                          value={item.review ?? ''}
+                          onChange={(e) => updateTestimonialItem(idx, { review: e.target.value })}
+                          rows={3}
+                          className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] italic focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Customer Name, Location & Product */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            Customer Name
+                          </label>
+                          <input
+                            type="text"
+                            value={item.name ?? ''}
+                            onChange={(e) => updateTestimonialItem(idx, { name: e.target.value })}
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] font-bold focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                            City / Location
+                          </label>
+                          <input
+                            type="text"
+                            value={item.location ?? ''}
+                            onChange={(e) => updateTestimonialItem(idx, { location: e.target.value })}
+                            placeholder="e.g. Mumbai"
+                            className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          Product Purchased
+                        </label>
+                        <input
+                          type="text"
+                          value={item.product ?? ''}
+                          onChange={(e) => updateTestimonialItem(idx, { product: e.target.value })}
+                          placeholder="e.g. Besan Ladoo"
+                          className="w-full px-2.5 py-1.5 bg-[#FAF7F2] border border-stone-200 rounded-xl text-xs text-[#1C1917] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleSaveSection('testimonials')}
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? 'Saving...' : '💾 Save Testimonials'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ================= SINGLE HERO (LEGACY) ================= */}
         {activeTab === 'hero' && (
           <div className="space-y-6">
@@ -664,11 +1626,32 @@ export default function AdminContentPage() {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       const reader = new FileReader();
-                      reader.onloadend = () => {
+                      reader.onloadend = async () => {
+                        const base64 = reader.result as string;
                         setContent({
                           ...content,
-                          hero: { ...content.hero, heroImage: reader.result as string },
+                          hero: { ...content.hero, heroImage: base64 },
                         });
+                        try {
+                          const res = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: `hero-${Date.now()}`,
+                              type: file.type,
+                              base64OrUrl: base64,
+                            }),
+                          });
+                          const uploadData = await res.json();
+                          if (uploadData.success && uploadData.url) {
+                            setContent({
+                              ...content,
+                              hero: { ...content.hero, heroImage: uploadData.url },
+                            });
+                          }
+                        } catch {
+                          // Keep base64
+                        }
                         showToast('Hero image uploaded!');
                       };
                       reader.readAsDataURL(file);

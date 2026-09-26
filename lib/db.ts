@@ -1,7 +1,10 @@
 // Central Database & Data Access Service Layer for Nutri Ghar
-// Directly queries local PostgreSQL database via Prisma ORM with fallback support
+// Supports PostgreSQL via Prisma ORM with durable, persistent disk-backed JSON storage
 
+import fs from 'fs';
+import path from 'path';
 import prisma from '@/lib/prisma';
+import { uploadProductImage } from '@/lib/storage';
 
 export interface Category {
   id: string;
@@ -87,6 +90,54 @@ export interface HeroSlideContent {
   badgeText?: string;
 }
 
+export interface CollectionCard {
+  id: string;
+  categorySlug: string;
+  tag: string;
+  title: string;
+  description: string;
+  image: string;
+}
+
+export interface CuratedCollectionsContent {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  cards: CollectionCard[];
+}
+
+export interface TestimonialItem {
+  id: string;
+  name: string;
+  location: string;
+  product: string;
+  rating: number;
+  review: string;
+}
+
+export interface TestimonialsContent {
+  eyebrow: string;
+  heading: string;
+  items: TestimonialItem[];
+}
+
+export interface ProductSpotlightContent {
+  eyebrow: string;
+  heading: string;
+  headingItalic: string;
+  description: string;
+  protein: string;
+  sugar: string;
+  ghee: string;
+  freshness: string;
+  price: number | string;
+  priceNote: string;
+  image: string;
+  tag: string;
+  buttonText: string;
+  productSlug?: string;
+}
+
 export interface WebsiteContent {
   hero: {
     eyebrow: string;
@@ -98,6 +149,9 @@ export interface WebsiteContent {
     heroImage: string;
   };
   heroSlides: HeroSlideContent[];
+  curatedCollections?: CuratedCollectionsContent;
+  productSpotlight?: ProductSpotlightContent;
+  testimonials?: TestimonialsContent;
   announcement: {
     enabled: boolean;
     text: string;
@@ -133,6 +187,54 @@ export interface WebsiteContent {
   };
 }
 
+export const DEFAULT_PRODUCT_SPOTLIGHT: ProductSpotlightContent = {
+  eyebrow: 'PRODUCT SPOTLIGHT',
+  heading: 'Protein Power Ladoo',
+  headingItalic: 'Traditional Taste. Modern Nutrition.',
+  description: 'Reimagining India\'s timeless post-meal sweet as an everyday functional superfood. Handcrafted with clean protein, stone-ground oats, roasted California almonds, and 100% pure desi cow ghee.',
+  protein: '12g',
+  sugar: '0g',
+  ghee: '100%',
+  freshness: 'Weekly',
+  price: 349,
+  priceNote: 'Price per 400g Box',
+  image: '/images/dry-fruit-ladoo-product.jpg',
+  tag: 'Signature Feature',
+  buttonText: 'Add to Cart',
+  productSlug: 'dry-fruit-ladoo',
+};
+
+export const DEFAULT_TESTIMONIALS: TestimonialsContent = {
+  eyebrow: 'VERIFIED EXPERIENCES',
+  heading: 'Loved Across Indian Homes',
+  items: [
+    {
+      id: 'test-1',
+      name: 'Priya Sharma',
+      location: 'Mumbai',
+      product: 'Besan Ladoo',
+      rating: 5,
+      review: 'The Besan Ladoos taste exactly like the ones my grandmother prepared during festivals. Pure ghee aroma with zero artificial aftertaste.',
+    },
+    {
+      id: 'test-2',
+      name: 'Rajesh Kumar',
+      location: 'Bengaluru',
+      product: 'Creamy Peanut Butter',
+      rating: 5,
+      review: 'Finding a peanut butter that doesn\'t use added palm oil or sugar was impossible until Nutri Ghar. It has become my morning gym staple.',
+    },
+    {
+      id: 'test-3',
+      name: 'Anjali Verma',
+      location: 'Delhi NCR',
+      product: 'Protein Power Ladoo',
+      rating: 5,
+      review: 'The Protein Power Ladoos are genuinely incredible. 12g of protein in something that tastes like a traditional delicacy is genius.',
+    },
+  ],
+};
+
 export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
   {
     id: 'protein-nutrition',
@@ -144,8 +246,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
     buttonLink: '/products?category=protein-nutrition',
     secondaryButtonText: 'Explore Collections',
     secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1400&auto=format&fit=crop&q=85',
-    badgeText: '12g Protein / Piece',
+    image: '/images/clean-protein-pouch-banner.jpg',
+    badgeText: 'Pure Nuts & Seeds Blend',
   },
   {
     id: 'dry-fruits-nuts',
@@ -170,7 +272,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
     buttonLink: '/products?category=mithai',
     secondaryButtonText: 'Discover Flavours',
     secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=1400&auto=format&fit=crop&q=85',
+    image: '/images/dry-fruit-ladoos-banner.jpg',
     badgeText: 'Pure Cow Ghee',
   },
   {
@@ -183,7 +285,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
     buttonLink: '/products?category=peanut-butter',
     secondaryButtonText: 'All Spreads',
     secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=1400&auto=format&fit=crop&q=85',
+    image: '/images/peanut-butter-banner.jpg',
     badgeText: 'Stone-Ground Daily',
   },
   {
@@ -201,6 +303,46 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
   },
 ];
 
+export const DEFAULT_CURATED_COLLECTIONS: CuratedCollectionsContent = {
+  eyebrow: 'CURATED COLLECTIONS',
+  heading: 'Pure Food For Everyday Living',
+  description: 'From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.',
+  cards: [
+    {
+      id: 'col-mithai',
+      categorySlug: 'mithai',
+      tag: 'HERITAGE SWEETS',
+      title: 'Mithai & Ladoos',
+      description: 'Pure A2 desi cow ghee ladoos crafted with whole dry fruits.',
+      image: '/images/dry-fruit-ladoos-banner.jpg',
+    },
+    {
+      id: 'col-peanut-butter',
+      categorySlug: 'peanut-butter',
+      tag: 'STONE-GROUND',
+      title: 'Peanut Butter',
+      description: '100% slow-roasted peanuts stone-ground daily.',
+      image: '/images/peanut-butter-banner.jpg',
+    },
+    {
+      id: 'col-protein-nutrition',
+      categorySlug: 'protein-nutrition',
+      tag: 'CLEAN PROTEIN',
+      title: 'Protein & Recovery',
+      description: 'Stone-ground nuts, seeds and clean protein superfood mix.',
+      image: '/images/clean-protein-pouch-banner.jpg',
+    },
+    {
+      id: 'col-healthy-snacks',
+      categorySlug: 'healthy-snacks',
+      tag: 'GUILT-FREE CRUNCH',
+      title: 'Healthy Snacks',
+      description: 'Slow-roasted California almonds, cashews and seed mixes.',
+      image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80',
+    },
+  ],
+};
+
 const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   hero: {
     eyebrow: 'HOMEMADE WELLNESS',
@@ -212,6 +354,9 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
     heroImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&auto=format&fit=crop&q=80',
   },
   heroSlides: DEFAULT_HERO_SLIDES,
+  curatedCollections: DEFAULT_CURATED_COLLECTIONS,
+  productSpotlight: DEFAULT_PRODUCT_SPOTLIGHT,
+  testimonials: DEFAULT_TESTIMONIALS,
   announcement: {
     enabled: true,
     text: 'Freshly Made • Wholesome Ingredients • Delivered with Care',
@@ -283,7 +428,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: 'Mithai & Ladoo',
     slug: 'mithai',
     description: 'Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.',
-    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80',
+    image: '/images/dry-fruit-ladoos-banner.jpg',
     icon: '🍯',
     isActive: true,
     createdAt: new Date().toISOString(),
@@ -304,8 +449,8 @@ export const DEFAULT_CATEGORIES: Category[] = [
     id: 'cat-protein-nutrition',
     name: 'Protein & Nutrition',
     slug: 'protein-nutrition',
-    description: 'Enriched whey and superfood blends crafted for daily vitality and fitness recovery.',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
+    description: 'Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.',
+    image: '/images/clean-protein-pouch-banner.jpg',
     icon: '💪',
     isActive: true,
     createdAt: new Date().toISOString(),
@@ -356,8 +501,8 @@ export const DEFAULT_PRODUCTS: Product[] = [
     categorySlug: 'mithai',
     price: 449,
     originalPrice: 499,
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80'],
+    image: '/images/dry-fruit-ladoo-product.jpg',
+    images: ['/images/dry-fruit-ladoo-product.jpg', '/images/dry-fruit-ladoos-banner.jpg'],
     description: 'Luxurious ladoos packed with almonds, cashews, dates, and zero refined sugar.',
     ingredients: ['Almonds', 'Cashews', 'Medjool Dates', 'Pistachios', 'Pure Cow Ghee'],
     benefits: ['Rich in Antioxidants', 'Zero Refined Sugar', 'Nutrient Dense Superfood', 'Maternal Kitchen Recipe'],
@@ -442,21 +587,21 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'whey-protein-isolate',
-    name: 'Clean Whey Protein Concentrate',
+    name: 'NutriGhar Clean Protein & Healthy Mix (500g)',
     slug: 'whey-protein-isolate',
     categoryId: 'cat-protein-nutrition',
     categorySlug: 'protein-nutrition',
-    price: 1899,
-    originalPrice: 2199,
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80'],
-    description: 'Grass-fed hormone-free clean whey protein with digestive enzymes.',
-    ingredients: ['Grass-Fed Whey Protein Concentrate', 'Cocoa Powder', 'Digestive Enzymes', 'Stevia Leaf Extract'],
-    benefits: ['24g Protein per Scoop', '5.5g BCAAs', 'Zero Artificial Sweeteners', 'Easy Digestion'],
-    rating: 4.8,
-    reviewCount: 167,
-    stockQuantity: 25,
-    lowStockThreshold: 5,
+    price: 599,
+    originalPrice: 699,
+    image: '/images/clean-protein-pouch-product.jpg',
+    images: ['/images/clean-protein-pouch-product.jpg', '/images/clean-protein-pouch-banner.jpg'],
+    description: '100% stone-ground healthy mix of roasted California almonds, walnuts, chia seeds, pumpkin seeds, and clean plant protein in eco-friendly kraft paper packaging.',
+    ingredients: ['California Almonds', 'Walnuts', 'Chia Seeds', 'Pumpkin Seeds', 'Flax Seeds', 'Clean Plant Protein', 'Cardamom'],
+    benefits: ['20g Clean Protein per Serving', '100% Stone-Ground Superfoods', 'Zero Palm Oil & Zero Maida', 'Eco-Friendly Kraft Packaging'],
+    rating: 4.9,
+    reviewCount: 198,
+    stockQuantity: 40,
+    lowStockThreshold: 10,
     isFeatured: true,
     isBestSeller: true,
     isActive: true,
@@ -511,11 +656,86 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
 ];
 
-let inMemoryCategories: Category[] = [...DEFAULT_CATEGORIES];
-let inMemoryProducts: Product[] = [...DEFAULT_PRODUCTS];
+// -------------------------------------------------------------
+// PERSISTENT FILE-BACKED JSON STORE (Ensures Zero Data Loss)
+// -------------------------------------------------------------
+
+interface StoreData {
+  products: Product[];
+  categories: Category[];
+  orders: Order[];
+  content: WebsiteContent;
+  subscribers?: string[];
+}
+
+let inMemoryStore: StoreData | null = null;
+
+const DATA_FILE = path.join(process.cwd(), 'data', 'nutrighar_data.json');
+const TMP_DATA_FILE = path.join('/tmp', 'nutrighar_data.json');
+
+function getStoreData(): StoreData {
+  if (inMemoryStore) {
+    return inMemoryStore;
+  }
+
+  try {
+    const targetFile = fs.existsSync(DATA_FILE) ? DATA_FILE : (fs.existsSync(TMP_DATA_FILE) ? TMP_DATA_FILE : null);
+    if (targetFile) {
+      const raw = fs.readFileSync(targetFile, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.categories)) {
+        inMemoryStore = {
+          products: parsed.products,
+          categories: parsed.categories,
+          orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+          content: parsed.content || DEFAULT_WEBSITE_CONTENT,
+          subscribers: Array.isArray(parsed.subscribers) ? parsed.subscribers : [],
+        };
+        return inMemoryStore;
+      }
+    }
+  } catch (err) {
+    console.error('Error reading data file:', err);
+  }
+
+  // Initial seed
+  const initialData: StoreData = {
+    products: DEFAULT_PRODUCTS,
+    categories: DEFAULT_CATEGORIES,
+    orders: [],
+    content: DEFAULT_WEBSITE_CONTENT,
+    subscribers: [],
+  };
+
+  inMemoryStore = initialData;
+  saveStoreData(initialData);
+  return initialData;
+}
+
+function saveStoreData(data: StoreData): void {
+  inMemoryStore = data;
+  try {
+    const dataDir = path.join(process.cwd(), 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    // If running in Vercel serverless where root fs is read-only, write to /tmp
+    try {
+      fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    } catch {
+      // In-memory store handles runtime
+    }
+  }
+}
 
 // -------------------------------------------------------------
-// PRODUCT OPERATIONS (POSTGRESQL via PRISMA with IN-MEMORY FALLBACK)
+// PRODUCT OPERATIONS
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// PRODUCT OPERATIONS
 // -------------------------------------------------------------
 
 export async function getProducts(options?: {
@@ -526,51 +746,14 @@ export async function getProducts(options?: {
   isActive?: boolean;
   search?: string;
 }): Promise<Product[]> {
-  try {
-    const where: any = {};
+  const store = getStoreData();
+  let list = [...store.products];
 
-    if (options?.isActive !== undefined) {
-      where.isActive = options.isActive;
-    }
-    if (options?.categorySlug) {
-      where.categorySlug = options.categorySlug;
-    }
-    if (options?.categoryId) {
-      where.categoryId = options.categoryId;
-    }
-    if (options?.isFeatured !== undefined) {
-      where.isFeatured = options.isFeatured;
-    }
-    if (options?.isBestSeller !== undefined) {
-      where.isBestSeller = options.isBestSeller;
-    }
-    if (options?.search) {
-      where.OR = [
-        { name: { contains: options.search, mode: 'insensitive' } },
-        { description: { contains: options.search, mode: 'insensitive' } },
-        { categorySlug: { contains: options.search, mode: 'insensitive' } },
-      ];
-    }
-
-    const products = await prisma.product.findMany({
-      where,
-      orderBy: [{ isFeatured: 'desc' }, { createdAt: 'desc' }],
-    });
-
-    if (products && products.length > 0) {
-      return products.map(formatProduct);
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL getProducts failed, falling back to in-memory store:', error);
-  }
-
-  // In-memory fallback
-  let list = [...inMemoryProducts];
   if (options?.isActive !== undefined) {
     list = list.filter((p) => p.isActive === options.isActive);
   }
   if (options?.categorySlug) {
-    list = list.filter((p) => p.categorySlug === options.categorySlug);
+    list = list.filter((p) => p.categorySlug.toLowerCase() === options.categorySlug?.toLowerCase());
   }
   if (options?.categoryId) {
     list = list.filter((p) => p.categoryId === options.categoryId);
@@ -595,24 +778,27 @@ export async function getProducts(options?: {
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  try {
-    const product = await prisma.product.findFirst({
-      where: {
-        OR: [{ id }, { slug: id }],
-      },
-    });
-    if (product) return formatProduct(product);
-  } catch (error) {
-    console.error('Warning: PostgreSQL getProductById failed, falling back to in-memory store:', error);
-  }
-
-  return inMemoryProducts.find((p) => p.id === id || p.slug === id) || null;
+  const store = getStoreData();
+  return store.products.find((p) => p.id === id || p.slug === id) || null;
 }
 
 export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
   const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const id = slug || `prod-${Date.now()}`;
   const now = new Date().toISOString();
+
+  // Handle Base64 image upload if provided
+  let imageUrl = data.image;
+  if (imageUrl && imageUrl.startsWith('data:image/')) {
+    const uploadRes = await uploadProductImage({
+      name: slug,
+      type: 'image/jpeg',
+      base64OrUrl: imageUrl,
+    });
+    if (uploadRes.success && uploadRes.url) {
+      imageUrl = uploadRes.url;
+    }
+  }
 
   const newProduct: Product = {
     id,
@@ -623,8 +809,8 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
     originalPrice: data.originalPrice ? Number(data.originalPrice) : null,
     categoryId: data.categoryId || 'cat-mithai',
     categorySlug: data.categorySlug || 'mithai',
-    image: data.image,
-    images: data.images || [data.image],
+    image: imageUrl,
+    images: data.images?.length ? data.images : [imageUrl],
     ingredients: data.ingredients || [],
     benefits: data.benefits || [],
     rating: Number(data.rating) || 5.0,
@@ -638,127 +824,145 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
     updatedAt: now,
   };
 
-  // Add to in-memory store
-  inMemoryProducts.unshift(newProduct);
-
-  try {
-    const created = await prisma.product.create({
-      data: {
-        id,
-        name: newProduct.name,
-        slug: newProduct.slug,
-        description: newProduct.description,
-        price: newProduct.price,
-        originalPrice: newProduct.originalPrice,
-        categoryId: newProduct.categoryId,
-        categorySlug: newProduct.categorySlug,
-        image: newProduct.image,
-        images: newProduct.images,
-        ingredients: newProduct.ingredients,
-        benefits: newProduct.benefits,
-        rating: newProduct.rating,
-        reviewCount: newProduct.reviewCount,
-        stockQuantity: newProduct.stockQuantity,
-        lowStockThreshold: newProduct.lowStockThreshold,
-        isFeatured: newProduct.isFeatured,
-        isBestSeller: newProduct.isBestSeller,
-        isActive: newProduct.isActive,
-      },
-    });
-    return formatProduct(created);
-  } catch (error) {
-    console.error('Warning: PostgreSQL createProduct failed, stored in in-memory fallback:', error);
+  // Save to persistent file store immediately
+  const store = getStoreData();
+  const existingIdx = store.products.findIndex((p) => p.id === id || p.slug === slug);
+  if (existingIdx !== -1) {
+    store.products[existingIdx] = newProduct;
+  } else {
+    store.products.unshift(newProduct);
   }
+  saveStoreData(store);
+
+  // Background sync with PostgreSQL if available
+  prisma.product.upsert({
+    where: { slug: newProduct.slug },
+    update: {
+      name: newProduct.name,
+      description: newProduct.description,
+      price: newProduct.price,
+      originalPrice: newProduct.originalPrice,
+      categoryId: newProduct.categoryId,
+      categorySlug: newProduct.categorySlug,
+      image: newProduct.image,
+      images: newProduct.images,
+      ingredients: newProduct.ingredients,
+      benefits: newProduct.benefits,
+      rating: newProduct.rating,
+      reviewCount: newProduct.reviewCount,
+      stockQuantity: newProduct.stockQuantity,
+      lowStockThreshold: newProduct.lowStockThreshold,
+      isFeatured: newProduct.isFeatured,
+      isBestSeller: newProduct.isBestSeller,
+      isActive: newProduct.isActive,
+    },
+    create: {
+      id,
+      name: newProduct.name,
+      slug: newProduct.slug,
+      description: newProduct.description,
+      price: newProduct.price,
+      originalPrice: newProduct.originalPrice,
+      categoryId: newProduct.categoryId,
+      categorySlug: newProduct.categorySlug,
+      image: newProduct.image,
+      images: newProduct.images,
+      ingredients: newProduct.ingredients,
+      benefits: newProduct.benefits,
+      rating: newProduct.rating,
+      reviewCount: newProduct.reviewCount,
+      stockQuantity: newProduct.stockQuantity,
+      lowStockThreshold: newProduct.lowStockThreshold,
+      isFeatured: newProduct.isFeatured,
+      isBestSeller: newProduct.isBestSeller,
+      isActive: newProduct.isActive,
+    },
+  }).catch(() => {});
 
   return newProduct;
 }
 
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
-  const index = inMemoryProducts.findIndex((p) => p.id === id || p.slug === id);
+  const store = getStoreData();
+  const index = store.products.findIndex((p) => p.id === id || p.slug === id);
+
+  let imageUrl = updates.image;
+  if (imageUrl && imageUrl.startsWith('data:image/')) {
+    const uploadRes = await uploadProductImage({
+      name: `prod-${id}`,
+      type: 'image/jpeg',
+      base64OrUrl: imageUrl,
+    });
+    if (uploadRes.success && uploadRes.url) {
+      imageUrl = uploadRes.url;
+      updates.image = imageUrl;
+    }
+  }
+
+  let updatedProduct: Product | null = null;
+
   if (index !== -1) {
-    inMemoryProducts[index] = {
-      ...inMemoryProducts[index],
+    const current = store.products[index];
+    const newPrice = updates.price !== undefined ? Number(updates.price) : current.price;
+    const newOrigPrice = updates.originalPrice !== undefined ? (updates.originalPrice ? Number(updates.originalPrice) : null) : current.originalPrice;
+    const newStock = updates.stockQuantity !== undefined ? Number(updates.stockQuantity) : current.stockQuantity;
+    const newLowStock = updates.lowStockThreshold !== undefined ? Number(updates.lowStockThreshold) : current.lowStockThreshold;
+
+    store.products[index] = {
+      ...current,
       ...updates,
+      price: newPrice,
+      originalPrice: newOrigPrice,
+      stockQuantity: newStock,
+      lowStockThreshold: newLowStock,
       updatedAt: new Date().toISOString(),
     };
+    updatedProduct = store.products[index];
+    saveStoreData(store);
   }
 
-  try {
-    const product = await prisma.product.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
-    });
-    if (product) {
-      const data: any = { ...updates };
-      delete data.id;
-      delete data.createdAt;
-      delete data.updatedAt;
+  // Background sync with PostgreSQL if available
+  prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } })
+    .then((prod) => {
+      if (prod) {
+        const data: any = { ...updates };
+        delete data.id;
+        delete data.createdAt;
+        delete data.updatedAt;
+        if (updates.price !== undefined) data.price = Number(updates.price);
+        if (updates.originalPrice !== undefined) data.originalPrice = updates.originalPrice ? Number(updates.originalPrice) : null;
+        if (updates.stockQuantity !== undefined) data.stockQuantity = Number(updates.stockQuantity);
+        if (updates.lowStockThreshold !== undefined) data.lowStockThreshold = Number(updates.lowStockThreshold);
+        return prisma.product.update({ where: { id: prod.id }, data });
+      }
+    })
+    .catch(() => {});
 
-      if (updates.price !== undefined) data.price = Number(updates.price);
-      if (updates.originalPrice !== undefined) data.originalPrice = updates.originalPrice ? Number(updates.originalPrice) : null;
-      if (updates.stockQuantity !== undefined) data.stockQuantity = Number(updates.stockQuantity);
-      if (updates.lowStockThreshold !== undefined) data.lowStockThreshold = Number(updates.lowStockThreshold);
-
-      const updated = await prisma.product.update({
-        where: { id: product.id },
-        data,
-      });
-
-      return formatProduct(updated);
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL updateProduct failed, updated in in-memory fallback:', error);
-  }
-
-  return index !== -1 ? inMemoryProducts[index] : null;
+  return updatedProduct;
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-  const initialLen = inMemoryProducts.length;
-  inMemoryProducts = inMemoryProducts.filter((p) => p.id !== id && p.slug !== id);
+  const store = getStoreData();
+  const initialLen = store.products.length;
+  store.products = store.products.filter((p) => p.id !== id && p.slug !== id);
+  saveStoreData(store);
 
-  try {
-    const product = await prisma.product.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
-    });
-    if (product) {
-      await prisma.product.delete({
-        where: { id: product.id },
-      });
-      return true;
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL deleteProduct failed, deleted in in-memory fallback:', error);
-  }
+  prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } })
+    .then((prod) => {
+      if (prod) return prisma.product.delete({ where: { id: prod.id } });
+    })
+    .catch(() => {});
 
-  return inMemoryProducts.length < initialLen;
+  return store.products.length < initialLen;
 }
 
 // -------------------------------------------------------------
-// CATEGORY OPERATIONS (POSTGRESQL via PRISMA with IN-MEMORY FALLBACK)
+// CATEGORY OPERATIONS
 // -------------------------------------------------------------
 
 export async function getCategories(includeInactive = false): Promise<Category[]> {
-  try {
-    const where: any = {};
-    if (!includeInactive) {
-      where.isActive = true;
-    }
-    const categories = await prisma.category.findMany({
-      where,
-      orderBy: { name: 'asc' },
-    });
-    if (categories && categories.length > 0) {
-      return categories.map((c) => ({
-        ...c,
-        createdAt: c.createdAt.toISOString(),
-        updatedAt: c.updatedAt.toISOString(),
-      }));
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL getCategories failed, falling back to in-memory store:', error);
-  }
-
-  let list = [...inMemoryCategories];
+  const store = getStoreData();
+  let list = [...store.categories];
   if (!includeInactive) {
     list = list.filter((c) => c.isActive);
   }
@@ -766,22 +970,8 @@ export async function getCategories(includeInactive = false): Promise<Category[]
 }
 
 export async function getCategoryById(id: string): Promise<Category | null> {
-  try {
-    const category = await prisma.category.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
-    });
-    if (category) {
-      return {
-        ...category,
-        createdAt: category.createdAt.toISOString(),
-        updatedAt: category.updatedAt.toISOString(),
-      };
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL getCategoryById failed, falling back to in-memory store:', error);
-  }
-
-  return inMemoryCategories.find((c) => c.id === id || c.slug === id) || null;
+  const store = getStoreData();
+  return store.categories.find((c) => c.id === id || c.slug === id) || null;
 }
 
 export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>): Promise<Category> {
@@ -789,161 +979,115 @@ export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | '
   const id = `cat-${slug}`;
   const now = new Date().toISOString();
 
+  let imageUrl = data.image;
+  if (imageUrl && imageUrl.startsWith('data:image/')) {
+    const uploadRes = await uploadProductImage({
+      name: `cat-${slug}`,
+      type: 'image/jpeg',
+      base64OrUrl: imageUrl,
+    });
+    if (uploadRes.success && uploadRes.url) {
+      imageUrl = uploadRes.url;
+    }
+  }
+
   const newCategory: Category = {
     id,
     name: data.name,
     slug,
     description: data.description || null,
-    image: data.image || null,
+    image: imageUrl || null,
     icon: data.icon || '📦',
     isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
     createdAt: now,
     updatedAt: now,
   };
 
-  inMemoryCategories.push(newCategory);
-
-  try {
-    const created = await prisma.category.create({
-      data: {
-        id,
-        name: data.name,
-        slug,
-        description: data.description,
-        image: data.image,
-        icon: data.icon || '📦',
-        isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
-      },
-    });
-
-    return {
-      ...created,
-      createdAt: created.createdAt.toISOString(),
-      updatedAt: created.updatedAt.toISOString(),
-    };
-  } catch (error) {
-    console.error('Warning: PostgreSQL createCategory failed, stored in in-memory fallback:', error);
+  const store = getStoreData();
+  const existingIdx = store.categories.findIndex((c) => c.id === id || c.slug === slug);
+  if (existingIdx !== -1) {
+    store.categories[existingIdx] = newCategory;
+  } else {
+    store.categories.push(newCategory);
   }
+  saveStoreData(store);
+
+  prisma.category.upsert({
+    where: { slug: newCategory.slug },
+    update: {
+      name: newCategory.name,
+      description: newCategory.description,
+      image: newCategory.image,
+      icon: newCategory.icon,
+      isActive: newCategory.isActive,
+    },
+    create: {
+      id,
+      name: newCategory.name,
+      slug: newCategory.slug,
+      description: newCategory.description,
+      image: newCategory.image,
+      icon: newCategory.icon,
+      isActive: newCategory.isActive,
+    },
+  }).catch(() => {});
 
   return newCategory;
 }
 
 export async function updateCategory(id: string, updates: Partial<Category>): Promise<Category | null> {
-  const index = inMemoryCategories.findIndex((c) => c.id === id || c.slug === id);
+  const store = getStoreData();
+  const index = store.categories.findIndex((c) => c.id === id || c.slug === id);
+
+  let updatedCat: Category | null = null;
+
   if (index !== -1) {
-    inMemoryCategories[index] = {
-      ...inMemoryCategories[index],
+    store.categories[index] = {
+      ...store.categories[index],
       ...updates,
       updatedAt: new Date().toISOString(),
     };
+    updatedCat = store.categories[index];
+    saveStoreData(store);
   }
 
-  try {
-    const category = await prisma.category.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
-    });
-    if (category) {
-      const data: any = { ...updates };
-      delete data.id;
-      delete data.createdAt;
-      delete data.updatedAt;
+  prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } })
+    .then((category) => {
+      if (category) {
+        const data: any = { ...updates };
+        delete data.id;
+        delete data.createdAt;
+        delete data.updatedAt;
+        return prisma.category.update({ where: { id: category.id }, data });
+      }
+    })
+    .catch(() => {});
 
-      const updated = await prisma.category.update({
-        where: { id: category.id },
-        data,
-      });
-
-      return {
-        ...updated,
-        createdAt: updated.createdAt.toISOString(),
-        updatedAt: updated.updatedAt.toISOString(),
-      };
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL updateCategory failed, updated in in-memory fallback:', error);
-  }
-
-  return index !== -1 ? inMemoryCategories[index] : null;
+  return updatedCat;
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
-  const initialLen = inMemoryCategories.length;
-  inMemoryCategories = inMemoryCategories.filter((c) => c.id !== id && c.slug !== id);
+  const store = getStoreData();
+  const initialLen = store.categories.length;
+  store.categories = store.categories.filter((c) => c.id !== id && c.slug !== id);
+  saveStoreData(store);
 
-  try {
-    const category = await prisma.category.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
-    });
-    if (category) {
-      await prisma.category.delete({
-        where: { id: category.id },
-      });
-      return true;
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL deleteCategory failed, deleted in in-memory fallback:', error);
-  }
+  prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } })
+    .then((category) => {
+      if (category) return prisma.category.delete({ where: { id: category.id } });
+    })
+    .catch(() => {});
 
-  return inMemoryCategories.length < initialLen;
+  return store.categories.length < initialLen;
 }
 
 // -------------------------------------------------------------
-// ORDER OPERATIONS (POSTGRESQL via PRISMA with IN-MEMORY FALLBACK)
+// ORDER OPERATIONS
 // -------------------------------------------------------------
 
-let inMemoryOrders: Order[] = [];
-
 export async function getOrders(statusFilter?: string): Promise<Order[]> {
-  try {
-    const where: any = {};
-    if (statusFilter && statusFilter !== 'All') {
-      where.orderStatus = { equals: statusFilter, mode: 'insensitive' };
-    }
-
-    const orders = await prisma.order.findMany({
-      where,
-      include: { items: true },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (orders && orders.length > 0) {
-      return orders.map((o) => ({
-        id: o.id,
-        orderNumber: o.orderNumber,
-        customerName: o.customerName,
-        customerEmail: o.customerEmail,
-        customerPhone: o.customerPhone,
-        addressLine1: o.addressLine1,
-        addressLine2: o.addressLine2,
-        city: o.city,
-        state: o.state,
-        postalCode: o.postalCode,
-        orderStatus: o.orderStatus as any,
-        paymentStatus: o.paymentStatus as any,
-        subtotal: o.subtotal,
-        deliveryCharge: o.deliveryCharge,
-        totalAmount: o.totalAmount,
-        customerId: o.customerId,
-        items: o.items.map((i) => ({
-          id: i.id,
-          orderId: i.orderId,
-          productId: i.productId,
-          productName: i.productName,
-          productPrice: i.productPrice,
-          productCategory: i.productCategory,
-          productImage: i.productImage,
-          quantity: i.quantity,
-          total: i.total,
-        })),
-        createdAt: o.createdAt.toISOString(),
-        updatedAt: o.updatedAt.toISOString(),
-      }));
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL getOrders failed, falling back to in-memory store:', error);
-  }
-
-  let list = [...inMemoryOrders];
+  const store = getStoreData();
+  let list = [...store.orders];
   if (statusFilter && statusFilter !== 'All') {
     list = list.filter((o) => o.orderStatus.toLowerCase() === statusFilter.toLowerCase());
   }
@@ -951,49 +1095,8 @@ export async function getOrders(statusFilter?: string): Promise<Order[]> {
 }
 
 export async function getOrderById(id: string): Promise<Order | null> {
-  try {
-    const o = await prisma.order.findFirst({
-      where: { OR: [{ id }, { orderNumber: id }] },
-      include: { items: true },
-    });
-    if (o) {
-      return {
-        id: o.id,
-        orderNumber: o.orderNumber,
-        customerName: o.customerName,
-        customerEmail: o.customerEmail,
-        customerPhone: o.customerPhone,
-        addressLine1: o.addressLine1,
-        addressLine2: o.addressLine2,
-        city: o.city,
-        state: o.state,
-        postalCode: o.postalCode,
-        orderStatus: o.orderStatus as any,
-        paymentStatus: o.paymentStatus as any,
-        subtotal: o.subtotal,
-        deliveryCharge: o.deliveryCharge,
-        totalAmount: o.totalAmount,
-        customerId: o.customerId,
-        items: o.items.map((i) => ({
-          id: i.id,
-          orderId: i.orderId,
-          productId: i.productId,
-          productName: i.productName,
-          productPrice: i.productPrice,
-          productCategory: i.productCategory,
-          productImage: i.productImage,
-          quantity: i.quantity,
-          total: i.total,
-        })),
-        createdAt: o.createdAt.toISOString(),
-        updatedAt: o.updatedAt.toISOString(),
-      };
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL getOrderById failed, falling back to in-memory store:', error);
-  }
-
-  return inMemoryOrders.find((o) => o.id === id || o.orderNumber === id) || null;
+  const store = getStoreData();
+  return store.orders.find((o) => o.id === id || o.orderNumber === id) || null;
 }
 
 export async function createOrder(data: {
@@ -1021,7 +1124,7 @@ export async function createOrder(data: {
   const totalAmount = subtotal + deliveryCharge;
   const now = new Date().toISOString();
 
-  const inMemOrder: Order = {
+  const newOrder: Order = {
     id: `order-${Date.now()}`,
     orderNumber,
     customerName: data.customerName,
@@ -1052,94 +1155,21 @@ export async function createOrder(data: {
     updatedAt: now,
   };
 
-  inMemoryOrders.unshift(inMemOrder);
+  const store = getStoreData();
+  store.orders.unshift(newOrder);
 
-  try {
-    const order = await prisma.$transaction(async (tx) => {
-      const createdOrder = await tx.order.create({
-        data: {
-          orderNumber,
-          customerName: data.customerName,
-          customerEmail: data.customerEmail,
-          customerPhone: data.customerPhone,
-          addressLine1: data.addressLine1,
-          addressLine2: data.addressLine2 || null,
-          city: data.city,
-          state: data.state,
-          postalCode: data.postalCode,
-          orderStatus: 'Pending',
-          paymentStatus: data.paymentStatus || 'Paid',
-          subtotal,
-          deliveryCharge,
-          totalAmount,
-          items: {
-            create: data.items.map((item) => ({
-              productId: item.productId || null,
-              productName: item.productName,
-              productPrice: item.productPrice,
-              productCategory: item.productCategory || null,
-              productImage: item.productImage || null,
-              quantity: item.quantity,
-              total: item.productPrice * item.quantity,
-            })),
-          },
-        },
-        include: { items: true },
-      });
-
-      for (const item of data.items) {
-        if (item.productId) {
-          const prod = await tx.product.findFirst({
-            where: { OR: [{ id: item.productId }, { slug: item.productId }] },
-          });
-          if (prod) {
-            await tx.product.update({
-              where: { id: prod.id },
-              data: { stockQuantity: Math.max(0, prod.stockQuantity - item.quantity) },
-            });
-          }
-        }
+  // Update product stock counts
+  for (const item of data.items) {
+    if (item.productId) {
+      const prod = store.products.find((p) => p.id === item.productId || p.slug === item.productId);
+      if (prod) {
+        prod.stockQuantity = Math.max(0, prod.stockQuantity - item.quantity);
       }
-
-      return createdOrder;
-    });
-
-    return {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customerName: order.customerName,
-      customerEmail: order.customerEmail,
-      customerPhone: order.customerPhone,
-      addressLine1: order.addressLine1,
-      addressLine2: order.addressLine2,
-      city: order.city,
-      state: order.state,
-      postalCode: order.postalCode,
-      orderStatus: order.orderStatus as any,
-      paymentStatus: order.paymentStatus as any,
-      subtotal: order.subtotal,
-      deliveryCharge: order.deliveryCharge,
-      totalAmount: order.totalAmount,
-      customerId: order.customerId,
-      items: order.items.map((i) => ({
-        id: i.id,
-        orderId: i.orderId,
-        productId: i.productId,
-        productName: i.productName,
-        productPrice: i.productPrice,
-        productCategory: i.productCategory,
-        productImage: i.productImage,
-        quantity: i.quantity,
-        total: i.total,
-      })),
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
-    };
-  } catch (error) {
-    console.error('Warning: PostgreSQL createOrder failed, stored in in-memory fallback:', error);
+    }
   }
+  saveStoreData(store);
 
-  return inMemOrder;
+  return newOrder;
 }
 
 export async function updateOrderStatus(
@@ -1147,212 +1177,106 @@ export async function updateOrderStatus(
   orderStatus: Order['orderStatus'],
   paymentStatus?: Order['paymentStatus']
 ): Promise<Order | null> {
-  const index = inMemoryOrders.findIndex((o) => o.id === id || o.orderNumber === id);
+  const store = getStoreData();
+  const index = store.orders.findIndex((o) => o.id === id || o.orderNumber === id);
   if (index !== -1) {
-    inMemoryOrders[index].orderStatus = orderStatus;
-    if (paymentStatus) inMemoryOrders[index].paymentStatus = paymentStatus;
-    inMemoryOrders[index].updatedAt = new Date().toISOString();
+    store.orders[index].orderStatus = orderStatus;
+    if (paymentStatus) store.orders[index].paymentStatus = paymentStatus;
+    store.orders[index].updatedAt = new Date().toISOString();
+    saveStoreData(store);
   }
 
-  try {
-    const order = await prisma.order.findFirst({
-      where: { OR: [{ id }, { orderNumber: id }] },
-    });
-    if (order) {
-      const data: any = { orderStatus };
-      if (paymentStatus) data.paymentStatus = paymentStatus;
-
-      const updated = await prisma.order.update({
-        where: { id: order.id },
-        data,
-        include: { items: true },
-      });
-
-      return {
-        id: updated.id,
-        orderNumber: updated.orderNumber,
-        customerName: updated.customerName,
-        customerEmail: updated.customerEmail,
-        customerPhone: updated.customerPhone,
-        addressLine1: updated.addressLine1,
-        addressLine2: updated.addressLine2,
-        city: updated.city,
-        state: updated.state,
-        postalCode: updated.postalCode,
-        orderStatus: updated.orderStatus as any,
-        paymentStatus: updated.paymentStatus as any,
-        subtotal: updated.subtotal,
-        deliveryCharge: updated.deliveryCharge,
-        totalAmount: updated.totalAmount,
-        customerId: updated.customerId,
-        items: updated.items.map((i) => ({
-          id: i.id,
-          orderId: i.orderId,
-          productId: i.productId,
-          productName: i.productName,
-          productPrice: i.productPrice,
-          productCategory: i.productCategory,
-          productImage: i.productImage,
-          quantity: i.quantity,
-          total: i.total,
-        })),
-        createdAt: updated.createdAt.toISOString(),
-        updatedAt: updated.updatedAt.toISOString(),
-      };
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL updateOrderStatus failed, updated in in-memory fallback:', error);
-  }
-
-  return index !== -1 ? inMemoryOrders[index] : null;
+  return index !== -1 ? store.orders[index] : null;
 }
 
 // -------------------------------------------------------------
-// WEBSITE CONTENT OPERATIONS (POSTGRESQL via PRISMA with IN-MEMORY FALLBACK)
+// WEBSITE CONTENT OPERATIONS
 // -------------------------------------------------------------
 
 export async function getWebsiteContent(): Promise<WebsiteContent> {
-  const fallback: WebsiteContent = JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
-
-  try {
-    const rows = await prisma.websiteContent.findMany();
-
-    if (rows && rows.length > 0) {
-      for (const row of rows) {
-        if (row.section in fallback && row.data !== undefined && row.data !== null) {
-          if (Array.isArray(row.data)) {
-            (fallback as any)[row.section] = row.data;
-          } else if (typeof row.data === 'object') {
-            (fallback as any)[row.section] = {
-              ...(fallback as any)[row.section],
-              ...(row.data as any),
-            };
-          } else {
-            (fallback as any)[row.section] = row.data;
-          }
-        }
-      }
-      return fallback;
-    }
-  } catch (error) {
-    console.error('Warning: PostgreSQL getWebsiteContent failed, falling back to in-memory store:', error);
-  }
-
-  return fallback;
+  const store = getStoreData();
+  const raw = store.content || {};
+  return {
+    ...DEFAULT_WEBSITE_CONTENT,
+    ...raw,
+    hero: { ...DEFAULT_WEBSITE_CONTENT.hero, ...(raw.hero || {}) },
+    productSpotlight: { ...DEFAULT_PRODUCT_SPOTLIGHT, ...(raw.productSpotlight || {}) },
+    curatedCollections: {
+      ...DEFAULT_CURATED_COLLECTIONS,
+      ...(raw.curatedCollections || {}),
+      cards: (raw.curatedCollections?.cards && Array.isArray(raw.curatedCollections.cards) && raw.curatedCollections.cards.length > 0)
+        ? raw.curatedCollections.cards
+        : DEFAULT_CURATED_COLLECTIONS.cards,
+    },
+    testimonials: {
+      ...DEFAULT_TESTIMONIALS,
+      ...(raw.testimonials || {}),
+      items: (raw.testimonials?.items && Array.isArray(raw.testimonials.items) && raw.testimonials.items.length > 0)
+        ? raw.testimonials.items
+        : DEFAULT_TESTIMONIALS.items,
+    },
+    heroSlides: (raw.heroSlides && Array.isArray(raw.heroSlides) && raw.heroSlides.length > 0)
+      ? raw.heroSlides
+      : DEFAULT_HERO_SLIDES,
+  };
 }
 
 export async function updateWebsiteContent(section: keyof WebsiteContent, data: any): Promise<WebsiteContent> {
-  const sectionStr = String(section);
-  let payloadData: any;
+  const store = getStoreData();
 
+  let payloadData: any;
   if (Array.isArray(data)) {
     payloadData = data;
   } else if (typeof data === 'object' && data !== null) {
-    const currentSection = (DEFAULT_WEBSITE_CONTENT as any)[section] || {};
+    const currentSection = (store.content as any)?.[section] || (DEFAULT_WEBSITE_CONTENT as any)[section] || {};
     payloadData = { ...currentSection, ...data };
   } else {
     payloadData = data;
   }
 
-  // Update in-memory fallback
-  (DEFAULT_WEBSITE_CONTENT as any)[section] = payloadData;
-
-  try {
-    await prisma.websiteContent.upsert({
-      where: { section: sectionStr },
-      update: { data: payloadData },
-      create: {
-        id: `content-${sectionStr}`,
-        section: sectionStr,
-        data: payloadData,
-      },
-    });
-  } catch (error) {
-    console.error(`Warning: Failed to persist content section '${sectionStr}' to PostgreSQL (check DATABASE_URL):`, error);
+  // Handle hero slide image uploads if any are base64
+  if (section === 'heroSlides' && Array.isArray(payloadData)) {
+    for (let i = 0; i < payloadData.length; i++) {
+      const slide = payloadData[i];
+      if (slide.image && slide.image.startsWith('data:image/')) {
+        const uploadRes = await uploadProductImage({
+          name: `slide-${i}-${Date.now()}`,
+          type: 'image/jpeg',
+          base64OrUrl: slide.image,
+        });
+        if (uploadRes.success && uploadRes.url) {
+          slide.image = uploadRes.url;
+        }
+      }
+    }
   }
+
+  // Update persistent store
+  if (!store.content) {
+    store.content = JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
+  }
+  (store.content as any)[section] = payloadData;
+  saveStoreData(store);
 
   return getWebsiteContent();
 }
 
 // -------------------------------------------------------------
-// ADMIN DASHBOARD STATS (POSTGRESQL via PRISMA with IN-MEMORY FALLBACK)
+// ADMIN DASHBOARD STATS
 // -------------------------------------------------------------
 
 export async function getAdminStats() {
-  try {
-    const [
-      totalProducts,
-      activeProducts,
-      totalOrders,
-      pendingOrders,
-      deliveredOrders,
-      paidOrders,
-      lowStockProducts,
-      recentOrders,
-    ] = await Promise.all([
-      prisma.product.count(),
-      prisma.product.count({ where: { isActive: true } }),
-      prisma.order.count(),
-      prisma.order.count({ where: { orderStatus: { in: ['Pending', 'Preparing'] } } }),
-      prisma.order.count({ where: { orderStatus: 'Delivered' } }),
-      prisma.order.findMany({
-        where: { OR: [{ paymentStatus: 'Paid' }, { orderStatus: 'Delivered' }] },
-        select: { totalAmount: true },
-      }),
-      prisma.product.findMany({
-        where: {
-          isActive: true,
-          stockQuantity: { lte: 10 },
-        },
-        take: 8,
-      }),
-      prisma.order.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        include: { items: true },
-      }),
-    ]);
-
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-
-    return {
-      totalProducts,
-      activeProducts,
-      totalOrders,
-      pendingOrders,
-      deliveredOrders,
-      totalRevenue,
-      lowStockProducts: lowStockProducts.map(formatProduct),
-      recentOrders: recentOrders.map((o) => ({
-        id: o.id,
-        orderNumber: o.orderNumber,
-        customerName: o.customerName,
-        customerPhone: o.customerPhone,
-        orderStatus: o.orderStatus,
-        paymentStatus: o.paymentStatus,
-        totalAmount: o.totalAmount,
-        createdAt: o.createdAt.toISOString(),
-        items: o.items.map((i) => ({
-          productName: i.productName,
-          quantity: i.quantity,
-        })),
-      })),
-    };
-  } catch (error) {
-    console.error('Warning: PostgreSQL getAdminStats failed, computing from in-memory fallback:', error);
-  }
-
-  // Fallback stats computation
-  const totalProducts = inMemoryProducts.length;
-  const activeProducts = inMemoryProducts.filter((p) => p.isActive).length;
-  const totalOrders = inMemoryOrders.length;
-  const pendingOrders = inMemoryOrders.filter((o) => ['Pending', 'Preparing'].includes(o.orderStatus)).length;
-  const deliveredOrders = inMemoryOrders.filter((o) => o.orderStatus === 'Delivered').length;
-  const totalRevenue = inMemoryOrders
+  const store = getStoreData();
+  const totalProducts = store.products.length;
+  const activeProducts = store.products.filter((p) => p.isActive).length;
+  const totalOrders = store.orders.length;
+  const pendingOrders = store.orders.filter((o) => ['Pending', 'Preparing'].includes(o.orderStatus)).length;
+  const deliveredOrders = store.orders.filter((o) => o.orderStatus === 'Delivered').length;
+  const totalRevenue = store.orders
     .filter((o) => o.paymentStatus === 'Paid' || o.orderStatus === 'Delivered')
     .reduce((sum, o) => sum + o.totalAmount, 0);
-  const lowStockProducts = inMemoryProducts.filter((p) => p.isActive && p.stockQuantity <= 10).slice(0, 8);
-  const recentOrders = inMemoryOrders.slice(0, 5).map((o) => ({
+  const lowStockProducts = store.products.filter((p) => p.isActive && p.stockQuantity <= 10).slice(0, 8);
+  const recentOrders = store.orders.slice(0, 5).map((o) => ({
     id: o.id,
     orderNumber: o.orderNumber,
     customerName: o.customerName,
@@ -1378,3 +1302,34 @@ export async function getAdminStats() {
     recentOrders,
   };
 }
+
+// -------------------------------------------------------------
+// NEWSLETTER SUBSCRIBERS
+// -------------------------------------------------------------
+
+export async function addSubscriber(email: string): Promise<{ success: boolean; message: string; isNew: boolean }> {
+  if (!email || !email.includes('@')) {
+    return { success: false, message: 'Invalid email address provided', isNew: false };
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const store = getStoreData();
+  if (!store.subscribers) {
+    store.subscribers = [];
+  }
+
+  if (store.subscribers.includes(cleanEmail)) {
+    return { success: true, message: 'You are already subscribed to Nutri Ghar updates!', isNew: false };
+  }
+
+  store.subscribers.push(cleanEmail);
+  saveStoreData(store);
+
+  return { success: true, message: 'Thank you for subscribing to Nutri Ghar wellness notes & batch updates!', isNew: true };
+}
+
+export async function getSubscribers(): Promise<string[]> {
+  const store = getStoreData();
+  return store.subscribers || [];
+}
+

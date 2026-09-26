@@ -5,6 +5,15 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+};
+
 // GET: Fetch single product
 export async function GET(request: Request, { params }: RouteParams) {
   try {
@@ -12,14 +21,14 @@ export async function GET(request: Request, { params }: RouteParams) {
     const product = await getProductById(id);
 
     if (!product) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
-    return NextResponse.json({ success: true, data: product });
+    return NextResponse.json({ success: true, data: product }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch product' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }
@@ -49,14 +58,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
     });
 
     if (!updated) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
-    return NextResponse.json({ success: true, data: updated });
+    return NextResponse.json({ success: true, data: updated }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to update product' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }
@@ -68,14 +77,14 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     const deleted = await deleteProduct(id);
 
     if (!deleted) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
-    return NextResponse.json({ success: true, message: 'Product deleted successfully' });
+    return NextResponse.json({ success: true, message: 'Product deleted successfully' }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to delete product' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }

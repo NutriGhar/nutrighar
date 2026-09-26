@@ -1,0 +1,564 @@
+{
+  "products": [
+    {
+      "id": "besan-ladoo",
+      "name": "Besan Ladoo",
+      "slug": "besan-ladoo",
+      "categoryId": "cat-mithai",
+      "categorySlug": "mithai",
+      "price": 299,
+      "originalPrice": 349,
+      "image": "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&auto=format&fit=crop&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&auto=format&fit=crop&q=80"
+      ],
+      "description": "Authentic gram flour ladoos handcrafted with pure A2 desi cow ghee and cardamom.",
+      "rating": 4.8,
+      "reviewCount": 234,
+      "stockQuantity": 48,
+      "lowStockThreshold": 10,
+      "isFeatured": true,
+      "isBestSeller": true,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:10:09.719Z",
+      "ingredients": [
+        "Roasted Gram Flour",
+        "Pure A2 Cow Ghee",
+        "Raw Cane Sugar",
+        "Cardamom"
+      ],
+      "benefits": [
+        "Rich in Plant Protein",
+        "Natural Energy Boost",
+        "Zero Preservatives"
+      ]
+    },
+    {
+      "id": "dry-fruit-ladoo",
+      "name": "Premium Dry Fruit Ladoo",
+      "slug": "dry-fruit-ladoo",
+      "categoryId": "cat-mithai",
+      "categorySlug": "mithai",
+      "price": 549,
+      "originalPrice": 649,
+      "image": "/images/dry-fruit-ladoo-product.jpg",
+      "images": [
+        "/images/dry-fruit-ladoo-product.jpg",
+        "/images/dry-fruit-ladoos-banner.jpg"
+      ],
+      "description": "Luxurious ladoos packed with almonds, cashews, dates, and zero refined sugar.",
+      "ingredients": [
+        "Almonds",
+        "Cashews",
+        "Medjool Dates",
+        "Pistachios",
+        "Almonds",
+        "Pure Cow Ghee"
+      ],
+      "benefits": [
+        "Rich in Antioxidants",
+        "Zero Refined Sugar",
+        "Nutrient Dense Superfood",
+        "Maternal Kitchen Recipe"
+      ],
+      "rating": 4.9,
+      "reviewCount": 342,
+      "stockQuantity": 10,
+      "lowStockThreshold": 4,
+      "isFeatured": true,
+      "isBestSeller": true,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:22:50.938Z"
+    },
+    {
+      "id": "coconut-ladoo",
+      "name": "Fresh Coconut Ladoo",
+      "slug": "coconut-ladoo",
+      "categoryId": "cat-mithai",
+      "categorySlug": "mithai",
+      "price": 279,
+      "originalPrice": 319,
+      "image": "https://images.unsplash.com/photo-1587314168485-3236d6710814?w=800&auto=format&fit=crop&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1587314168485-3236d6710814?w=800&auto=format&fit=crop&q=80"
+      ],
+      "description": "Delicate coconut ladoos made with freshly grated coconut and condensed milk.",
+      "ingredients": [
+        "Fresh Coconut",
+        "Whole Milk",
+        "Raw Sugar",
+        "Green Cardamom"
+      ],
+      "benefits": [
+        "Rich in Essential Minerals",
+        "Naturally Gluten Free",
+        "Pure Freshly Made",
+        "Traditional Taste"
+      ],
+      "rating": 4.7,
+      "reviewCount": 156,
+      "stockQuantity": 28,
+      "lowStockThreshold": 10,
+      "isFeatured": true,
+      "isBestSeller": false,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    },
+    {
+      "id": "classic-peanut-butter",
+      "name": "Classic Creamy Peanut Butter",
+      "slug": "classic-peanut-butter",
+      "categoryId": "cat-peanut-butter",
+      "categorySlug": "peanut-butter",
+      "price": 249,
+      "originalPrice": 299,
+      "image": "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80"
+      ],
+      "description": "100% slow-roasted peanuts stone-ground to silky perfection with zero palm oil.",
+      "ingredients": [
+        "100% Roasted Gujarat Peanuts",
+        "Himalayan Pink Salt"
+      ],
+      "benefits": [
+        "High Protein (30g/100g)",
+        "Zero Added Palm Oil",
+        "No Preservatives",
+        "Slow Stone Ground"
+      ],
+      "rating": 4.9,
+      "reviewCount": 421,
+      "stockQuantity": 60,
+      "lowStockThreshold": 15,
+      "isFeatured": true,
+      "isBestSeller": true,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    },
+    {
+      "id": "crunchy-peanut-butter",
+      "name": "Crunchy Dark Roast Peanut Butter",
+      "slug": "crunchy-peanut-butter",
+      "categoryId": "cat-peanut-butter",
+      "categorySlug": "peanut-butter",
+      "price": 269,
+      "originalPrice": 319,
+      "image": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&auto=format&fit=crop&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&auto=format&fit=crop&q=80"
+      ],
+      "description": "Dark roasted peanut butter loaded with satisfying crunchy peanut bits.",
+      "ingredients": [
+        "Roasted Peanuts",
+        "Crushed Peanut Chunks",
+        "Himalayan Pink Salt"
+      ],
+      "benefits": [
+        "Delightful Crunch",
+        "Zero Hydrogenated Oils",
+        "Natural Heart Healthy Fats",
+        "Clean Fuel"
+      ],
+      "rating": 4.8,
+      "reviewCount": 289,
+      "stockQuantity": 50,
+      "lowStockThreshold": 12,
+      "isFeatured": false,
+      "isBestSeller": true,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    },
+    {
+      "id": "whey-protein-isolate",
+      "name": "NutriGhar Clean Protein & Healthy Mix (500g)",
+      "slug": "protein",
+      "categoryId": "cat-protein-nutrition",
+      "categorySlug": "protein-nutrition",
+      "price": 599,
+      "originalPrice": 699,
+      "image": "/images/clean-protein-pouch-product.jpg",
+      "images": [
+        "/images/clean-protein-pouch-product.jpg",
+        "/images/clean-protein-pouch-banner.jpg"
+      ],
+      "description": "100% stone-ground healthy mix of roasted California almonds, walnuts, chia seeds, pumpkin seeds, and clean plant protein in eco-friendly kraft paper packaging.",
+      "ingredients": [
+        "California Almonds",
+        "Walnuts",
+        "Chia Seeds",
+        "Pumpkin Seeds",
+        "Flax Seeds",
+        "Clean Plant Protein",
+        "Cardamom"
+      ],
+      "benefits": [
+        "20g Clean Protein per Serving",
+        "100% Stone-Ground Superfoods",
+        "Zero Palm Oil & Zero Maida",
+        "Eco-Friendly Kraft Packaging"
+      ],
+      "rating": 4.8,
+      "reviewCount": 167,
+      "stockQuantity": 15,
+      "lowStockThreshold": 5,
+      "isFeatured": true,
+      "isBestSeller": true,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:37:15.558Z"
+    },
+    {
+      "id": "roasted-almonds",
+      "name": "Himalayan Pink Salt Almonds",
+      "slug": "roasted-almonds",
+      "categoryId": "cat-healthy-snacks",
+      "categorySlug": "healthy-snacks",
+      "price": 399,
+      "originalPrice": 449,
+      "image": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80"
+      ],
+      "description": "Jumbo California almonds slow-roasted without oil, seasoned with pink rock salt.",
+      "ingredients": [
+        "Jumbo California Almonds",
+        "Himalayan Pink Rock Salt"
+      ],
+      "benefits": [
+        "Oil-Free Roasting",
+        "Rich in Vitamin E",
+        "Brain & Heart Health",
+        "Guilt-Free Crunch"
+      ],
+      "rating": 4.8,
+      "reviewCount": 312,
+      "stockQuantity": 40,
+      "lowStockThreshold": 10,
+      "isFeatured": true,
+      "isBestSeller": true,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    },
+    {
+      "id": "superfood-trail-mix",
+      "name": "7-Seed Superfood Trail Mix",
+      "slug": "superfood-trail-mix",
+      "categoryId": "cat-healthy-snacks",
+      "categorySlug": "healthy-snacks",
+      "price": 349,
+      "originalPrice": 399,
+      "image": "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&auto=format&fit=crop&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&auto=format&fit=crop&q=80"
+      ],
+      "description": "Crunchy blend of pumpkin, sunflower, chia, flax, watermelon seeds, and dried berries.",
+      "ingredients": [
+        "Pumpkin Seeds",
+        "Sunflower Seeds",
+        "Chia Seeds",
+        "Flax Seeds",
+        "Cranberries",
+        "Black Raisins"
+      ],
+      "benefits": [
+        "Rich in Omega-3 & Zinc",
+        "High Dietary Fiber",
+        "Immunity Booster",
+        "Natural Energy Snack"
+      ],
+      "rating": 4.9,
+      "reviewCount": 278,
+      "stockQuantity": 45,
+      "lowStockThreshold": 10,
+      "isFeatured": true,
+      "isBestSeller": true,
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-mithai",
+      "name": "Mithai & Ladoo",
+      "slug": "mithai",
+      "description": "Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.",
+      "image": "/images/dry-fruit-ladoos-banner.jpg",
+      "icon": "🍯",
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    },
+    {
+      "id": "cat-peanut-butter",
+      "name": "Peanut Butter",
+      "slug": "peanut-butter",
+      "description": "100% stone-ground natural nut butters with zero palm oil or chemical preservatives.",
+      "image": "/images/peanut-butter-banner.jpg",
+      "icon": "🥜",
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    },
+    {
+      "id": "cat-protein-nutrition",
+      "name": "Protein & Nutrition",
+      "slug": "protein-nutrition",
+      "description": "Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.",
+      "image": "/images/clean-protein-pouch-banner.jpg",
+      "icon": "💪",
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    },
+    {
+      "id": "cat-healthy-snacks",
+      "name": "Healthy Snacks",
+      "slug": "healthy-snacks",
+      "description": "Slow-roasted premium nuts, crunchy seeds, and sun-dried fruit assortments.",
+      "image": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80",
+      "icon": "🥗",
+      "isActive": true,
+      "createdAt": "2026-09-26T05:00:29.109Z",
+      "updatedAt": "2026-09-26T05:00:29.109Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "order-1790399831043",
+      "orderNumber": "NG971525",
+      "customerName": "Test Buyer",
+      "customerEmail": "buyer@test.com",
+      "customerPhone": "9876543210",
+      "addressLine1": "Flat 101, Test Residency",
+      "addressLine2": null,
+      "city": "Delhi",
+      "state": "Delhi",
+      "postalCode": "110001",
+      "orderStatus": "Confirmed",
+      "paymentStatus": "Paid",
+      "subtotal": 598,
+      "deliveryCharge": 0,
+      "totalAmount": 598,
+      "items": [
+        {
+          "id": "item-1790399831043-0",
+          "orderId": "order-1790399831043",
+          "productId": "besan-ladoo",
+          "productName": "Besan Ladoo",
+          "productPrice": 299,
+          "productCategory": null,
+          "productImage": null,
+          "quantity": 2,
+          "total": 598
+        }
+      ],
+      "createdAt": "2026-09-26T05:17:11.043Z",
+      "updatedAt": "2026-09-26T05:17:12.320Z"
+    }
+  ],
+  "content": {
+    "hero": {
+      "eyebrow": "HOMEMADE WELLNESS",
+      "headline": "Goodness That",
+      "headlineItalic": "Feels Like Home.",
+      "supportingText": "Naturally made foods and nutrition products crafted with care for your everyday wellness. Pure A2 ghee, stone-ground nuts, and authentic home-style craft.",
+      "primaryButtonText": "Shop Bestsellers",
+      "secondaryButtonText": "Explore Collections",
+      "heroImage": "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&auto=format&fit=crop&q=80"
+    },
+    "heroSlides": [
+      {
+        "id": "protein-nutrition",
+        "tag": "CLEAN FITNESS NUTRITION",
+        "title": "Your Favourite Treats,",
+        "titleItalic": "Enriched With Clean Protein.",
+        "subtitle": "20g+ clean protein per piece with roasted California almonds, pure A2 desi cow ghee, and zero refined sugar.",
+        "buttonText": "Shop High Protein",
+        "buttonLink": "/products?category=protein-nutrition",
+        "secondaryButtonText": "Explore Collections",
+        "secondaryButtonLink": "/products",
+        "image": "/images/clean-protein-pouch-banner.jpg",
+        "badgeText": "Pure Nuts & Seeds Blend"
+      },
+      {
+        "id": "dry-fruits-nuts",
+        "tag": "HANDPICKED SUPERFOODS",
+        "title": "Slow-Roasted Nuts,",
+        "titleItalic": "All Flavour, Zero Excess Oil.",
+        "subtitle": "Premium California almonds, whole cashews, and crunch-roasted seed mixes prepared fresh in small batches.",
+        "buttonText": "Explore Roasted Nuts",
+        "buttonLink": "/products?category=healthy-snacks",
+        "secondaryButtonText": "View All Snacks",
+        "secondaryButtonLink": "/products?category=healthy-snacks",
+        "image": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=1400&auto=format&fit=crop&q=85",
+        "badgeText": "100% Whole Nuts"
+      },
+      {
+        "id": "mithai-ladoos",
+        "tag": "HERITAGE RECIPES",
+        "title": "Pure A2 Desi Ghee Ladoos,",
+        "titleItalic": "The Warmth of Home Kitchen.",
+        "subtitle": "Melt-in-mouth Besan and Motichoor ladoos slow-cooked in 100% pure desi cow ghee and organic jaggery.",
+        "buttonText": "Shop Mithai & Ladoos",
+        "buttonLink": "/products?category=mithai",
+        "secondaryButtonText": "Discover Flavours",
+        "secondaryButtonLink": "/products",
+        "image": "/images/dry-fruit-ladoos-banner.jpg",
+        "badgeText": "Pure Cow Ghee"
+      },
+      {
+        "id": "peanut-butter",
+        "tag": "100% NATURAL BUTTER",
+        "title": "Stone-Ground Peanuts,",
+        "titleItalic": "Zero Added Palm Oil & Preservatives.",
+        "subtitle": "Slow stone-ground daily for an irresistibly rich texture and deep roasted aroma. Pure plant-based energy.",
+        "buttonText": "Discover Butters",
+        "buttonLink": "/products?category=peanut-butter",
+        "secondaryButtonText": "All Spreads",
+        "secondaryButtonLink": "/products",
+        "image": "/images/peanut-butter-banner.jpg",
+        "badgeText": "Stone-Ground Daily"
+      },
+      {
+        "id": "nut-cake-cookies",
+        "tag": "HEALTHY BAKERY CRAFT",
+        "title": "Wholesome Nut Cakes,",
+        "titleItalic": "Guilt-Free Cookies & Bakes.",
+        "subtitle": "Nut-dense artisan cakes and crunchy whole grain cookies sweetened with forest honey and natural jaggery.",
+        "buttonText": "Explore Healthy Treats",
+        "buttonLink": "/products?category=healthy-snacks",
+        "secondaryButtonText": "Shop All Bakes",
+        "secondaryButtonLink": "/products",
+        "image": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1400&auto=format&fit=crop&q=85",
+        "badgeText": "Zero Maida / No Preservatives"
+      }
+    ],
+    "announcement": {
+      "enabled": true,
+      "text": "FREE DELIVERY FOR ORDERS ABOVE RS 500 • 100% PURE HOMEMADE NUTRITION"
+    },
+    "brandStory": {
+      "eyebrow": "THE NUTRI GHAR WAY",
+      "heading": "Rooted in Tradition.",
+      "headingItalic": "Made for Today.",
+      "paragraph1": "At Nutri Ghar, we believe you shouldn’t have to choose between the pure, heartwarming flavors of Indian heritage and the clean nutritional standards demanded by modern living.",
+      "paragraph2": "Every jar of stone-ground peanut butter and every handcrafted batch of ladoos begins with 100% whole ingredients: pure A2 desi cow ghee, California almonds, rich roasted gram flour, and wild forest honey.",
+      "paragraph3": "No industrial shortcuts. Zero palm oil, no artificial flavorings, and no chemical preservatives. Just honest, wholesome nutrition prepared exactly the way it would be in your family home.",
+      "storyImage": "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1000&auto=format&fit=crop&q=80",
+      "quote": "“Food made with the warmth of a mother’s kitchen nourishes not just the body, but the soul.”"
+    },
+    "contact": {
+      "phone": "+91 98765 43210",
+      "email": "care@nutrighar.com",
+      "whatsapp": "+91 98765 43210",
+      "address": "Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001",
+      "fssaiLicense": "FSSAI Lic: 10823005000214"
+    },
+    "footer": {
+      "aboutText": "Nutri Ghar represents healthy food made with the warmth and trust of home. Small batches crafted with pure ingredients, zero chemical preservatives, and traditional recipes.",
+      "instagramUrl": "https://instagram.com",
+      "whatsappUrl": "https://wa.me/919876543210",
+      "facebookUrl": "https://facebook.com",
+      "copyrightText": "© 2026 Nutri Ghar. Pure homemade nutrition crafted with care."
+    },
+    "newsletter": {
+      "heading": "A Little Goodness in Your Inbox.",
+      "description": "Receive thoughtful wellness notes, seasonal kitchen recipes, and priority access to fresh batches.",
+      "promoNote": "We respect your privacy. No spam, ever. Unsubscribe anytime."
+    },
+    "curatedCollections": {
+      "eyebrow": "CURATED COLLECTIONS",
+      "heading": "Pure Food For Everyday Living",
+      "description": "From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.",
+      "cards": [
+        {
+          "id": "col-mithai",
+          "categorySlug": "mithai",
+          "tag": "HERITAGE SWEETS",
+          "title": "Mithai & Ladoos",
+          "description": "Pure A2 desi cow ghee ladoos crafted with whole dry fruits.",
+          "image": "/images/dry-fruit-ladoos-banner.jpg"
+        },
+        {
+          "id": "col-peanut-butter",
+          "categorySlug": "peanut-butter",
+          "tag": "STONE-GROUND",
+          "title": "Peanut Butter",
+          "description": "100% slow-roasted peanuts stone-ground daily.",
+          "image": "/images/peanut-butter-banner.jpg"
+        },
+        {
+          "id": "col-protein-nutrition",
+          "categorySlug": "protein-nutrition",
+          "tag": "CLEAN PROTEIN",
+          "title": "Protein & Recovery",
+          "description": "Stone-ground nuts, seeds and clean protein superfood mix.",
+          "image": "/images/clean-protein-pouch-banner.jpg"
+        },
+        {
+          "id": "col-healthy-snacks",
+          "categorySlug": "healthy-snacks",
+          "tag": "GUILT-FREE CRUNCH",
+          "title": "Healthy Snacks",
+          "description": "Slow-roasted California almonds, cashews and seed mixes.",
+          "image": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80"
+        }
+      ]
+    },
+    "productSpotlight": {
+      "eyebrow": "PRODUCT SPOTLIGHT",
+      "heading": "Protein Power Ladoo",
+      "headingItalic": "Traditional Taste. Modern Nutrition.",
+      "description": "Reimagining India's timeless post-meal sweet as an everyday functional superfood. Handcrafted with clean protein, stone-ground oats, roasted California almonds, and 100% pure desi cow ghee.",
+      "protein": "12g",
+      "sugar": "0g",
+      "ghee": "10%",
+      "freshness": "Weekly",
+      "price": 599,
+      "priceNote": "Price per 500g Box",
+      "image": "/images/dry-fruit-ladoo-product.jpg",
+      "tag": "Signature Feature",
+      "buttonText": "Add to Cart",
+      "productSlug": "dry-fruit-ladoo"
+    },
+    "testimonials": {
+      "eyebrow": "VERIFIED EXPERIENCES",
+      "heading": "Loved Across Indian Homes",
+      "items": [
+        {
+          "id": "test-1",
+          "name": "Apoorv",
+          "location": "Noida",
+          "product": "Besan Ladoo",
+          "rating": 5,
+          "review": "The Besan Ladoos taste exactly like the ones my grandmother prepared during festivals. Pure ghee aroma with zero artificial aftertaste."
+        },
+        {
+          "id": "test-2",
+          "name": "Rajesh Kumar",
+          "location": "Bengaluru",
+          "product": "Creamy Peanut Butter",
+          "rating": 5,
+          "review": "Finding a peanut butter that doesn't use added palm oil or sugar was impossible until Nutri Ghar. It has become my morning gym staple."
+        },
+        {
+          "id": "test-3",
+          "name": "Anjali Verma",
+          "location": "Delhi NCR",
+          "product": "Protein Power Ladoo",
+          "rating": 5,
+          "review": "The Protein Power Ladoos are genuinely incredible. 12g of protein in something that tastes like a traditional delicacy is genius."
+        }
+      ]
+    }
+  },
+  "subscribers": []
+}

@@ -24,14 +24,14 @@ function ProductsContent() {
     setSearchQuery(searchParam);
   }, [searchParam]);
 
-  // Load live products & categories once on component mount
+  // Load live products & categories on component mount
   useEffect(() => {
     async function loadData() {
       try {
         setIsLoading(true);
         const [prodRes, catRes] = await Promise.all([
-          fetch('/api/products?active=true'),
-          fetch('/api/categories'),
+          fetch(`/api/products?active=true&t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' }),
         ]);
 
         const [prodData, catData] = await Promise.all([prodRes.json(), catRes.json()]);

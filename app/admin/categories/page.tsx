@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Category, Product } from '@/lib/db';
+import { Category, Product } from '@/types/content';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -26,8 +26,8 @@ export default function AdminCategoriesPage() {
     try {
       setIsLoading(true);
       const [catRes, prodRes] = await Promise.all([
-        fetch('/api/categories?all=true'),
-        fetch('/api/products?all=true'),
+        fetch(`/api/categories?all=true&t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`/api/products?all=true&t=${Date.now()}`, { cache: 'no-store' }),
       ]);
       const [catData, prodData] = await Promise.all([catRes.json(), prodRes.json()]);
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Product, Category } from '@/lib/db';
+import { Product, Category } from '@/types/content';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -20,8 +20,8 @@ export default function AdminProductsPage() {
     try {
       setIsLoading(true);
       const [prodRes, catRes] = await Promise.all([
-        fetch('/api/products?all=true'),
-        fetch('/api/categories?all=true'),
+        fetch(`/api/products?all=true&t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`/api/categories?all=true&t=${Date.now()}`, { cache: 'no-store' }),
       ]);
       const [prodData, catData] = await Promise.all([prodRes.json(), catRes.json()]);
 
@@ -128,12 +128,25 @@ export default function AdminProductsPage() {
           </p>
         </div>
 
-        <Link
-          href="/admin/products/new"
-          className="px-5 py-3 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-sm inline-flex items-center justify-center gap-2"
-        >
-          <span>+ Add New Product</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={fetchData}
+            className="p-3 bg-white hover:bg-[#EFE8DE] text-[#1E382B] rounded-xl border border-[#D8CEBE] transition-colors shadow-sm cursor-pointer"
+            title="Reload Products List"
+          >
+            <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+          </button>
+
+          <Link
+            href="/admin/products/new"
+            className="px-5 py-3 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-sm inline-flex items-center justify-center gap-2"
+          >
+            <span>+ Add New Product</span>
+          </Link>
+        </div>
       </div>
 
       {/* Search & Filters Card */}

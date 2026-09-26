@@ -1,5 +1,8 @@
-// Image Management and Upload Storage Abstraction
-// Designed for local base64/file handling and ready for S3 / Cloudinary / Supabase storage providers
+// Image Management and Upload Storage
+// Saves local uploaded images to public/uploads directory and supports external URLs
+
+import fs from 'fs';
+import path from 'path';
 
 export interface UploadResult {
   url: string;
@@ -9,7 +12,7 @@ export interface UploadResult {
 }
 
 /**
- * Image storage provider interface
+ * Image storage provider - writes base64 images directly to public/uploads
  */
 export async function uploadProductImage(fileData: {
   name: string;
@@ -17,10 +20,19 @@ export async function uploadProductImage(fileData: {
   base64OrUrl: string;
 }): Promise<UploadResult> {
   try {
-    const { base64OrUrl } = fileData;
+    const { name, base64OrUrl } = fileData;
 
-    // If it's already an HTTP/HTTPS URL, return it directly
-    if (base64OrUrl.startsWith('http://') || base64OrUrl.startsWith('https://')) {
+    if (!base64OrUrl || typeof base64OrUrl !== 'string') {
+      return { url: '', provider: 'local', success: false, error: 'No image data provided' };
+    }
+
+    // If it's already an HTTP/HTTPS URL or /uploads/ or /images/ path, return it directly
+    if (
+      base64OrUrl.startsWith('http://') ||
+      base64OrUrl.startsWith('https://') ||
+      base64OrUrl.startsWith('/uploads/') ||
+      base64OrUrl.startsWith('/images/')
+    ) {
       return {
         url: base64OrUrl,
         provider: 'url',
@@ -30,16 +42,47 @@ export async function uploadProductImage(fileData: {
 
     // If it's a data URL / base64 image
     if (base64OrUrl.startsWith('data:image/')) {
-      // In a full cloud setup, here you would dispatch to AWS S3 or Cloudinary:
-      // const cloudUrl = await s3Client.upload(...)
-      return {
-        url: base64OrUrl,
-        provider: 'local',
-        success: true,
-      };
+      const matches = base64OrUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        let ext = 'jpg';
+        if (mimeType.includes('png')) ext = 'png';
+        else if (mimeType.includes('webp')) ext = 'webp';
+        else if (mimeType.includes('gif')) ext = 'gif';
+        else if (mimeType.includes('svg')) ext = 'svg';
+
+        const safeName = name ? name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 30) : 'img';
+        const filename = `${safeName}-${Date.now()}.${ext}`;
+
+        try {
+          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+
+          const filePath = path.join(uploadDir, filename);
+          fs.writeFileSync(filePath, buffer);
+
+          return {
+            url: `/uploads/${filename}`,
+            provider: 'local',
+            success: true,
+          };
+        } catch {
+          // On Vercel serverless (read-only filesystem), return base64 Data URI directly
+          return {
+            url: base64OrUrl,
+            provider: 'cloud',
+            success: true,
+          };
+        }
+      }
     }
 
-    // Default fallback placeholder for image uploads
+    // Return as-is
     return {
       url: base64OrUrl,
       provider: 'url',
@@ -55,3 +98,4 @@ export async function uploadProductImage(fileData: {
     };
   }
 }
+

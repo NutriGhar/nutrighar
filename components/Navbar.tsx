@@ -6,10 +6,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
+import { useContent } from '@/context/ContentContext';
 
 export default function Navbar() {
   const { getItemCount, getTotal } = useCart();
-  const { customer, logout } = useCustomerAuth();
+  const { customer, logout, updateProfile } = useCustomerAuth();
+  const { content, whatsappLink } = useContent();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -20,6 +22,13 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Profile Edit Modal State
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const shopDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +37,42 @@ export default function Navbar() {
     setItemCount(getItemCount());
     setCartTotal(getTotal());
   }, [getItemCount, getTotal]);
+
+  useEffect(() => {
+    if (customer) {
+      setEditName(customer.name?.startsWith('User +91') ? '' : customer.name || '');
+      setEditEmail(customer.email?.includes('@phone.nutrighar.com') ? '' : customer.email || '');
+    }
+  }, [customer]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      setProfileMsg({ type: 'error', text: 'Please enter your name' });
+      return;
+    }
+    try {
+      setIsSavingProfile(true);
+      setProfileMsg(null);
+      const res = await updateProfile({
+        name: editName.trim(),
+        email: editEmail.trim() || undefined,
+      });
+      if (res.success) {
+        setProfileMsg({ type: 'success', text: '✓ Name updated successfully!' });
+        setTimeout(() => {
+          setIsEditProfileOpen(false);
+          setProfileMsg(null);
+        }, 1200);
+      } else {
+        setProfileMsg({ type: 'error', text: res.error || 'Failed to update name' });
+      }
+    } catch {
+      setProfileMsg({ type: 'error', text: 'Error updating name' });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Close dropdowns on route change
   useEffect(() => {
@@ -93,14 +138,13 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-2xs">
       {/* Top Announcement Banner */}
-      <div className="bg-[#E7F0AB] text-[#243513] text-[11px] sm:text-xs py-2 px-4 text-center font-bold tracking-widest uppercase">
-        <span className="hidden sm:inline">
-          FREE DELIVERY FOR ORDERS ABOVE RS 500 • 100% PURE HOMEMADE NUTRITION
-        </span>
-        <span className="sm:hidden">
-          FREE DELIVERY ABOVE RS 500 • 100% PURE GHEE
-        </span>
-      </div>
+      {content?.announcement?.enabled !== false && (
+        <div className="bg-[#E7F0AB] text-[#243513] text-[11px] sm:text-xs py-2 px-4 text-center font-bold tracking-widest uppercase">
+          <span>
+            {content?.announcement?.text || 'FREE DELIVERY FOR ORDERS ABOVE RS 500 • 100% PURE HOMEMADE NUTRITION'}
+          </span>
+        </div>
+      )}
 
       {/* Main Header Bar */}
       <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -343,20 +387,29 @@ export default function Navbar() {
               </svg>
             </button>
             
-            {/* User Account Icon Button (Hidden on tiny mobile screens, accessible in drawer and bottom nav) */}
+            {/* User Account Icon Button & Dropdown */}
             <div ref={userMenuRef} className="relative hidden sm:block">
               {customer ? (
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-stone-800 hover:text-[#4E652B] hover:bg-stone-100 rounded-full transition-all cursor-pointer relative"
+                  className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-stone-100 border border-stone-200 transition-all cursor-pointer group"
                   aria-label="Account"
-                  title={customer.name}
+                  title={customer.name || 'My Account'}
                 >
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  <div className="w-7 h-7 rounded-full bg-[#1E382B] text-[#E7F0AB] font-bold text-xs flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                    {customer.name && !customer.name.startsWith('User +91') && customer.name !== 'Customer'
+                      ? customer.name.charAt(0).toUpperCase()
+                      : '👤'}
+                  </div>
+                  <span className="text-xs font-bold text-stone-800 max-w-[90px] truncate hidden md:inline-block">
+                    {customer.name && !customer.name.startsWith('User +91') && customer.name !== 'Customer'
+                      ? customer.name.split(' ')[0]
+                      : 'Account'}
+                  </span>
+                  <svg className={`w-3 h-3 text-stone-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                   </svg>
-                  <span className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-[#526E2D] ring-2 ring-white" />
                 </button>
               ) : (
                 <Link
@@ -371,31 +424,97 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {/* Customer Dropdown */}
+              {/* Luxury Customer Dropdown Menu */}
               {isUserMenuOpen && customer && (
-                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 text-xs animate-fadeIn">
-                  <div className="px-4 py-2 border-b border-stone-100">
-                    <div className="font-bold text-stone-900 truncate">{customer.name}</div>
-                    <div className="text-[11px] text-stone-500 truncate">
-                      {customer.phone ? `+91 ${customer.phone}` : customer.email}
+                <div className="absolute right-0 top-full mt-2.5 w-72 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2 px-2 z-50 animate-fadeIn text-xs">
+                  
+                  {/* Customer Card Header */}
+                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200/60 mb-1.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-full bg-[#1E382B] text-[#E7F0AB] font-bold text-base flex items-center justify-center shrink-0 shadow-xs">
+                        {customer.name && !customer.name.startsWith('User +91') && customer.name !== 'Customer'
+                          ? customer.name.charAt(0).toUpperCase()
+                          : '🌿'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-extrabold text-stone-900 text-sm truncate">
+                          {customer.name && !customer.name.startsWith('User +91')
+                            ? customer.name
+                            : 'Valued Customer'}
+                        </div>
+                        <div className="text-[11px] text-stone-500 font-medium truncate flex items-center gap-1 mt-0.5">
+                          <span>{customer.phone ? `+91 ${customer.phone}` : customer.email}</span>
+                          <span className="text-emerald-600 font-bold" title="Verified Customer">✓</span>
+                        </div>
+                      </div>
                     </div>
+
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsEditProfileOpen(true);
+                      }}
+                      className="mt-2.5 w-full py-1.5 px-2.5 bg-white hover:bg-stone-50 text-[#4E652B] hover:text-[#3D5021] border border-stone-200/80 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <span>✏️</span> Edit Profile / Change Name
+                    </button>
                   </div>
-                  <Link
-                    href="/cart"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="block px-4 py-2 hover:bg-stone-50 text-stone-800 font-medium"
-                  >
-                    🛒 My Basket ({itemCount})
-                  </Link>
-                  <button
-                    onClick={async () => {
-                      setIsUserMenuOpen(false);
-                      await logout();
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-rose-50 text-rose-700 font-bold border-t border-stone-100 cursor-pointer"
-                  >
-                    Sign Out
-                  </button>
+
+                  {/* Navigation Links */}
+                  <div className="space-y-0.5 py-1">
+                    <Link
+                      href="/cart"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-stone-50 text-stone-800 font-medium transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>🛒</span> My Basket
+                      </span>
+                      {itemCount > 0 ? (
+                        <span className="bg-[#4E652B] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                          {itemCount}
+                        </span>
+                      ) : (
+                        <span className="text-stone-400 text-[10px]">Empty</span>
+                      )}
+                    </Link>
+
+                    <Link
+                      href="/checkout"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-stone-50 text-stone-800 font-medium transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>📦</span> Checkout &amp; Tracking
+                      </span>
+                      <span className="text-stone-400">›</span>
+                    </Link>
+
+                    <Link
+                      href="/#story"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-stone-50 text-stone-800 font-medium transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>📖</span> NutriGhar Kitchen Story
+                      </span>
+                      <span className="text-stone-400">›</span>
+                    </Link>
+                  </div>
+
+                  {/* Sign Out Button */}
+                  <div className="pt-1.5 mt-1 border-t border-stone-100">
+                    <button
+                      onClick={async () => {
+                        setIsUserMenuOpen(false);
+                        await logout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700 font-bold transition-colors cursor-pointer text-left"
+                    >
+                      <span>🚪</span> Sign Out
+                    </button>
+                  </div>
+
                 </div>
               )}
             </div>
@@ -510,24 +629,40 @@ export default function Navbar() {
 
               {/* Login / Customer Card */}
               {customer ? (
-                <div className="bg-[#4E652B] text-white p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
-                      👤
+                <div className="bg-[#1E382B] text-white p-4 rounded-2xl shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-full bg-[#E7F0AB] text-[#1E382B] flex items-center justify-center text-sm font-black shadow-xs">
+                        {customer.name && !customer.name.startsWith('User +91') && customer.name !== 'Customer'
+                          ? customer.name.charAt(0).toUpperCase()
+                          : '👤'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-stone-300 font-medium">Welcome back,</div>
+                        <div className="font-extrabold text-xs truncate text-[#FAF7F2]">
+                          {customer.name && !customer.name.startsWith('User +91') ? customer.name : 'Valued Customer'}
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-stone-200 font-light">Signed in as</div>
-                      <div className="font-bold text-xs truncate">{customer.name}</div>
-                    </div>
+                    <button
+                      onClick={async () => {
+                        setIsMenuOpen(false);
+                        await logout();
+                      }}
+                      className="px-2.5 py-1 bg-white/10 hover:bg-rose-900/50 text-stone-200 hover:text-rose-200 rounded-lg text-[10px] font-bold tracking-wider transition-colors cursor-pointer uppercase"
+                    >
+                      Sign Out
+                    </button>
                   </div>
+
                   <button
-                    onClick={async () => {
+                    onClick={() => {
                       setIsMenuOpen(false);
-                      await logout();
+                      setIsEditProfileOpen(true);
                     }}
-                    className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-[10px] font-bold tracking-wider transition-colors cursor-pointer uppercase"
+                    className="w-full py-1.5 px-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    Sign Out
+                    <span>✏️</span> Edit Name / Profile
                   </button>
                 </div>
               ) : (
@@ -642,7 +777,7 @@ export default function Navbar() {
 
                 {/* Direct WhatsApp Support */}
                 <a
-                  href="https://wa.me/919876543210?text=Hi%20Nutri%20Ghar,%20I%20have%20an%20inquiry%20regarding%20fresh%20batches."
+                  href={whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold text-xs transition-colors mt-2"
@@ -740,7 +875,7 @@ export default function Navbar() {
           </Link>
 
           <a
-            href="https://wa.me/919876543210?text=Hi%20Nutri%20Ghar,%20I%20have%20an%20inquiry."
+            href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
             className="flex flex-col items-center gap-0.5 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors"
@@ -751,6 +886,131 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* ========================================================
+          Edit Profile Modal
+      ======================================================== */}
+      {isEditProfileOpen && customer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden animate-scaleUp">
+            
+            {/* Modal Header */}
+            <div className="p-5 bg-[#FAF7F2] border-b border-stone-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#1E382B] text-[#E7F0AB] font-bold text-base flex items-center justify-center shadow-xs">
+                  {editName ? editName.charAt(0).toUpperCase() : '👤'}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-stone-900 text-base">Your Profile</h3>
+                  <p className="text-[11px] text-stone-500 font-medium">Update your display name &amp; details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditProfileOpen(false);
+                  setProfileMsg(null);
+                }}
+                className="w-8 h-8 rounded-full bg-white hover:bg-stone-200 flex items-center justify-center text-stone-600 hover:text-stone-900 transition-colors cursor-pointer text-sm font-bold shadow-2xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
+              
+              {profileMsg && (
+                <div
+                  className={`p-3 rounded-xl text-xs font-semibold text-center ${
+                    profileMsg.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  }`}
+                >
+                  {profileMsg.text}
+                </div>
+              )}
+
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Enter your full name (e.g. Apoorv)"
+                  required
+                  autoFocus
+                  className="w-full px-4 py-2.5 bg-[#FAF7F2] border border-stone-300 focus:border-[#4E652B] focus:bg-white rounded-xl text-sm font-semibold text-stone-900 outline-none transition-colors"
+                />
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                  Email Address <span className="text-stone-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  className="w-full px-4 py-2.5 bg-[#FAF7F2] border border-stone-300 focus:border-[#4E652B] focus:bg-white rounded-xl text-sm font-medium text-stone-900 outline-none transition-colors"
+                />
+              </div>
+
+              {/* Phone Number (Verified) */}
+              {customer.phone && (
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    Verified Mobile Number
+                  </label>
+                  <div className="px-4 py-2.5 bg-stone-100 border border-stone-200 rounded-xl text-sm font-bold text-stone-700 flex items-center justify-between">
+                    <span>+91 {customer.phone}</span>
+                    <span className="text-emerald-700 text-xs font-bold bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span>✓</span> Verified
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditProfileOpen(false);
+                    setProfileMsg(null);
+                  }}
+                  className="flex-1 py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSavingProfile || !editName.trim()}
+                  className="flex-1 py-2.5 px-4 bg-[#4E652B] hover:bg-[#3D5021] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-md flex items-center justify-center gap-2"
+                >
+                  {isSavingProfile ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </header>
   );
 }
+

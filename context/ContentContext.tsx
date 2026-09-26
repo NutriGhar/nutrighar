@@ -1,7 +1,7 @@
 'use client';
 // live dynamic content provider
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { WebsiteContent } from '@/lib/db';
+import { WebsiteContent } from '@/types/content';
 
 export function formatWhatsAppUrl(numberOrUrl?: string, message?: string): string {
   if (!numberOrUrl) return 'https://wa.me/919876543210';
@@ -44,13 +44,12 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<WebsiteContent | null>(null);
 
   const refreshContent = async () => {
-    // 1. Read from local storage first if available
-    let localSaved: WebsiteContent | null = null;
+    // 1. Read from local storage first for fast instant render
     try {
       if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('nutrighar_custom_content');
         if (stored) {
-          localSaved = JSON.parse(stored);
+          const localSaved = JSON.parse(stored);
           setContent(localSaved);
         }
       }
@@ -58,14 +57,15 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
       // ignore JSON parse error
     }
 
-    // 2. Fetch from API
+    // 2. Fetch authoritative database content from API
     try {
-      const res = await fetch('/api/content', { cache: 'no-store' });
+      const res = await fetch(`/api/content?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && data.data) {
-        // If local storage has customizations, merge with API data
-        const merged = localSaved ? { ...data.data, ...localSaved } : data.data;
-        setContent(merged);
+        setContent(data.data);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('nutrighar_custom_content', JSON.stringify(data.data));
+        }
       }
     } catch (err) {
       console.error('Failed to fetch website content:', err);
