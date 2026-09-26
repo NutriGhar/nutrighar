@@ -21,6 +21,7 @@ function LoginContent() {
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [demoCode, setDemoCode] = useState<string | null>(null);
+  const [otpChannel, setOtpChannel] = useState<'sms' | 'whatsapp'>('sms');
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,10 +34,11 @@ function LoginContent() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Send OTP
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent, channel: 'sms' | 'whatsapp' = 'sms') => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
+    setOtpChannel(channel);
 
     const cleanPhone = phone.trim().replace(/[^0-9]/g, '');
     if (cleanPhone.length !== 10) {
@@ -46,11 +48,16 @@ function LoginContent() {
 
     try {
       setIsLoading(true);
-      const res = await sendOtp(cleanPhone, fullName);
+      const res = await sendOtp(cleanPhone, fullName, channel);
       if (res.success) {
         setOtpSent(true);
         setDemoCode(res.demoOtp || '123456');
-        setSuccessMsg(`✓ 6-Digit OTP sent to +91 ${cleanPhone}`);
+        setSuccessMsg(
+          res.message ||
+            (channel === 'whatsapp'
+              ? `✓ 6-Digit OTP sent to your WhatsApp (+91 ${cleanPhone})`
+              : `✓ 6-Digit OTP sent via SMS to +91 ${cleanPhone}`)
+        );
       } else {
         setError(res.error || 'Failed to send OTP. Please try again.');
       }
@@ -302,7 +309,7 @@ function LoginContent() {
                         <rect y="400" width="900" height="200" fill="#138808" />
                         <circle cx="450" cy="300" r="80" fill="none" stroke="#000080" strokeWidth="12" />
                       </svg>
-                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#222' }}>India</span>
+                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#222' }}>India (+91)</span>
                     </div>
                   </div>
 
@@ -319,7 +326,7 @@ function LoginContent() {
                       gap: '12px',
                       backgroundColor: '#FFFFFF',
                       boxSizing: 'border-box',
-                      marginBottom: '10px',
+                      marginBottom: '14px',
                     }}
                   >
                     <svg width="20" height="20" fill="none" stroke="#6E8B4C" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -331,7 +338,7 @@ function LoginContent() {
                       onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                       required
                       maxLength={10}
-                      placeholder="Mobile Number"
+                      placeholder="10-digit Mobile Number"
                       style={{
                         width: '100%',
                         height: '100%',
@@ -345,11 +352,42 @@ function LoginContent() {
                     />
                   </div>
 
-                  {/* Circular Green Arrow Button Overlapping the Bottom (Kapiva Style) */}
+                  {/* Send via WhatsApp Button */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <button
+                      type="button"
+                      onClick={(e) => handleSendOtp(e, 'whatsapp')}
+                      disabled={isLoading || phone.length !== 10}
+                      style={{
+                        width: '100%',
+                        height: '44px',
+                        borderRadius: '10px',
+                        backgroundColor: phone.length === 10 ? '#F0FDF4' : '#F9FAFB',
+                        border: phone.length === 10 ? '1.5px solid #22C55E' : '1.5px solid #E5E7EB',
+                        color: phone.length === 10 ? '#15803D' : '#9CA3AF',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: phone.length === 10 ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                      </svg>
+                      <span>Send OTP via WhatsApp</span>
+                    </button>
+                  </div>
+
+                  {/* Circular Green Arrow Button for SMS OTP (Kapiva Style) */}
                   <button
                     type="submit"
                     disabled={isLoading || phone.length !== 10}
-                    aria-label="Submit"
+                    aria-label="Get OTP via SMS"
+                    title="Get OTP via SMS"
                     style={{
                       position: 'absolute',
                       bottom: '-28px',
@@ -384,8 +422,13 @@ function LoginContent() {
                 /* Step 2: 6-Digit OTP */
                 <form onSubmit={handleVerifyOtp}>
                   <div style={{ marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#444' }}>Enter OTP</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E382B' }}>Enter OTP</span>
+                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', backgroundColor: otpChannel === 'whatsapp' ? '#DCFCE7' : '#FEF3C7', color: otpChannel === 'whatsapp' ? '#15803D' : '#92400E', fontWeight: '700' }}>
+                          {otpChannel === 'whatsapp' ? '💬 WhatsApp' : '📱 SMS'}
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
@@ -393,7 +436,7 @@ function LoginContent() {
                           setOtpCode('');
                           setError(null);
                         }}
-                        style={{ fontSize: '13px', color: '#B55B32', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                        style={{ fontSize: '12px', color: '#B55B32', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
                       >
                         Change (+91 {phone})
                       </button>
@@ -427,8 +470,8 @@ function LoginContent() {
                   {demoCode && (
                     <div
                       style={{
-                        marginBottom: '16px',
-                        padding: '10px 14px',
+                        marginBottom: '12px',
+                        padding: '8px 12px',
                         borderRadius: '8px',
                         backgroundColor: '#FEF3C7',
                         border: '1px solid #FDE68A',
@@ -439,7 +482,7 @@ function LoginContent() {
                         color: '#92400E',
                       }}
                     >
-                      <span>Demo Code: <strong>{demoCode}</strong></span>
+                      <span>Demo OTP: <strong>{demoCode}</strong></span>
                       <button
                         type="button"
                         onClick={() => setOtpCode(demoCode)}
@@ -450,11 +493,34 @@ function LoginContent() {
                     </div>
                   )}
 
+                  {/* Resend Option Toggle */}
+                  <div style={{ marginBottom: '8px', textAlign: 'center' }}>
+                    {otpChannel === 'sms' ? (
+                      <button
+                        type="button"
+                        onClick={(e) => handleSendOtp(e, 'whatsapp')}
+                        disabled={isLoading}
+                        style={{ fontSize: '12px', color: '#15803D', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <span>💬 Didn&apos;t get SMS? Resend via WhatsApp</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleSendOtp(e, 'sms')}
+                        disabled={isLoading}
+                        style={{ fontSize: '12px', color: '#5C7A38', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <span>📱 Resend via regular SMS instead</span>
+                      </button>
+                    )}
+                  </div>
+
                   {/* Circular Button for Verification */}
                   <button
                     type="submit"
                     disabled={isLoading || otpCode.length !== 6}
-                    aria-label="Verify"
+                    aria-label="Verify OTP"
                     style={{
                       position: 'absolute',
                       bottom: '-28px',

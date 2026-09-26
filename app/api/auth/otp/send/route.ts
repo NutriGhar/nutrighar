@@ -4,7 +4,7 @@ import { generateOtp } from '@/lib/customerAuth';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone, name } = body;
+    const { phone, name, channel = 'sms' } = body;
 
     if (!phone || phone.trim().length < 10) {
       return NextResponse.json(
@@ -16,10 +16,16 @@ export async function POST(request: Request) {
     const cleanPhone = phone.trim().replace(/[^0-9]/g, '').slice(-10);
     const otpCode = generateOtp(cleanPhone, name?.trim());
 
+    const isWhatsApp = channel === 'whatsapp';
+    const message = isWhatsApp
+      ? `✓ 6-Digit OTP sent to your WhatsApp (+91 ${cleanPhone})`
+      : `✓ 6-Digit OTP sent via SMS to +91 ${cleanPhone}`;
+
     return NextResponse.json({
       success: true,
-      message: `OTP sent successfully to +91 ${cleanPhone}`,
-      // We provide the demo OTP in development for effortless testing:
+      channel: isWhatsApp ? 'whatsapp' : 'sms',
+      message,
+      // Demo OTP in development / sandbox:
       demoOtp: otpCode,
     });
   } catch (error: any) {

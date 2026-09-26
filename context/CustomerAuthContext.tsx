@@ -7,7 +7,7 @@ interface CustomerAuthContextType {
   customer: CustomerSession | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  sendOtp: (phone: string, name?: string) => Promise<{ success: boolean; message?: string; demoOtp?: string; error?: string }>;
+  sendOtp: (phone: string, name?: string, channel?: 'sms' | 'whatsapp') => Promise<{ success: boolean; message?: string; demoOtp?: string; channel?: string; error?: string }>;
   verifyOtp: (phone: string, otp: string, name?: string) => Promise<{ success: boolean; error?: string }>;
   loginWithPassword: (emailOrPhone: string, password: string) => Promise<{ success: boolean; error?: string }>;
   registerWithPassword: (data: { name: string; email: string; password: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
@@ -43,12 +43,12 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     refreshSession();
   }, []);
 
-  const sendOtp = async (phone: string, name?: string) => {
+  const sendOtp = async (phone: string, name?: string, channel: 'sms' | 'whatsapp' = 'sms') => {
     try {
       const res = await fetch('/api/auth/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name }),
+        body: JSON.stringify({ phone, name, channel }),
       });
       return await res.json();
     } catch (err: any) {
