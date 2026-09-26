@@ -196,15 +196,15 @@ function ProductsContent() {
 
       <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Big Search and Filters Card with Generous Padding */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 mb-10 sm:mb-12 shadow-xs">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-end">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200 p-4 sm:p-8 mb-8 sm:mb-12 shadow-xs space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-6 items-end">
             
             {/* Search Input (Big & Prominent) */}
-            <div className="md:col-span-5 space-y-2">
+            <div className="md:col-span-6 space-y-1.5">
               <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-800">
                 Search Products
               </label>
-              <div className="flex items-center h-13 sm:h-14 px-4 border-2 border-stone-200 hover:border-stone-300 focus-within:border-[#4E652B] focus-within:ring-2 focus-within:ring-[#4E652B]/20 rounded-2xl bg-[#FAF7F2]/50 focus-within:bg-white transition-all gap-3">
+              <div className="flex items-center h-12 sm:h-14 px-3.5 sm:px-4 border-2 border-stone-200 hover:border-stone-300 focus-within:border-[#4E652B] focus-within:ring-2 focus-within:ring-[#4E652B]/20 rounded-xl sm:rounded-2xl bg-[#FAF7F2]/50 focus-within:bg-white transition-all gap-2.5 sm:gap-3">
                 <svg
                   className="w-5 h-5 text-[#4E652B] shrink-0"
                   fill="none"
@@ -238,16 +238,16 @@ function ProductsContent() {
               </div>
             </div>
 
-            {/* Category Filter (Big Dropdown) */}
-            <div className="md:col-span-4 space-y-2">
+            {/* Category Filter (Dropdown) */}
+            <div className="hidden md:block md:col-span-3 space-y-1.5">
               <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-800">
-                📂 Select Category
+                📂 Category
               </label>
               <div className="relative">
                 <select
                   value={categoryParam}
                   onChange={(e) => handleCategorySelect(e.target.value)}
-                  className="w-full h-13 sm:h-14 px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-2xl text-sm sm:text-base font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
+                  className="w-full h-12 sm:h-14 px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
                 >
                   {categoryOptions.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -255,14 +255,14 @@ function ProductsContent() {
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold">
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold text-xs">
                   ▼
                 </div>
               </div>
             </div>
 
-            {/* Sort Filter (Big Dropdown) */}
-            <div className="md:col-span-3 space-y-2">
+            {/* Sort Filter */}
+            <div className="md:col-span-3 space-y-1.5">
               <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-800">
                 ⭐ Sort By
               </label>
@@ -270,19 +270,48 @@ function ProductsContent() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full h-13 sm:h-14 px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-2xl text-sm sm:text-base font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
+                  className="w-full h-12 sm:h-14 px-3.5 sm:px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
                 >
                   <option value="featured">Featured First</option>
                   <option value="price-low">Price: Low to High</option>
                   <option value="price-high">Price: High to Low</option>
                   <option value="rating">Highest Rated</option>
                 </select>
-                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold">
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold text-xs">
                   ▼
                 </div>
               </div>
             </div>
 
+          </div>
+
+          {/* Quick Category Filter Pills (1-Tap Switching on Mobile & Desktop) */}
+          <div className="pt-2 border-t border-stone-100 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">
+              Filter:
+            </span>
+            {categoryOptions.map((cat) => {
+              const isSelected = (!categoryParam && !cat.id) || categoryParam.toLowerCase() === cat.id.toLowerCase();
+              return (
+                <button
+                  key={cat.id || 'all'}
+                  type="button"
+                  onClick={() => handleCategorySelect(cat.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border ${
+                    isSelected
+                      ? 'bg-[#4E652B] text-[#E7F0AB] border-[#4E652B] shadow-xs'
+                      : 'bg-[#FAF7F2] text-stone-700 hover:bg-stone-200/80 border-stone-200'
+                  }`}
+                >
+                  {cat.id === '' && '✨ All Products'}
+                  {cat.id === 'mithai' && '🍯 Pure Ghee Mithai'}
+                  {cat.id === 'peanut-butter' && '🥜 Peanut Butter'}
+                  {cat.id === 'protein-nutrition' && '🌿 Clean Protein'}
+                  {cat.id === 'healthy-snacks' && '🌰 Roasted Snacks'}
+                  {!['', 'mithai', 'peanut-butter', 'protein-nutrition', 'healthy-snacks'].includes(cat.id) && cat.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 
