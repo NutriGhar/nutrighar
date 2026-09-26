@@ -7,9 +7,52 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Product } from '@/types/product';
 
+const DEFAULT_UPSELLS: Product[] = [
+  {
+    id: 'besan-ladoo',
+    name: 'Besan Ladoo',
+    slug: 'besan-ladoo',
+    price: 299,
+    originalPrice: 349,
+    image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&auto=format&fit=crop&q=80',
+    description: 'Authentic gram flour ladoos handcrafted with pure A2 desi cow ghee and cardamom.',
+    rating: 4.8,
+  },
+  {
+    id: 'dry-fruit-ladoo',
+    name: 'Premium Dry Fruit Ladoo',
+    slug: 'dry-fruit-ladoo',
+    price: 549,
+    originalPrice: 649,
+    image: '/images/dry-fruit-ladoo-product.jpg',
+    description: 'Luxurious ladoos packed with almonds, cashews, dates, and zero refined sugar.',
+    rating: 4.9,
+  },
+  {
+    id: 'clean-protein',
+    name: '100% Clean Plant Protein',
+    slug: 'clean-protein',
+    price: 599,
+    originalPrice: 699,
+    image: '/images/clean-protein-pouch-product.jpg',
+    description: 'Plant-based clean protein blend with natural cocoa and zero artificial sweeteners.',
+    rating: 4.8,
+  },
+  {
+    id: 'peanut-butter',
+    name: 'Classic Creamy Peanut Butter',
+    slug: 'peanut-butter',
+    price: 249,
+    originalPrice: 279,
+    image: '/images/peanut-butter-product.jpg',
+    description: 'Stone-ground slow roasted peanuts with zero palm oil and zero preservatives.',
+    rating: 4.7,
+  },
+];
+
 export default function CartPage() {
   const { items, getTotal, clearCart, addItem } = useCart();
-  const [upsells, setUpsells] = useState<Product[]>([]);
+  const [upsells, setUpsells] = useState<Product[]>(DEFAULT_UPSELLS);
   const [addedItemIds, setAddedItemIds] = useState<{ [key: string]: boolean }>({});
 
   const subtotal = getTotal();
@@ -24,17 +67,23 @@ export default function CartPage() {
     async function fetchUpsells() {
       try {
         const res = await fetch('/api/products');
-        const data = await res.json();
-        const allProducts = Array.isArray(data) ? data : data.products || [];
-        if (allProducts.length > 0) {
+        const json = await res.json();
+        const allProducts: Product[] = Array.isArray(json)
+          ? json
+          : json.data || json.products || DEFAULT_UPSELLS;
+        if (allProducts && allProducts.length > 0) {
           // Filter out items already in the basket
           const available = allProducts.filter(
-            (p: Product) => !items.some((cartItem) => cartItem.id === p.id)
+            (p: Product) => !items.some((cartItem) => cartItem.id === p.id || cartItem.slug === p.slug)
           );
           setUpsells(available.length > 0 ? available.slice(0, 4) : allProducts.slice(0, 2));
         }
       } catch (e) {
         console.error('Error fetching upsell products:', e);
+        const available = DEFAULT_UPSELLS.filter(
+          (p) => !items.some((cartItem) => cartItem.id === p.id || cartItem.slug === p.slug)
+        );
+        setUpsells(available.length > 0 ? available.slice(0, 4) : DEFAULT_UPSELLS.slice(0, 2));
       }
     }
     fetchUpsells();
