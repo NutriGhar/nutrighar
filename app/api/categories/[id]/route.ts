@@ -5,6 +5,15 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+};
+
 // GET: Single Category
 export async function GET(request: Request, { params }: RouteParams) {
   try {
@@ -12,14 +21,14 @@ export async function GET(request: Request, { params }: RouteParams) {
     const category = await getCategoryById(id);
 
     if (!category) {
-      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
-    return NextResponse.json({ success: true, data: category });
+    return NextResponse.json({ success: true, data: category }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch category' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }
@@ -33,14 +42,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const updated = await updateCategory(id, body);
 
     if (!updated) {
-      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
-    return NextResponse.json({ success: true, data: updated });
+    return NextResponse.json({ success: true, data: updated }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to update category' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }
@@ -52,14 +61,14 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     const deleted = await deleteCategory(id);
 
     if (!deleted) {
-      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
-    return NextResponse.json({ success: true, message: 'Category deleted successfully' });
+    return NextResponse.json({ success: true, message: 'Category deleted successfully' }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to delete category' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { WebsiteContent, HeroSlideContent, DEFAULT_HERO_SLIDES } from '@/lib/db';
+import { WebsiteContent, HeroSlideContent, DEFAULT_HERO_SLIDES } from '@/types/content';
 
 export default function AdminContentPage() {
   const [content, setContent] = useState<WebsiteContent | null>(null);
@@ -31,7 +31,7 @@ export default function AdminContentPage() {
 
       try {
         setIsLoading(true);
-        const res = await fetch('/api/content');
+        const res = await fetch(`/api/content?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         if (data.success) {
           const loaded = data.data;
@@ -117,11 +117,29 @@ export default function AdminContentPage() {
 
     setIsUploadingImage(true);
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       const base64Url = reader.result as string;
       updateActiveSlide({ image: base64Url });
-      setIsUploadingImage(false);
-      showToast('Image uploaded and set for this slide!');
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `slide-${selectedSlideIndex}-${Date.now()}`,
+            type: file.type,
+            base64OrUrl: base64Url,
+          }),
+        });
+        const uploadData = await res.json();
+        if (uploadData.success && uploadData.url) {
+          updateActiveSlide({ image: uploadData.url });
+        }
+      } catch {
+        // Keep base64
+      } finally {
+        setIsUploadingImage(false);
+        showToast('Image uploaded and set for this slide!');
+      }
     };
     reader.onerror = () => {
       setIsUploadingImage(false);
@@ -664,11 +682,32 @@ export default function AdminContentPage() {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       const reader = new FileReader();
-                      reader.onloadend = () => {
+                      reader.onloadend = async () => {
+                        const base64 = reader.result as string;
                         setContent({
                           ...content,
-                          hero: { ...content.hero, heroImage: reader.result as string },
+                          hero: { ...content.hero, heroImage: base64 },
                         });
+                        try {
+                          const res = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: `hero-${Date.now()}`,
+                              type: file.type,
+                              base64OrUrl: base64,
+                            }),
+                          });
+                          const uploadData = await res.json();
+                          if (uploadData.success && uploadData.url) {
+                            setContent({
+                              ...content,
+                              hero: { ...content.hero, heroImage: uploadData.url },
+                            });
+                          }
+                        } catch {
+                          // Keep base64
+                        }
                         showToast('Hero image uploaded!');
                       };
                       reader.readAsDataURL(file);

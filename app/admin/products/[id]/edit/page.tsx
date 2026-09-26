@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Category, Product } from '@/lib/db';
+import { Category, Product } from '@/types/content';
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
@@ -43,8 +43,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       try {
         setIsLoading(true);
         const [catRes, prodRes] = await Promise.all([
-          fetch('/api/categories?all=true'),
-          fetch(`/api/products/${productId}`),
+          fetch(`/api/categories?all=true&t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`/api/products/${productId}?t=${Date.now()}`, { cache: 'no-store' }),
         ]);
 
         const [catData, prodData] = await Promise.all([catRes.json(), prodRes.json()]);
@@ -83,12 +83,30 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   }, [productId]);
 
   // Image Upload helper
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        setImage(base64);
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: file.name.replace(/\.[^/.]+$/, ''),
+              type: file.type,
+              base64OrUrl: base64,
+            }),
+          });
+          const data = await res.json();
+          if (data.success && data.url) {
+            setImage(data.url);
+          }
+        } catch {
+          // Keep base64 as fallback
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -150,7 +168,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         return;
       }
 
-      router.push('/admin/products');
+      window.location.href = '/admin/products';
     } catch (err: any) {
       setError(err.message || 'An error occurred while saving.');
       setIsSubmitting(false);
@@ -172,7 +190,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         return;
       }
 
-      router.push('/admin/products');
+      window.location.href = '/admin/products';
     } catch (err: any) {
       setError(err.message || 'Failed to delete product');
       setIsDeleting(false);
@@ -377,25 +395,43 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
           <div className="space-y-4">
             {!image ? (
-              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-stone-300 rounded-2xl cursor-pointer bg-stone-50 hover:bg-stone-100 hover:border-[#1E382B] transition-all group">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                  <div className="w-12 h-12 rounded-full bg-emerald-50 text-[#1E382B] flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform">
-                    📷
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-stone-300 rounded-2xl cursor-pointer bg-stone-50 hover:bg-stone-100 hover:border-[#1E382B] transition-all group p-4">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-[#1E382B] flex items-center justify-center text-xl mb-2 group-hover:scale-110 transition-transform">
+                      📷
+                    </div>
+                    <p className="mb-0.5 text-xs font-bold text-stone-700">
+                      Upload from Computer / Phone
+                    </p>
+                    <p className="text-[10px] text-stone-500">
+                      PNG, JPG, WEBP
+                    </p>
                   </div>
-                  <p className="mb-1 text-sm font-bold text-stone-700">
-                    Click or tap to upload product photo
-                  </p>
-                  <p className="text-xs text-stone-500">
-                    Supports PNG, JPG, JPEG, WEBP (Direct file upload)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="flex flex-col justify-center p-4 bg-stone-50 border-2 border-stone-200 rounded-2xl space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                    Or Enter Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={image}
+                    onChange={(e) => setImage(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#1E382B]"
+                  />
+                  <p className="text-[10px] text-stone-500">
+                    Paste any public image link or CDN URL.
                   </p>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
+              </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-5 p-4 bg-stone-50 rounded-2xl border border-stone-200">
@@ -403,10 +439,13 @@ export default function EditProductPage({ params }: EditProductPageProps) {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={image} alt="Preview" className="w-full h-full object-cover" />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 flex-1">
                     <p className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-md inline-block">
                       ✓ Current Product Photo
                     </p>
+                    <div className="text-[11px] text-stone-500 font-mono truncate max-w-md">
+                      {image.startsWith('data:') ? 'Local Image File' : image}
+                    </div>
                     <div>
                       <label className="inline-block px-4 py-2 bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer transition-colors">
                         🔄 Upload New Photo
@@ -417,6 +456,13 @@ export default function EditProductPage({ params }: EditProductPageProps) {
                           className="hidden"
                         />
                       </label>
+                      <button
+                        type="button"
+                        onClick={() => setImage('')}
+                        className="ml-2 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                      >
+                        Remove
+                      </button>
                     </div>
                   </div>
                 </div>

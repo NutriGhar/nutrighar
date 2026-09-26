@@ -6,10 +6,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
+import { useContent } from '@/context/ContentContext';
 
 export default function Navbar() {
   const { getItemCount, getTotal } = useCart();
   const { customer, logout } = useCustomerAuth();
+  const { content, whatsappLink } = useContent();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -93,14 +95,13 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-2xs">
       {/* Top Announcement Banner */}
-      <div className="bg-[#E7F0AB] text-[#243513] text-[11px] sm:text-xs py-2 px-4 text-center font-bold tracking-widest uppercase">
-        <span className="hidden sm:inline">
-          FREE DELIVERY FOR ORDERS ABOVE RS 500 • 100% PURE HOMEMADE NUTRITION
-        </span>
-        <span className="sm:hidden">
-          FREE DELIVERY ABOVE RS 500 • 100% PURE GHEE
-        </span>
-      </div>
+      {content?.announcement?.enabled !== false && (
+        <div className="bg-[#E7F0AB] text-[#243513] text-[11px] sm:text-xs py-2 px-4 text-center font-bold tracking-widest uppercase">
+          <span>
+            {content?.announcement?.text || 'FREE DELIVERY FOR ORDERS ABOVE RS 500 • 100% PURE HOMEMADE NUTRITION'}
+          </span>
+        </div>
+      )}
 
       {/* Main Header Bar */}
       <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -642,7 +643,7 @@ export default function Navbar() {
 
                 {/* Direct WhatsApp Support */}
                 <a
-                  href="https://wa.me/919876543210?text=Hi%20Nutri%20Ghar,%20I%20have%20an%20inquiry%20regarding%20fresh%20batches."
+                  href={whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold text-xs transition-colors mt-2"
@@ -740,7 +741,7 @@ export default function Navbar() {
           </Link>
 
           <a
-            href="https://wa.me/919876543210?text=Hi%20Nutri%20Ghar,%20I%20have%20an%20inquiry."
+            href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
             className="flex flex-col items-center gap-0.5 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors"

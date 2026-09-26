@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PRODUCTS as INITIAL_PRODUCTS } from '@/data/products';
 import { useCart } from '@/context/CartContext';
+import { useContent } from '@/context/ContentContext';
 import { Product } from '@/types/product';
 import ProductCard from '@/components/ProductCard';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -29,6 +30,7 @@ const DEFAULT_CONTENT = {
 
 export default function HomePage() {
   const { addItem } = useCart();
+  const { content: globalContent } = useContent();
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [content, setContent] = useState(DEFAULT_CONTENT);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
@@ -36,14 +38,27 @@ export default function HomePage() {
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
   useEffect(() => {
+    if (globalContent) {
+      setContent((prev) => ({
+        ...prev,
+        ...globalContent,
+        brandStory: {
+          ...prev.brandStory,
+          ...(globalContent.brandStory || {}),
+        },
+        newsletter: {
+          ...prev.newsletter,
+          ...(globalContent.newsletter || {}),
+        },
+      }));
+    }
+  }, [globalContent]);
+
+  useEffect(() => {
     async function loadDynamicStorefrontData() {
       try {
-        const [prodRes, contentRes] = await Promise.all([
-          fetch('/api/products?active=true'),
-          fetch('/api/content'),
-        ]);
-
-        const [prodData, contentData] = await Promise.all([prodRes.json(), contentRes.json()]);
+        const prodRes = await fetch(`/api/products?active=true&t=${Date.now()}`, { cache: 'no-store' });
+        const prodData = await prodRes.json();
 
         if (prodData.success && prodData.data?.length > 0) {
           setProducts(
@@ -55,10 +70,6 @@ export default function HomePage() {
             }))
           );
         }
-
-        if (contentData.success && contentData.data) {
-          setContent((prev) => ({ ...prev, ...contentData.data }));
-        }
       } catch (err) {
         console.error('Storefront dynamic fetch error:', err);
       }
@@ -67,7 +78,10 @@ export default function HomePage() {
     loadDynamicStorefrontData();
   }, []);
 
-  const featuredProducts = products.filter((p) => p.isFeatured || p.featured).slice(0, 6);
+  const featuredProducts =
+    products.filter((p) => p.isFeatured || p.featured).length > 0
+      ? products.filter((p) => p.isFeatured || p.featured).slice(0, 8)
+      : products.slice(0, 8);
   const heroBestseller =
     products.find((p) => p.isBestSeller || p.id === 'protein-ladoo' || p.slug === 'protein-ladoo') ||
     products[0] ||

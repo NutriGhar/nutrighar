@@ -1,28 +1,73 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { Order } from '@/types/product';
+import { useSearchParams } from 'next/navigation';
 import { useContent, formatTelUrl } from '@/context/ContentContext';
 
-export default function OrderSuccessPage() {
-  const [order, setOrder] = useState<Order | null>(null);
+function OrderSuccessContent() {
+  const searchParams = useSearchParams();
+  const orderNumberParam = searchParams.get('orderNumber');
+  const [order, setOrder] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { phone, getWhatsAppUrl } = useContent();
 
   useEffect(() => {
-    const saved = localStorage.getItem('lastOrder');
-    if (saved) {
-      setOrder(JSON.parse(saved));
-    }
-  }, []);
+    async function load() {
+      if (orderNumberParam) {
+        try {
+          const res = await fetch(`/api/orders/${orderNumberParam}?t=${Date.now()}`, { cache: 'no-store' });
+          const json = await res.json();
+          if (json.success && json.data) {
+            const o = json.data;
+            setOrder({
+              orderNumber: o.orderNumber,
+              customerName: o.customerName,
+              email: o.customerEmail,
+              phone: o.customerPhone,
+              address: o.addressLine1,
+              city: o.city,
+              state: o.state,
+              pincode: o.postalCode,
+              date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+              subtotal: o.subtotal,
+              deliveryCharge: o.deliveryCharge,
+              total: o.totalAmount,
+              items: o.items.map((it: any) => ({
+                id: it.id,
+                name: it.productName,
+                price: it.productPrice,
+                quantity: it.quantity,
+              })),
+            });
+            setIsLoading(false);
+            return;
+          }
+        } catch {
+          // fallback to localStorage
+        }
+      }
 
-  if (!order) {
+      const saved = localStorage.getItem('lastOrder');
+      if (saved) {
+        try {
+          setOrder(JSON.parse(saved));
+        } catch {}
+      }
+      setIsLoading(false);
+    }
+
+    load();
+  }, [orderNumberParam]);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Loading...</h1>
-          </div>
+      <div className="min-h-screen bg-[#FAF7F2] py-16 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-3 border-[#1E382B] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs uppercase tracking-widest text-[#6B635B] font-bold">
+            Loading Order Confirmation...
+          </p>
         </div>
       </div>
     );
@@ -68,7 +113,7 @@ export default function OrderSuccessPage() {
           <div className="mb-6 pb-6 border-b">
             <h3 className="font-semibold text-gray-900 mb-4">Items</h3>
             <div className="space-y-3">
-              {order.items.map((item) => (
+              {order.items.map((item: any) => (
                 <div key={item.id} className="flex justify-between">
                   <span className="text-gray-700">
                     {item.name} <span className="text-gray-500 text-sm">x{item.quantity}</span>
@@ -168,5 +213,19 @@ export default function OrderSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+          <div className="w-8 h-8 border-3 border-[#1E382B] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

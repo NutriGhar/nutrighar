@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Order } from '@/lib/db';
+import { Order } from '@/types/content';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -16,8 +16,10 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
-      const url = selectedStatus === 'All' ? '/api/orders' : `/api/orders?status=${selectedStatus}`;
-      const res = await fetch(url);
+      const url = selectedStatus === 'All'
+        ? `/api/orders?t=${Date.now()}`
+        : `/api/orders?status=${selectedStatus}&t=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         setOrders(data.data);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useContent } from '@/context/ContentContext';
 
 export interface HeroSlide {
   id: string;
@@ -91,25 +92,17 @@ export interface HeroCarouselProps {
 }
 
 export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
+  const { content } = useContent();
   const [slides, setSlides] = useState<HeroSlide[]>(initialSlides && initialSlides.length > 0 ? initialSlides : HERO_SLIDES);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    async function loadSlides() {
-      try {
-        const res = await fetch('/api/content');
-        const json = await res.json();
-        if (json.success && json.data?.heroSlides && Array.isArray(json.data.heroSlides) && json.data.heroSlides.length > 0) {
-          setSlides(json.data.heroSlides);
-        }
-      } catch (e) {
-        console.error('Failed to load dynamic hero slides:', e);
-      }
+    if (content?.heroSlides && Array.isArray(content.heroSlides) && content.heroSlides.length > 0) {
+      setSlides(content.heroSlides);
     }
-    loadSlides();
-  }, []);
+  }, [content]);
 
   const totalSlides = slides.length;
 
