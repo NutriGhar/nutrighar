@@ -9,8 +9,9 @@ async function main() {
       const data = contact.data as any;
       data.phone = '+91 79761 19153';
       data.whatsapp = '+91 79761 19153';
+      data.email = 'Nutrighar2917@gmail.com';
       await prisma.websiteContent.update({ where: { section: 'contact' }, data: { data } });
-      console.log('Updated contact content in db');
+      console.log('Updated contact content (phone + email) in db');
     }
     const footer = await prisma.websiteContent.findUnique({ where: { section: 'footer' } });
     if (footer) {

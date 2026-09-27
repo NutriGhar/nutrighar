@@ -373,7 +373,7 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   contact: {
     phone: '+91 79761 19153',
-    email: 'care@nutrighar.com',
+    email: 'Nutrighar2917@gmail.com',
     whatsapp: '+91 79761 19153',
     address: 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001',
     fssaiLicense: 'FSSAI Lic: 10823005000214',

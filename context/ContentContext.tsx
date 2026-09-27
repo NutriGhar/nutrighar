@@ -35,7 +35,7 @@ const ContentContext = createContext<ContentContextType>({
   content: null,
   whatsappLink: 'https://wa.me/917976119153',
   phone: '+91 79761 19153',
-  email: 'care@nutrighar.com',
+  email: 'Nutrighar2917@gmail.com',
   getWhatsAppUrl: () => 'https://wa.me/917976119153',
   refreshContent: async () => {},
 });
@@ -94,7 +94,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
   const rawWhatsApp = content?.contact?.whatsapp || content?.footer?.whatsappUrl || '+91 79761 19153';
   const whatsappLink = formatWhatsAppUrl(rawWhatsApp);
   const phone = content?.contact?.phone || '+91 79761 19153';
-  const email = content?.contact?.email || 'care@nutrighar.com';
+  const email = content?.contact?.email || 'Nutrighar2917@gmail.com';
 
   const getWhatsAppUrl = (message?: string) => formatWhatsAppUrl(rawWhatsApp, message);
 

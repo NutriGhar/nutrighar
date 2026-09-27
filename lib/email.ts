@@ -37,7 +37,7 @@ async function getDynamicStoreDetails() {
     const cleanWhatsApp = digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly || '917976119153';
     const whatsappUrl = content?.footer?.whatsappUrl || `https://wa.me/${cleanWhatsApp}`;
     const address = content?.contact?.address || 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001';
-    const email = content?.contact?.email || 'care@nutrighar.com';
+    const email = content?.contact?.email || 'Nutrighar2917@gmail.com';
     const copyright = content?.footer?.copyrightText || `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.`;
 
     return {
@@ -54,7 +54,7 @@ async function getDynamicStoreDetails() {
       whatsapp: '917976119153',
       whatsappUrl: 'https://wa.me/917976119153',
       address: 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001',
-      email: 'care@nutrighar.com',
+      email: 'Nutrighar2917@gmail.com',
       copyright: `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.`,
     };
   }
