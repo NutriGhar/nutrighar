@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrders, createOrder } from '@/lib/db';
+import { sendOrderConfirmationEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -57,6 +58,23 @@ export async function POST(request: Request) {
         quantity: Number(item.quantity) || 1,
       })),
     });
+
+    // Send order confirmation email asynchronously to customer (whether they logged in via mobile or email)
+    sendOrderConfirmationEmail({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      addressLine1: order.addressLine1,
+      addressLine2: order.addressLine2,
+      city: order.city,
+      state: order.state,
+      postalCode: order.postalCode,
+      totalAmount: order.totalAmount,
+      deliveryCharge: order.deliveryCharge,
+      paymentStatus: order.paymentStatus,
+      items: order.items || [],
+    }).catch((err) => console.error('Error sending order confirmation email:', err));
 
     return NextResponse.json({ success: true, data: order }, { status: 201, headers: NO_CACHE_HEADERS });
   } catch (error: any) {

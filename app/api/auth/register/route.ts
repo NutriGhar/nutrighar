@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { encodeCustomerSession, CUSTOMER_COOKIE_NAME, CustomerSession, hashPassword } from '@/lib/customerAuth';
 import prisma from '@/lib/prisma';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -52,6 +53,11 @@ export async function POST(request: Request) {
         phone: cleanPhone,
       },
     });
+
+    // Send welcome email asynchronously
+    sendWelcomeEmail(customer.name || name.trim(), cleanEmail).catch((err) =>
+      console.error('Error sending welcome email:', err)
+    );
 
     const session: CustomerSession = {
       id: customer.id,
