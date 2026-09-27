@@ -7,7 +7,7 @@ interface CustomerAuthContextType {
   customer: CustomerSession | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  sendOtp: (phone: string, name?: string, channel?: 'sms' | 'whatsapp') => Promise<{ success: boolean; message?: string; demoOtp?: string; channel?: string; error?: string }>;
+  sendOtp: (phone: string, name?: string, channel?: 'sms' | 'whatsapp') => Promise<{ success: boolean; message?: string; demoOtp?: string; otp?: string; whatsappUrl?: string; channel?: string; error?: string }>;
   verifyOtp: (phone: string, otp: string, name?: string) => Promise<{ success: boolean; error?: string }>;
   loginWithPassword: (emailOrPhone: string, password: string) => Promise<{ success: boolean; error?: string }>;
   registerWithPassword: (data: { name: string; email: string; password: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;

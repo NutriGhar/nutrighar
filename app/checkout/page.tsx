@@ -100,7 +100,15 @@ export default function CheckoutPage() {
       const res = await sendOtp(cleanPhone, formData.fullName, channel);
       if (res.success) {
         setOtpSent(true);
-        setDemoCode(res.demoOtp || '123456');
+        const code = res.otp || res.demoOtp || '123456';
+        setDemoCode(code);
+        if (channel === 'whatsapp' && res.whatsappUrl) {
+          try {
+            window.open(res.whatsappUrl, '_blank');
+          } catch {
+            // popup blocked fallback
+          }
+        }
       } else {
         setAuthError(res.error || 'Failed to send OTP');
       }
@@ -479,14 +487,48 @@ export default function CheckoutPage() {
                   </div>
 
                   {demoCode && (
-                    <div className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex justify-between items-center">
-                      <span>Demo Test OTP: <strong>{demoCode}</strong></span>
+                    <div
+                      className={`p-3.5 rounded-2xl border flex flex-col gap-2.5 ${
+                        otpChannel === 'whatsapp'
+                          ? 'bg-emerald-50/80 border-emerald-300'
+                          : 'bg-amber-50 border-amber-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <span>{otpChannel === 'whatsapp' ? '💬' : '📱'}</span>
+                          <span className={otpChannel === 'whatsapp' ? 'text-emerald-900' : 'text-amber-900'}>
+                            {otpChannel === 'whatsapp' ? 'WhatsApp Verification Code:' : 'Verification OTP:'}
+                          </span>
+                        </div>
+                        <span className={`font-mono font-extrabold text-base tracking-widest ${otpChannel === 'whatsapp' ? 'text-emerald-800' : 'text-amber-800'}`}>
+                          {demoCode}
+                        </span>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() => setOtpCode(demoCode)}
-                        className="font-bold underline text-[#4E652B] cursor-pointer"
+                        onClick={async () => {
+                          setOtpCode(demoCode);
+                          try {
+                            setAuthLoading(true);
+                            const res = await verifyOtp(phone, demoCode);
+                            if (res.success) {
+                              setShowAddressForm(true);
+                            } else {
+                              setAuthError(res.error || 'Invalid OTP code');
+                            }
+                          } finally {
+                            setAuthLoading(false);
+                          }
+                        }}
+                        className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                          otpChannel === 'whatsapp'
+                            ? 'bg-emerald-700 hover:bg-emerald-800'
+                            : 'bg-[#4E652B] hover:bg-[#3D5021]'
+                        }`}
                       >
-                        Autofill
+                        <span>⚡ 1-Tap Auto-Verify &amp; Continue</span>
                       </button>
                     </div>
                   )}
@@ -500,7 +542,7 @@ export default function CheckoutPage() {
                         disabled={authLoading}
                         className="text-xs text-emerald-700 font-bold hover:underline inline-flex items-center gap-1.5 cursor-pointer"
                       >
-                        <span>💬 Didn&apos;t receive SMS? Resend via WhatsApp</span>
+                        <span>💬 Didn&apos;t receive SMS? Verify via WhatsApp (1-Click)</span>
                       </button>
                     ) : (
                       <button

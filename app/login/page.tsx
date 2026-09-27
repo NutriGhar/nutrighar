@@ -51,13 +51,22 @@ function LoginContent() {
       const res = await sendOtp(cleanPhone, fullName, channel);
       if (res.success) {
         setOtpSent(true);
-        setDemoCode(res.demoOtp || '123456');
+        const code = res.otp || res.demoOtp || '123456';
+        setDemoCode(code);
         setSuccessMsg(
           res.message ||
             (channel === 'whatsapp'
-              ? `✓ 6-Digit OTP sent to your WhatsApp (+91 ${cleanPhone})`
+              ? `✓ WhatsApp Verification Code generated for +91 ${cleanPhone}`
               : `✓ 6-Digit OTP sent via SMS to +91 ${cleanPhone}`)
         );
+
+        if (channel === 'whatsapp' && res.whatsappUrl) {
+          try {
+            window.open(res.whatsappUrl, '_blank');
+          } catch {
+            // popup blocked or inline
+          }
+        }
       } else {
         setError(res.error || 'Failed to send OTP. Please try again.');
       }
@@ -470,25 +479,59 @@ function LoginContent() {
                   {demoCode && (
                     <div
                       style={{
-                        marginBottom: '12px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        backgroundColor: '#FEF3C7',
-                        border: '1px solid #FDE68A',
+                        marginBottom: '14px',
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        backgroundColor: otpChannel === 'whatsapp' ? '#F0FDF4' : '#FEF3C7',
+                        border: otpChannel === 'whatsapp' ? '1.5px solid #86EFAC' : '1px solid #FDE68A',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: '12px',
-                        color: '#92400E',
+                        flexDirection: 'column',
+                        gap: '8px',
                       }}
                     >
-                      <span>Demo OTP: <strong>{demoCode}</strong></span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>{otpChannel === 'whatsapp' ? '💬' : '📱'}</span>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: otpChannel === 'whatsapp' ? '#166534' : '#92400E' }}>
+                            {otpChannel === 'whatsapp' ? 'WhatsApp Verification Code:' : 'Verification OTP:'}
+                          </span>
+                        </div>
+                        <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: otpChannel === 'whatsapp' ? '#15803D' : '#B45309' }}>
+                          {demoCode}
+                        </span>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() => setOtpCode(demoCode)}
-                        style={{ fontWeight: '700', color: '#5C7A38', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                        onClick={async () => {
+                          setOtpCode(demoCode);
+                          try {
+                            setIsLoading(true);
+                            const res = await verifyOtp(phone, demoCode, fullName);
+                            if (res.success) router.push(redirectUrl);
+                            else setError(res.error || 'Verification failed');
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: otpChannel === 'whatsapp' ? '#15803D' : '#5C7A38',
+                          color: '#FFFFFF',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                        }}
                       >
-                        Autofill OTP
+                        <span>⚡ 1-Tap Auto-Verify &amp; Login</span>
                       </button>
                     </div>
                   )}
@@ -502,7 +545,7 @@ function LoginContent() {
                         disabled={isLoading}
                         style={{ fontSize: '12px', color: '#15803D', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
-                        <span>💬 Didn&apos;t get SMS? Resend via WhatsApp</span>
+                        <span>💬 Didn&apos;t get SMS? Verify via WhatsApp (1-Click)</span>
                       </button>
                     ) : (
                       <button
