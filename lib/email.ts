@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { getWebsiteContent } from '@/lib/db';
 
 // Helper to create SMTP transporter
 function getTransporter() {
@@ -23,6 +24,42 @@ function getTransporter() {
   });
 }
 
+/**
+ * Dynamically retrieve the latest store contact information (Phone, WhatsApp, Address, Email)
+ * from the database or environment variables.
+ */
+async function getDynamicStoreDetails() {
+  try {
+    const content = await getWebsiteContent();
+    const phone = content?.contact?.phone || process.env.NEXT_PUBLIC_CONTACT_PHONE || '+91 79761 19153';
+    const rawWhatsApp = content?.contact?.whatsapp || process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '917976119153';
+    const digitsOnly = rawWhatsApp.replace(/[^0-9]/g, '');
+    const cleanWhatsApp = digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly || '917976119153';
+    const whatsappUrl = content?.footer?.whatsappUrl || `https://wa.me/${cleanWhatsApp}`;
+    const address = content?.contact?.address || 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001';
+    const email = content?.contact?.email || 'care@nutrighar.com';
+    const copyright = content?.footer?.copyrightText || `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.`;
+
+    return {
+      phone,
+      whatsapp: cleanWhatsApp,
+      whatsappUrl,
+      address,
+      email,
+      copyright,
+    };
+  } catch {
+    return {
+      phone: '+91 79761 19153',
+      whatsapp: '917976119153',
+      whatsappUrl: 'https://wa.me/917976119153',
+      address: 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001',
+      email: 'care@nutrighar.com',
+      copyright: `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.`,
+    };
+  }
+}
+
 export interface OrderEmailData {
   orderNumber: string;
   customerName: string;
@@ -45,16 +82,17 @@ export interface OrderEmailData {
 }
 
 /**
- * Send rich HTML order confirmation email to customer
+ * Send rich HTML order confirmation email to customer using dynamic store data
  */
 export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise<boolean> {
   if (!order.customerEmail || !order.customerEmail.includes('@')) {
-    console.log(`[Email] Skipping order confirmation: no valid email provided for ${order.orderNumber}`);
+    console.log(`[Email] Skipping order confirmation: no valid email provided for #${order.orderNumber}`);
     return false;
   }
 
+  const storeInfo = await getDynamicStoreDetails();
   const transporter = getTransporter();
-  const fromAddress = process.env.EMAIL_FROM || `"Nutri Ghar" <${process.env.SMTP_USER || 'care@nutrighar.com'}>`;
+  const fromAddress = process.env.EMAIL_FROM || `"Nutri Ghar" <${process.env.SMTP_USER || storeInfo.email}>`;
 
   const itemsHtml = order.items
     .map(
@@ -131,7 +169,7 @@ export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise
                 </tr>
               </table>
 
-              <!-- Delivery Address -->
+              <!-- Customer Delivery Address -->
               <div style="background-color: #FAF7F2; border-radius: 12px; padding: 18px; border: 1px solid #EFEAE3; margin-bottom: 24px;">
                 <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #5C7A38; text-transform: uppercase;">📍 Shipping Address</h4>
                 <p style="margin: 0; font-size: 13px; color: #333; line-height: 1.5;">
@@ -142,20 +180,22 @@ export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise
                 </p>
               </div>
 
-              <!-- Support Note -->
-              <p style="font-size: 12px; color: #777; line-height: 1.5; text-align: center; margin: 0;">
-                Have questions regarding your order? Reach out to us directly on WhatsApp at 
-                <a href="https://wa.me/917976119153" style="color: #5C7A38; font-weight: 700; text-decoration: none;">+91 79761 19153</a> 
-                or reply to this email.
-              </p>
+              <!-- Support Note with Dynamic WhatsApp & Phone -->
+              <div style="border-top: 1px solid #F0EAE1; padding-top: 18px; text-align: center;">
+                <p style="font-size: 12px; color: #777; line-height: 1.5; margin: 0;">
+                  Have questions regarding your order? Reach out to us directly on WhatsApp at 
+                  <a href="${storeInfo.whatsappUrl}" style="color: #5C7A38; font-weight: 700; text-decoration: none;">${storeInfo.phone}</a> 
+                  or email us at <a href="mailto:${storeInfo.email}" style="color: #5C7A38; font-weight: 700; text-decoration: none;">${storeInfo.email}</a>.
+                </p>
+              </div>
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- Dynamic Footer with Kitchen Address -->
           <tr>
             <td style="background-color: #F3EFEA; padding: 20px 24px; text-align: center; font-size: 11px; color: #888;">
-              © 2026 Nutri Ghar • Pure Homemade Nutrition Crafted With Care.<br>
-              Sector 14, Gurugram, Haryana - 122001
+              ${storeInfo.copyright}<br>
+              ${storeInfo.address}
             </td>
           </tr>
         </table>
@@ -184,13 +224,14 @@ export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise
 }
 
 /**
- * Send rich HTML registration successful & welcome email to newly registered customer
+ * Send rich HTML registration successful email to newly registered customer using dynamic store data
  */
 export async function sendWelcomeEmail(name: string, email: string): Promise<boolean> {
   if (!email || !email.includes('@')) return false;
 
+  const storeInfo = await getDynamicStoreDetails();
   const transporter = getTransporter();
-  const fromAddress = process.env.EMAIL_FROM || `"Nutri Ghar" <${process.env.SMTP_USER || 'care@nutrighar.com'}>`;
+  const fromAddress = process.env.EMAIL_FROM || `"Nutri Ghar" <${process.env.SMTP_USER || storeInfo.email}>`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   const emailHtml = `
@@ -258,23 +299,23 @@ export async function sendWelcomeEmail(name: string, email: string): Promise<boo
                 </a>
               </div>
 
-              <!-- Support Note -->
+              <!-- Support Note with Dynamic Contact -->
               <div style="border-top: 1px solid #F0EAE1; padding-top: 20px; text-align: center;">
                 <p style="font-size: 12px; color: #777; line-height: 1.5; margin: 0;">
                   Have questions or need assistance? Reach out to us directly on WhatsApp at 
-                  <a href="https://wa.me/917976119153" style="color: #5C7A38; font-weight: 700; text-decoration: none;">+91 79761 19153</a> 
-                  or reply to this email.
+                  <a href="${storeInfo.whatsappUrl}" style="color: #5C7A38; font-weight: 700; text-decoration: none;">${storeInfo.phone}</a> 
+                  or email us at <a href="mailto:${storeInfo.email}" style="color: #5C7A38; font-weight: 700; text-decoration: none;">${storeInfo.email}</a>.
                 </p>
               </div>
 
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- Dynamic Footer with Kitchen Address -->
           <tr>
             <td style="background-color: #F3EFEA; padding: 18px 24px; text-align: center; font-size: 11px; color: #888;">
-              © 2026 Nutri Ghar • Pure Homemade Nutrition Crafted With Care.<br>
-              Sector 14, Gurugram, Haryana - 122001
+              ${storeInfo.copyright}<br>
+              ${storeInfo.address}
             </td>
           </tr>
         </table>
