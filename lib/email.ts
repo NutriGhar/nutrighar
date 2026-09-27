@@ -184,50 +184,97 @@ export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise
 }
 
 /**
- * Send welcome email to newly registered customer
+ * Send rich HTML registration successful & welcome email to newly registered customer
  */
 export async function sendWelcomeEmail(name: string, email: string): Promise<boolean> {
   if (!email || !email.includes('@')) return false;
 
   const transporter = getTransporter();
   const fromAddress = process.env.EMAIL_FROM || `"Nutri Ghar" <${process.env.SMTP_USER || 'care@nutrighar.com'}>`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   const emailHtml = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8">
-        <title>Welcome to Nutri Ghar</title>
+        <title>Registration Successful - Nutri Ghar</title>
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FAF7F2; margin: 0; padding: 24px; color: #2C2A29;">
         <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin: 0 auto; border: 1px solid #EFEAE3;">
+          
+          <!-- Brand Header -->
           <tr>
             <td style="background-color: #5C7A38; padding: 32px 24px; text-align: center; color: #FFFFFF;">
-              <h1 style="margin: 0; font-size: 26px; font-weight: 700;">Welcome to Nutri Ghar!</h1>
+              <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.5px;">Nutri Ghar</h1>
               <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Pure Homemade Goodness</p>
             </td>
           </tr>
+
+          <!-- Main Content -->
           <tr>
             <td style="padding: 32px 28px;">
-              <p style="font-size: 15px; color: #333; line-height: 1.6; margin-top: 0;">
-                Hello <strong>${name}</strong>,
+              
+              <!-- Celebration Card -->
+              <div style="background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 18px; margin-bottom: 24px; text-align: center;">
+                <span style="font-size: 26px; display: block; margin-bottom: 4px;">🎉</span>
+                <h2 style="margin: 0; color: #065F46; font-size: 18px; font-weight: 700;">Registration Successful!</h2>
+                <p style="margin: 4px 0 0 0; color: #047857; font-size: 13px;">Welcome to the Nutri Ghar family, <strong>${name}</strong>.</p>
+              </div>
+
+              <!-- Account Details Card -->
+              <div style="background-color: #FAF7F2; border-radius: 12px; padding: 20px; border: 1px solid #EFEAE3; margin-bottom: 24px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 700; color: #5C7A38; text-transform: uppercase; letter-spacing: 0.5px;">👤 Your Account Details</h3>
+                <table width="100%" style="font-size: 13px; color: #444; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #777;">Name:</td>
+                    <td style="padding: 6px 0; font-weight: 700; color: #1C2914; text-align: right;">${name}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #777;">Email Address:</td>
+                    <td style="padding: 6px 0; font-weight: 700; color: #1C2914; text-align: right;">${email}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #777;">Account Status:</td>
+                    <td style="padding: 6px 0; font-weight: 700; color: #166534; text-align: right;">✓ Active</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- About Our Pure Food -->
+              <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 16px;">
+                At Nutri Ghar, every batch of sweets and stone-ground peanut butter is prepared fresh with:
               </p>
-              <p style="font-size: 14px; color: #555; line-height: 1.6;">
-                Thank you for joining the Nutri Ghar family! We craft traditional sweets and stone-ground nut butters made with 100% pure desi cow ghee, California almonds, and zero preservatives.
-              </p>
-              <div style="text-align: center; margin: 28px 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}" style="background-color: #5C7A38; color: #FFFFFF; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 14px; display: inline-block;">
-                  Explore Pure Goodness →
+              <ul style="font-size: 13px; color: #555; line-height: 1.7; padding-left: 20px; margin-bottom: 24px;">
+                <li><strong>100% Pure A2 Desi Cow Ghee</strong> — traditional richness and aroma</li>
+                <li><strong>Zero Chemical Preservatives</strong> &amp; Zero Palm Oil</li>
+                <li><strong>Handcrafted in Small Batches</strong> with authentic recipes</li>
+              </ul>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 30px 0 24px 0;">
+                <a href="${appUrl}" style="background-color: #5C7A38; color: #FFFFFF; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(92, 122, 56, 0.3);">
+                  Explore Fresh Batches &amp; Shop →
                 </a>
               </div>
-              <p style="font-size: 12px; color: #777; line-height: 1.5; text-align: center; margin: 0;">
-                Need assistance? WhatsApp us anytime at <a href="https://wa.me/917976119153" style="color: #5C7A38; font-weight: 700;">+91 79761 19153</a>.
-              </p>
+
+              <!-- Support Note -->
+              <div style="border-top: 1px solid #F0EAE1; padding-top: 20px; text-align: center;">
+                <p style="font-size: 12px; color: #777; line-height: 1.5; margin: 0;">
+                  Have questions or need assistance? Reach out to us directly on WhatsApp at 
+                  <a href="https://wa.me/917976119153" style="color: #5C7A38; font-weight: 700; text-decoration: none;">+91 79761 19153</a> 
+                  or reply to this email.
+                </p>
+              </div>
+
             </td>
           </tr>
+
+          <!-- Footer -->
           <tr>
-            <td style="background-color: #F3EFEA; padding: 16px 24px; text-align: center; font-size: 11px; color: #888;">
-              © 2026 Nutri Ghar • Pure Homemade Nutrition Crafted With Care.
+            <td style="background-color: #F3EFEA; padding: 18px 24px; text-align: center; font-size: 11px; color: #888;">
+              © 2026 Nutri Ghar • Pure Homemade Nutrition Crafted With Care.<br>
+              Sector 14, Gurugram, Haryana - 122001
             </td>
           </tr>
         </table>
@@ -236,7 +283,7 @@ export async function sendWelcomeEmail(name: string, email: string): Promise<boo
   `;
 
   if (!transporter) {
-    console.log(`[Email Simulation] SMTP not configured. Welcome email prepared for ${email}`);
+    console.log(`[Email Simulation] SMTP not configured. Registration successful email prepared for ${email}`);
     return true;
   }
 
@@ -244,12 +291,13 @@ export async function sendWelcomeEmail(name: string, email: string): Promise<boo
     await transporter.sendMail({
       from: fromAddress,
       to: email,
-      subject: `Welcome to Nutri Ghar, ${name}! 🍯`,
+      subject: `🎉 Registration Successful! Welcome to Nutri Ghar, ${name}`,
       html: emailHtml,
     });
+    console.log(`[Email] Registration successful email sent to ${email}`);
     return true;
   } catch (error: any) {
-    console.error(`[Email] Failed to send welcome email to ${email}:`, error.message);
+    console.error(`[Email] Failed to send registration email to ${email}:`, error.message);
     return false;
   }
 }
