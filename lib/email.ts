@@ -342,3 +342,142 @@ export async function sendWelcomeEmail(name: string, email: string): Promise<boo
     return false;
   }
 }
+
+export interface AnnouncementEmailPayload {
+  recipientName?: string;
+  recipientEmail: string;
+  subject: string;
+  headline?: string;
+  message: string;
+  product?: {
+    name: string;
+    description?: string;
+    price: number;
+    originalPrice?: number | null;
+    image?: string;
+    slug?: string;
+  } | null;
+  ctaText?: string;
+  ctaLink?: string;
+}
+
+/**
+ * Send a branded product announcement or promotional notification to customer/subscriber
+ */
+export async function sendProductAnnouncementEmail(payload: AnnouncementEmailPayload): Promise<boolean> {
+  const { recipientEmail, recipientName, subject, headline, message, product, ctaText, ctaLink } = payload;
+  if (!recipientEmail || !recipientEmail.includes('@')) {
+    return false;
+  }
+
+  const storeInfo = await getDynamicStoreDetails();
+  const transporter = getTransporter();
+  const fromAddress = process.env.EMAIL_FROM || `"Nutri Ghar" <${process.env.SMTP_USER || storeInfo.email}>`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const targetCtaLink = ctaLink || (product?.slug ? `${appUrl}/products/${product.slug}` : `${appUrl}/products`);
+  const targetCtaText = ctaText || (product ? `Explore ${product.name} →` : 'Discover Nutri Ghar Fresh Batches →');
+
+  const productHtml = product
+    ? `
+      <div style="background-color: #FAF7F2; border-radius: 12px; padding: 20px; border: 1px solid #EFEAE3; margin: 24px 0; text-align: center;">
+        ${
+          product.image
+            ? `<div style="margin-bottom: 16px;">
+                <img src="${product.image.startsWith('http') ? product.image : `${appUrl}${product.image}`}" alt="${product.name}" style="max-width: 220px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); object-fit: cover;" />
+              </div>`
+            : ''
+        }
+        <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 700; color: #112219;">${product.name}</h3>
+        ${product.description ? `<p style="margin: 0 0 12px 0; font-size: 13px; color: #666; line-height: 1.5;">${product.description}</p>` : ''}
+        <div style="margin-top: 8px;">
+          <span style="font-size: 20px; font-weight: 800; color: #166534;">₹${product.price}</span>
+          ${product.originalPrice ? `<span style="font-size: 14px; text-decoration: line-through; color: #999; margin-left: 8px;">₹${product.originalPrice}</span>` : ''}
+        </div>
+      </div>
+    `
+    : '';
+
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${subject} - Nutri Ghar</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FAF7F2; margin: 0; padding: 24px; color: #2C2A29;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin: 0 auto; border: 1px solid #EFEAE3;">
+          
+          <!-- Brand Header -->
+          <tr>
+            <td style="background-color: #112219; padding: 32px 24px; text-align: center; color: #FFFFFF;">
+              <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.5px; color: #FFFFFF;">Nutri Ghar</h1>
+              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9; color: #D49A4B; text-transform: uppercase; letter-spacing: 2px;">Homemade Wellness &amp; Pure Craft</p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 32px 28px;">
+              ${
+                headline
+                  ? `<h2 style="margin: 0 0 16px 0; color: #112219; font-size: 22px; font-weight: 700; line-height: 1.3;">${headline}</h2>`
+                  : ''
+              }
+              
+              <p style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 20px; white-space: pre-line;">
+                ${message}
+              </p>
+
+              ${productHtml}
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 32px 0 24px 0;">
+                <a href="${targetCtaLink}" style="background-color: #1E382B; color: #FFFFFF; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 4px 12px rgba(30, 56, 43, 0.3);">
+                  ${targetCtaText}
+                </a>
+              </div>
+
+              <!-- Support Note with Dynamic Contact -->
+              <div style="border-top: 1px solid #F0EAE1; padding-top: 20px; text-align: center;">
+                <p style="font-size: 12px; color: #777; line-height: 1.5; margin: 0;">
+                  Questions or special batch orders? WhatsApp us at 
+                  <a href="${storeInfo.whatsappUrl}" style="color: #1E382B; font-weight: 700; text-decoration: none;">${storeInfo.phone}</a> 
+                  or email <a href="mailto:${storeInfo.email}" style="color: #1E382B; font-weight: 700; text-decoration: none;">${storeInfo.email}</a>.
+                </p>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Dynamic Footer with Kitchen Address -->
+          <tr>
+            <td style="background-color: #F3EFEA; padding: 18px 24px; text-align: center; font-size: 11px; color: #888;">
+              ${storeInfo.copyright}<br>
+              ${storeInfo.address}
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  if (!transporter) {
+    console.log(`[Email Simulation] SMTP not configured. Product announcement prepared for ${recipientEmail}: ${subject}`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: fromAddress,
+      to: recipientEmail,
+      subject: subject,
+      html: emailHtml,
+    });
+    console.log(`[Email] Product announcement email sent to ${recipientEmail}`);
+    return true;
+  } catch (error: any) {
+    console.error(`[Email] Failed to send announcement email to ${recipientEmail}:`, error.message);
+    return false;
+  }
+}
+

@@ -20,7 +20,7 @@ export default function FloatingWhatsApp() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with Nutri Ghar on WhatsApp"
-      className="flex fixed bottom-6 right-4 sm:bottom-6 sm:right-6 z-[9999] w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
+      className="hidden md:flex fixed bottom-6 right-6 z-[9999] w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
       style={{
         boxShadow: '0 8px 24px rgba(37, 211, 102, 0.45)',
       }}
