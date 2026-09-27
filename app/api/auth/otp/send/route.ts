@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const otpCode = generateOtp(cleanPhone, name?.trim());
 
     const isWhatsApp = channel === 'whatsapp';
-    const nutrigharPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '919876543210';
+    const nutrigharPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '917976119153';
     const cleanSupportPhone = nutrigharPhone.replace(/[^0-9]/g, '');
     const waText = `Hi Nutri Ghar! Please verify my account for mobile number +91 ${cleanPhone}. My OTP Code is: ${otpCode}`;
     const whatsappUrl = `https://wa.me/${cleanSupportPhone}?text=${encodeURIComponent(waText)}`;

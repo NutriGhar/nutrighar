@@ -363,9 +363,9 @@ async function main() {
       id: 'content-contact',
       section: 'contact',
       data: {
-        phone: '+91 98765 43210',
+        phone: '+91 79761 19153',
         email: 'care@nutrighar.com',
-        whatsapp: '+91 98765 43210',
+        whatsapp: '+91 79761 19153',
         address: 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001',
         fssaiLicense: 'FSSAI Lic: 10823005000214',
       },
@@ -376,7 +376,7 @@ async function main() {
       data: {
         aboutText: 'Nutri Ghar represents healthy food made with the warmth and trust of home. Small batches crafted with pure ingredients, zero chemical preservatives, and traditional recipes.',
         instagramUrl: 'https://instagram.com',
-        whatsappUrl: 'https://wa.me/919876543210',
+        whatsappUrl: 'https://wa.me/917976119153',
         facebookUrl: 'https://facebook.com',
         copyrightText: `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.`,
       },
