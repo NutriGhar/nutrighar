@@ -34,11 +34,10 @@ function LoginContent() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Send OTP
-  const handleSendOtp = async (e: React.FormEvent, channel: 'sms' | 'whatsapp' = 'sms') => {
-    e.preventDefault();
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError(null);
     setSuccessMsg(null);
-    setOtpChannel(channel);
 
     const cleanPhone = phone.trim().replace(/[^0-9]/g, '');
     if (cleanPhone.length !== 10) {
@@ -48,25 +47,12 @@ function LoginContent() {
 
     try {
       setIsLoading(true);
-      const res = await sendOtp(cleanPhone, fullName, channel);
+      const res = await sendOtp(cleanPhone, fullName, 'sms');
       if (res.success) {
         setOtpSent(true);
         const code = res.otp || res.demoOtp || '123456';
         setDemoCode(code);
-        setSuccessMsg(
-          res.message ||
-            (channel === 'whatsapp'
-              ? `✓ WhatsApp Verification Code generated for +91 ${cleanPhone}`
-              : `✓ 6-Digit OTP sent via SMS to +91 ${cleanPhone}`)
-        );
-
-        if (channel === 'whatsapp' && res.whatsappUrl) {
-          try {
-            window.open(res.whatsappUrl, '_blank');
-          } catch {
-            // popup blocked or inline
-          }
-        }
+        setSuccessMsg(res.message || `✓ 6-Digit OTP sent to +91 ${cleanPhone}`);
       } else {
         setError(res.error || 'Failed to send OTP. Please try again.');
       }
@@ -271,7 +257,7 @@ function LoginContent() {
           {authMethod === 'otp' && (
             <div>
               {!otpSent ? (
-                <form onSubmit={(e) => handleSendOtp(e, 'whatsapp')}>
+                <form onSubmit={(e) => handleSendOtp(e)}>
                   {/* Optional/Required Name Field */}
                   <div style={{ marginBottom: '14px' }}>
                     <input
@@ -295,7 +281,7 @@ function LoginContent() {
                     />
                   </div>
 
-                  {/* Field 1: India Box (Exact Kapiva Style) */}
+                  {/* Field 1: India Box */}
                   <div
                     style={{
                       width: '100%',
@@ -311,7 +297,6 @@ function LoginContent() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      {/* SVG Indian Flag */}
                       <svg width="24" height="16" viewBox="0 0 900 600" style={{ borderRadius: '2px', display: 'block' }}>
                         <rect width="900" height="200" fill="#FF9933" />
                         <rect y="200" width="900" height="200" fill="#FFFFFF" />
@@ -322,7 +307,7 @@ function LoginContent() {
                     </div>
                   </div>
 
-                  {/* Field 2: Mobile Input with Telephone Outline Icon (Exact Kapiva Style) */}
+                  {/* Field 2: Mobile Input with Telephone Outline Icon */}
                   <div
                     style={{
                       width: '100%',
@@ -335,7 +320,7 @@ function LoginContent() {
                       gap: '12px',
                       backgroundColor: '#FFFFFF',
                       boxSizing: 'border-box',
-                      marginBottom: '14px',
+                      marginBottom: '18px',
                     }}
                   >
                     <svg width="20" height="20" fill="none" stroke="#6E8B4C" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -361,31 +346,12 @@ function LoginContent() {
                     />
                   </div>
 
-                  {/* Informational WhatsApp Notice */}
-                  <div
-                    style={{
-                      marginBottom: '18px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: '#F0FDF4',
-                      border: '1px solid #BBF7D0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      fontSize: '12px',
-                      color: '#15803D',
-                    }}
-                  >
-                    <span style={{ fontSize: '15px' }}>💬</span>
-                    <span>Click the green arrow below to get your instant free WhatsApp OTP code!</span>
-                  </div>
-
-                  {/* Circular Green Arrow Button for WhatsApp OTP (Exact Kapiva Style) */}
+                  {/* Circular Green Arrow Button for OTP (Kapiva Style) */}
                   <button
                     type="submit"
                     disabled={isLoading || phone.length !== 10}
-                    aria-label="Get OTP via WhatsApp"
-                    title="Get OTP via WhatsApp"
+                    aria-label="Send OTP to Mobile"
+                    title="Send OTP to Mobile"
                     style={{
                       position: 'absolute',
                       bottom: '-28px',
@@ -421,12 +387,7 @@ function LoginContent() {
                 <form onSubmit={handleVerifyOtp}>
                   <div style={{ marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E382B' }}>Enter OTP</span>
-                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', backgroundColor: otpChannel === 'whatsapp' ? '#DCFCE7' : '#FEF3C7', color: otpChannel === 'whatsapp' ? '#15803D' : '#92400E', fontWeight: '700' }}>
-                          {otpChannel === 'whatsapp' ? '💬 WhatsApp' : '📱 SMS'}
-                        </span>
-                      </div>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E382B' }}>Enter 6-Digit OTP</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -471,8 +432,8 @@ function LoginContent() {
                         marginBottom: '14px',
                         padding: '12px 14px',
                         borderRadius: '10px',
-                        backgroundColor: otpChannel === 'whatsapp' ? '#F0FDF4' : '#FEF3C7',
-                        border: otpChannel === 'whatsapp' ? '1.5px solid #86EFAC' : '1px solid #FDE68A',
+                        backgroundColor: '#F0FDF4',
+                        border: '1.5px solid #86EFAC',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '8px',
@@ -480,12 +441,12 @@ function LoginContent() {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>{otpChannel === 'whatsapp' ? '💬' : '📱'}</span>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: otpChannel === 'whatsapp' ? '#166534' : '#92400E' }}>
-                            {otpChannel === 'whatsapp' ? 'WhatsApp Verification Code:' : 'Verification OTP:'}
+                          <span>📱</span>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#166534' }}>
+                            Your Verification OTP:
                           </span>
                         </div>
-                        <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: otpChannel === 'whatsapp' ? '#15803D' : '#B45309' }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: '#15803D' }}>
                           {demoCode}
                         </span>
                       </div>
@@ -507,7 +468,7 @@ function LoginContent() {
                           width: '100%',
                           padding: '8px 12px',
                           borderRadius: '8px',
-                          backgroundColor: otpChannel === 'whatsapp' ? '#15803D' : '#5C7A38',
+                          backgroundColor: '#15803D',
                           color: '#FFFFFF',
                           fontSize: '12px',
                           fontWeight: '700',
@@ -525,27 +486,16 @@ function LoginContent() {
                     </div>
                   )}
 
-                  {/* Resend Option Toggle */}
+                  {/* Resend Option */}
                   <div style={{ marginBottom: '8px', textAlign: 'center' }}>
-                    {otpChannel === 'sms' ? (
-                      <button
-                        type="button"
-                        onClick={(e) => handleSendOtp(e, 'whatsapp')}
-                        disabled={isLoading}
-                        style={{ fontSize: '12px', color: '#15803D', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <span>💬 Didn&apos;t get SMS? Verify via WhatsApp (1-Click)</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => handleSendOtp(e, 'sms')}
-                        disabled={isLoading}
-                        style={{ fontSize: '12px', color: '#5C7A38', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <span>📱 Resend via regular SMS instead</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleSendOtp()}
+                      disabled={isLoading}
+                      style={{ fontSize: '12px', color: '#5C7A38', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span>🔄 Resend OTP to +91 {phone}</span>
+                    </button>
                   </div>
 
                   {/* Circular Button for Verification */}
