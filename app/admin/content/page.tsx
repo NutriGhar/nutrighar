@@ -9,6 +9,7 @@ import {
   DEFAULT_CURATED_COLLECTIONS,
   DEFAULT_PRODUCT_SPOTLIGHT,
   DEFAULT_TESTIMONIALS,
+  DEFAULT_WEBSITE_CONTENT,
   CollectionCard,
   TestimonialItem,
   CuratedCollectionsContent,
@@ -28,19 +29,6 @@ export default function AdminContentPage() {
 
   useEffect(() => {
     async function loadContent() {
-      let localSaved: WebsiteContent | null = null;
-      try {
-        if (typeof window !== 'undefined') {
-          const stored = localStorage.getItem('nutrighar_custom_content');
-          if (stored) {
-            localSaved = JSON.parse(stored);
-            setContent(localSaved);
-          }
-        }
-      } catch {
-        // ignore parse error
-      }
-
       try {
         setIsLoading(true);
         const res = await fetch(`/api/content?t=${Date.now()}`, { cache: 'no-store' });
@@ -48,6 +36,7 @@ export default function AdminContentPage() {
         if (data.success && data.data) {
           const loaded = data.data;
           const merged: WebsiteContent = {
+            ...DEFAULT_WEBSITE_CONTENT,
             ...loaded,
             heroSlides: (loaded.heroSlides && Array.isArray(loaded.heroSlides) && loaded.heroSlides.length > 0)
               ? loaded.heroSlides
@@ -71,34 +60,22 @@ export default function AdminContentPage() {
                 : DEFAULT_TESTIMONIALS.items,
             },
           };
-          if (localSaved) {
-            setContent({
-              ...merged,
-              ...localSaved,
-              curatedCollections: {
-                ...DEFAULT_CURATED_COLLECTIONS,
-                ...(merged.curatedCollections || {}),
-                ...(localSaved.curatedCollections || {}),
-                cards: localSaved.curatedCollections?.cards || merged.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards,
-              },
-              productSpotlight: {
-                ...DEFAULT_PRODUCT_SPOTLIGHT,
-                ...(merged.productSpotlight || {}),
-                ...(localSaved.productSpotlight || {}),
-              },
-              testimonials: {
-                ...DEFAULT_TESTIMONIALS,
-                ...(merged.testimonials || {}),
-                ...(localSaved.testimonials || {}),
-                items: localSaved.testimonials?.items || merged.testimonials?.items || DEFAULT_TESTIMONIALS.items,
-              },
-            });
-          } else {
-            setContent(merged);
+
+          setContent(merged);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('nutrighar_custom_content', JSON.stringify(merged));
           }
         }
       } catch (err: any) {
-        if (!localSaved) {
+        // Fallback to local storage if network offline
+        try {
+          if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('nutrighar_custom_content');
+            if (stored) {
+              setContent(JSON.parse(stored));
+            }
+          }
+        } catch {
           setError(err.message || 'Failed to load content');
         }
       } finally {

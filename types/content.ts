@@ -334,3 +334,52 @@ export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
     badgeText: 'Zero Maida / No Preservatives',
   },
 ];
+
+export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
+  hero: {
+    eyebrow: 'HOMEMADE WELLNESS',
+    headline: 'Goodness That',
+    headlineItalic: 'Feels Like Home.',
+    supportingText: 'Naturally made foods and nutrition products crafted with care for your everyday wellness. Pure A2 ghee, stone-ground nuts, and authentic home-style craft.',
+    primaryButtonText: 'Shop Bestsellers',
+    secondaryButtonText: 'Explore Collections',
+    heroImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&auto=format&fit=crop&q=80',
+  },
+  heroSlides: DEFAULT_HERO_SLIDES,
+  curatedCollections: DEFAULT_CURATED_COLLECTIONS,
+  productSpotlight: DEFAULT_PRODUCT_SPOTLIGHT,
+  testimonials: DEFAULT_TESTIMONIALS,
+  announcement: {
+    enabled: true,
+    text: 'Freshly Made • Wholesome Ingredients • Delivered with Care',
+  },
+  brandStory: {
+    eyebrow: 'THE NUTRI GHAR WAY',
+    heading: 'Rooted in Tradition.',
+    headingItalic: 'Made for Today.',
+    paragraph1: 'At Nutri Ghar, we believe you shouldn’t have to choose between the pure, heartwarming flavors of Indian heritage and the clean nutritional standards demanded by modern living.',
+    paragraph2: 'Every jar of stone-ground peanut butter and every handcrafted batch of ladoos begins with 100% whole ingredients: pure A2 desi cow ghee, California almonds, rich roasted gram flour, and wild forest honey.',
+    paragraph3: 'No industrial shortcuts. Zero palm oil, no artificial flavorings, and no chemical preservatives. Just honest, wholesome nutrition prepared exactly the way it would be in your family home.',
+    storyImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1000&auto=format&fit=crop&q=80',
+    quote: '“Food made with the warmth of a mother’s kitchen nourishes not just the body, but the soul.”',
+  },
+  contact: {
+    phone: '+91 79761 19153',
+    email: 'Nutrighar2917@gmail.com',
+    whatsapp: '+91 79761 19153',
+    address: 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001',
+    fssaiLicense: 'FSSAI Lic: 10823005000214',
+  },
+  footer: {
+    aboutText: 'Nutri Ghar represents healthy food made with the warmth and trust of home. Small batches crafted with pure ingredients, zero chemical preservatives, and traditional recipes.',
+    instagramUrl: 'https://instagram.com',
+    whatsappUrl: 'https://wa.me/917976119153',
+    facebookUrl: 'https://facebook.com',
+    copyrightText: `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.`,
+  },
+  newsletter: {
+    heading: 'A Little Goodness in Your Inbox.',
+    description: 'Receive thoughtful wellness notes, seasonal kitchen recipes, and priority access to fresh batches.',
+    promoNote: 'We respect your privacy. No spam, ever. Unsubscribe anytime.',
+  },
+};

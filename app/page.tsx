@@ -51,9 +51,9 @@ export default function HomePage() {
           ...prev.brandStory,
           ...(globalContent.brandStory || {}),
         },
-        curatedCollections: globalContent.curatedCollections || prev.curatedCollections || DEFAULT_CURATED_COLLECTIONS,
-        productSpotlight: globalContent.productSpotlight || prev.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT,
-        testimonials: globalContent.testimonials || prev.testimonials || DEFAULT_TESTIMONIALS,
+        curatedCollections: globalContent.curatedCollections || DEFAULT_CURATED_COLLECTIONS,
+        productSpotlight: globalContent.productSpotlight || DEFAULT_PRODUCT_SPOTLIGHT,
+        testimonials: globalContent.testimonials || DEFAULT_TESTIMONIALS,
         newsletter: {
           ...prev.newsletter,
           ...(globalContent.newsletter || {}),

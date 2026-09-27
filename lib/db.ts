@@ -1195,7 +1195,23 @@ export async function updateOrderStatus(
 
 export async function getWebsiteContent(): Promise<WebsiteContent> {
   const store = getStoreData();
-  const raw = store.content || {};
+  const raw: any = { ...(store.content || {}) };
+
+  try {
+    const dbRecords = await prisma.websiteContent.findMany();
+    if (dbRecords && dbRecords.length > 0) {
+      for (const r of dbRecords) {
+        raw[r.section] = r.data;
+      }
+      if (!store.content) {
+        store.content = JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
+      }
+      Object.assign(store.content, raw);
+    }
+  } catch {
+    // fallback to JSON / memory store
+  }
+
   return {
     ...DEFAULT_WEBSITE_CONTENT,
     ...raw,
@@ -1251,12 +1267,23 @@ export async function updateWebsiteContent(section: keyof WebsiteContent, data: 
     }
   }
 
-  // Update persistent store
+  // Update in-memory and file store
   if (!store.content) {
     store.content = JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
   }
   (store.content as any)[section] = payloadData;
   saveStoreData(store);
+
+  // Sync to PostgreSQL database
+  try {
+    await prisma.websiteContent.upsert({
+      where: { section: String(section) },
+      update: { data: payloadData },
+      create: { section: String(section), data: payloadData },
+    });
+  } catch (err: any) {
+    console.warn(`[Content] Database sync note for section "${String(section)}":`, err.message);
+  }
 
   return getWebsiteContent();
 }
