@@ -72,37 +72,54 @@ function ProductsContent() {
       let matchesCategory = false;
       if (!selCat) {
         matchesCategory = true;
-      } else if (selCat === 'mithai') {
+      } else if (selCat === 'mithai' || selCat === 'cat-mithai' || selCat === 'mithai-ladoos') {
         matchesCategory =
           catSlug === 'mithai' ||
+          catSlug === 'mithai-ladoos' ||
           catId === 'cat-mithai' ||
           catSlug.includes('mithai') ||
+          catSlug.includes('ladoo') ||
           prodName.includes('ladoo') ||
-          prodName.includes('mithai');
-      } else if (selCat === 'peanut-butter') {
+          prodName.includes('mithai') ||
+          prodName.includes('katli') ||
+          prodName.includes('pedha') ||
+          prodName.includes('barfi');
+      } else if (selCat === 'peanut-butter' || selCat === 'cat-peanut-butter') {
         matchesCategory =
           catSlug === 'peanut-butter' ||
           catId === 'cat-peanut-butter' ||
-          prodName.includes('peanut butter') ||
+          catSlug.includes('peanut') ||
+          catSlug.includes('butter') ||
           prodName.includes('peanut') ||
+          prodName.includes('butter') ||
           prodName.includes('spread');
-      } else if (selCat === 'protein-nutrition') {
+      } else if (selCat === 'protein-nutrition' || selCat === 'cat-protein-nutrition' || selCat === 'protein') {
         matchesCategory =
           catSlug === 'protein-nutrition' ||
+          catSlug === 'protein' ||
           catId === 'cat-protein-nutrition' ||
-          prodName.includes('protein mix') ||
-          prodName.includes('high protein') ||
-          prodName.includes('protein power');
-      } else if (selCat === 'healthy-snacks') {
+          catSlug.includes('protein') ||
+          catSlug.includes('nutrition') ||
+          prodName.includes('protein');
+      } else if (selCat === 'healthy-snacks' || selCat === 'cat-healthy-snacks' || selCat === 'snacks') {
         matchesCategory =
           catSlug === 'healthy-snacks' ||
+          catSlug === 'snacks' ||
           catId === 'cat-healthy-snacks' ||
-          prodName.includes('roasted') ||
-          prodName.includes('energy bites') ||
-          prodName.includes('dry fruit') ||
-          prodName.includes('assortment');
+          catSlug.includes('snack') ||
+          catSlug.includes('nut') ||
+          prodName.includes('almond') ||
+          prodName.includes('cashew') ||
+          prodName.includes('trail') ||
+          prodName.includes('snack') ||
+          prodName.includes('seed') ||
+          prodName.includes('roasted');
       } else {
-        matchesCategory = catSlug === selCat || catId === selCat;
+        matchesCategory =
+          catSlug === selCat ||
+          catId === selCat ||
+          catSlug.includes(selCat) ||
+          selCat.includes(catSlug);
       }
 
       const matchesSearch =

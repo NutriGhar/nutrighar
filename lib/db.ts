@@ -704,9 +704,19 @@ function getStoreData(): StoreData {
   }
 
   try {
-    const targetFile = fs.existsSync(DATA_FILE) ? DATA_FILE : (fs.existsSync(TMP_DATA_FILE) ? TMP_DATA_FILE : null);
-    if (targetFile) {
-      const raw = fs.readFileSync(targetFile, 'utf-8');
+    let raw: string | null = null;
+    if (fs.existsSync(TMP_DATA_FILE)) {
+      try {
+        raw = fs.readFileSync(TMP_DATA_FILE, 'utf-8');
+      } catch {}
+    }
+    if (!raw && fs.existsSync(DATA_FILE)) {
+      try {
+        raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      } catch {}
+    }
+
+    if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.categories)) {
         inMemoryStore = {
@@ -739,25 +749,25 @@ function getStoreData(): StoreData {
 
 function saveStoreData(data: StoreData): void {
   inMemoryStore = data;
+  
+  // 1. Write to /tmp/nutrighar_data.json (always writable in Vercel serverless)
+  try {
+    fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch {
+    // Ignore tmp write errors
+  }
+
+  // 2. Also write to data/nutrighar_data.json if filesystem is writable
   try {
     const dataDir = path.join(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (err) {
-    // If running in Vercel serverless where root fs is read-only, write to /tmp
-    try {
-      fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-    } catch {
-      // In-memory store handles runtime
-    }
+  } catch {
+    // Read-only filesystem in production
   }
 }
-
-// -------------------------------------------------------------
-// PRODUCT OPERATIONS
-// -------------------------------------------------------------
 
 // -------------------------------------------------------------
 // PRODUCT OPERATIONS
@@ -781,24 +791,22 @@ export async function getProducts(options?: {
       const formatted = dbProducts.map(formatProduct);
       const productMap = new Map<string, Product>();
       for (const p of formatted) {
-        productMap.set(p.id, p);
-        if (p.slug) productMap.set(p.slug, p);
+        productMap.set(p.slug || p.id, p);
       }
       for (const p of store.products) {
-        const existing = productMap.get(p.id) || (p.slug ? productMap.get(p.slug) : undefined);
+        const key = p.slug || p.id;
+        const existing = productMap.get(key);
         if (!existing) {
-          productMap.set(p.id, p);
-          if (p.slug) productMap.set(p.slug, p);
+          productMap.set(key, p);
         } else {
           const dbTime = new Date(existing.updatedAt || 0).getTime();
           const localTime = new Date(p.updatedAt || 0).getTime();
           if (localTime >= dbTime) {
-            productMap.set(p.id, p);
-            if (p.slug) productMap.set(p.slug, p);
+            productMap.set(key, p);
           }
         }
       }
-      store.products = Array.from(new Set(productMap.values()));
+      store.products = Array.from(productMap.values());
     }
   } catch (err: any) {
     console.warn('[Products] DB query fallback note:', err.message);
@@ -810,7 +818,8 @@ export async function getProducts(options?: {
     list = list.filter((p) => p.isActive === options.isActive);
   }
   if (options?.categorySlug) {
-    list = list.filter((p) => p.categorySlug.toLowerCase() === options.categorySlug?.toLowerCase());
+    const cat = options.categorySlug.toLowerCase();
+    list = list.filter((p) => (p.categorySlug || '').toLowerCase() === cat || (p.categoryId || '').toLowerCase() === cat);
   }
   if (options?.categoryId) {
     list = list.filter((p) => p.categoryId === options.categoryId);
@@ -827,7 +836,7 @@ export async function getProducts(options?: {
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q) ||
-        p.categorySlug.toLowerCase().includes(q)
+        (p.categorySlug || '').toLowerCase().includes(q)
     );
   }
 
@@ -907,6 +916,31 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
 
   // Sync with PostgreSQL
   try {
+    const catSlug = newProduct.categorySlug || 'mithai';
+    const catInStore = store.categories.find((c) => c.id === newProduct.categoryId || c.slug === catSlug);
+    const catName = catInStore ? catInStore.name : 'Mithai & Ladoo';
+
+    let dbCategoryId = newProduct.categoryId;
+    try {
+      const dbCat = await prisma.category.upsert({
+        where: { slug: catSlug },
+        update: { name: catName },
+        create: {
+          id: newProduct.categoryId || `cat-${catSlug}`,
+          name: catName,
+          slug: catSlug,
+          description: catInStore?.description || '',
+          icon: catInStore?.icon || '📦',
+          isActive: true,
+        },
+      });
+      if (dbCat && dbCat.id) {
+        dbCategoryId = dbCat.id;
+      }
+    } catch (catErr: any) {
+      console.warn('[Category Sync] Note:', catErr.message);
+    }
+
     await prisma.product.upsert({
       where: { slug: newProduct.slug },
       update: {
@@ -914,7 +948,7 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
         description: newProduct.description,
         price: newProduct.price,
         originalPrice: newProduct.originalPrice,
-        categoryId: newProduct.categoryId,
+        categoryId: dbCategoryId,
         categorySlug: newProduct.categorySlug,
         image: newProduct.image,
         images: newProduct.images,
@@ -936,7 +970,7 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
         description: newProduct.description,
         price: newProduct.price,
         originalPrice: newProduct.originalPrice,
-        categoryId: newProduct.categoryId,
+        categoryId: dbCategoryId,
         categorySlug: newProduct.categorySlug,
         image: newProduct.image,
         images: newProduct.images,
