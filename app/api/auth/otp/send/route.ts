@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateOtp } from '@/lib/customerAuth';
+import { generateOtp, OTP_COOKIE_NAME } from '@/lib/customerAuth';
 
 /**
  * Optional SMS gateway integration (e.g. Fast2SMS / Twilio)
@@ -43,17 +43,29 @@ export async function POST(request: Request) {
     }
 
     const cleanPhone = phone.trim().replace(/[^0-9]/g, '').slice(-10);
-    const otpCode = generateOtp(cleanPhone, name?.trim());
+    const { code: otpCode, token: otpToken } = generateOtp(cleanPhone, name?.trim());
 
     // Send real SMS to the user's mobile number if SMS Gateway API key is configured
     await sendSmsToCustomer(cleanPhone, otpCode);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: `✓ 6-Digit OTP sent to +91 ${cleanPhone}`,
       otp: otpCode,
       demoOtp: otpCode,
     });
+
+    response.cookies.set({
+      name: OTP_COOKIE_NAME,
+      value: otpToken,
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 10 * 60, // 10 minutes
+    });
+
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to send OTP' },

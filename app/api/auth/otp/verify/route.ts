@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { verifyOtp, encodeCustomerSession, CUSTOMER_COOKIE_NAME, CustomerSession } from '@/lib/customerAuth';
+import { cookies } from 'next/headers';
+import { verifyOtp, encodeCustomerSession, CUSTOMER_COOKIE_NAME, OTP_COOKIE_NAME, CustomerSession } from '@/lib/customerAuth';
 import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
@@ -15,7 +16,10 @@ export async function POST(request: Request) {
     }
 
     const cleanPhone = phone.trim().replace(/[^0-9]/g, '').slice(-10);
-    const verification = verifyOtp(cleanPhone, otp.trim());
+    const cookieStore = await cookies();
+    const otpCookie = cookieStore.get(OTP_COOKIE_NAME)?.value;
+
+    const verification = verifyOtp(cleanPhone, otp.trim(), otpCookie);
 
     if (!verification.valid) {
       return NextResponse.json(
@@ -24,39 +28,61 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upsert customer in PostgreSQL database
-    let customer = await prisma.customer.findFirst({
-      where: { phone: cleanPhone },
-    });
-
     const passedName = name?.trim() || verification.name;
-    const isGenericName = customer?.name?.startsWith('User +91') || customer?.name === 'Customer';
-    const effectiveName = passedName || (customer && !isGenericName ? customer.name : 'Customer');
+    let customerId = `cust_${cleanPhone}`;
+    let customerName = passedName || 'Customer';
+    let customerEmail = `${cleanPhone}@phone.nutrighar.com`;
+    let customerAddress: string | null = null;
+    let customerCity: string | null = null;
+    let customerState: string | null = null;
+    let customerPostal: string | null = null;
 
-    if (!customer) {
-      customer = await prisma.customer.create({
-        data: {
-          phone: cleanPhone,
-          name: effectiveName,
-          email: `${cleanPhone}@phone.nutrighar.com`,
-        },
+    // Upsert customer in PostgreSQL database (with resilient fallback)
+    try {
+      let customer = await prisma.customer.findFirst({
+        where: { phone: cleanPhone },
       });
-    } else if (passedName || (isGenericName && passedName)) {
-      customer = await prisma.customer.update({
-        where: { id: customer.id },
-        data: { name: effectiveName },
-      });
+
+      const isGenericName = customer?.name?.startsWith('User +91') || customer?.name === 'Customer';
+      const effectiveName = passedName || (customer && !isGenericName ? customer.name : 'Customer');
+
+      if (!customer) {
+        customer = await prisma.customer.create({
+          data: {
+            phone: cleanPhone,
+            name: effectiveName,
+            email: `${cleanPhone}@phone.nutrighar.com`,
+          },
+        });
+      } else if (passedName || (isGenericName && passedName)) {
+        customer = await prisma.customer.update({
+          where: { id: customer.id },
+          data: { name: effectiveName },
+        });
+      }
+
+      if (customer) {
+        customerId = customer.id;
+        customerName = customer.name || effectiveName;
+        customerEmail = customer.email || customerEmail;
+        customerAddress = customer.address || null;
+        customerCity = customer.city || null;
+        customerState = customer.state || null;
+        customerPostal = customer.postalCode || null;
+      }
+    } catch (dbErr: any) {
+      console.warn('[Auth OTP Verify] DB fallback note:', dbErr.message);
     }
 
     const session: CustomerSession = {
-      id: customer.id,
-      name: customer.name || effectiveName,
-      email: customer.email,
-      phone: customer.phone,
-      address: customer.address,
-      city: customer.city,
-      state: customer.state,
-      postalCode: customer.postalCode,
+      id: customerId,
+      name: customerName,
+      email: customerEmail,
+      phone: cleanPhone,
+      address: customerAddress,
+      city: customerCity,
+      state: customerState,
+      postalCode: customerPostal,
       expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
     };
 
@@ -76,6 +102,9 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60,
     });
+
+    // Delete temporary OTP cookie
+    response.cookies.delete(OTP_COOKIE_NAME);
 
     return response;
   } catch (error: any) {

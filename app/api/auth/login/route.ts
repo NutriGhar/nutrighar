@@ -17,14 +17,23 @@ export async function POST(request: Request) {
     const identifier = emailOrPhone.trim().toLowerCase();
     const cleanPhone = identifier.replace(/[^0-9]/g, '').slice(-10);
 
-    const customer = await prisma.customer.findFirst({
-      where: {
-        OR: [
-          { email: identifier },
-          ...(cleanPhone.length === 10 ? [{ phone: cleanPhone }] : []),
-        ],
-      },
-    });
+    let customer: any = null;
+    try {
+      customer = await prisma.customer.findFirst({
+        where: {
+          OR: [
+            { email: identifier },
+            ...(cleanPhone.length === 10 ? [{ phone: cleanPhone }] : []),
+          ],
+        },
+      });
+    } catch (dbErr: any) {
+      console.warn('[Login] DB connection note:', dbErr.message);
+      return NextResponse.json(
+        { success: false, error: 'Database service is temporarily initializing. Please sign in via Mobile OTP or try again in a moment.' },
+        { status: 503 }
+      );
+    }
 
     if (!customer) {
       return NextResponse.json(

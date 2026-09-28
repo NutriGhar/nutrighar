@@ -517,6 +517,29 @@ export const DEFAULT_PRODUCTS: Product[] = [
     updatedAt: new Date().toISOString(),
   },
   {
+    id: 'kaju-katli',
+    name: 'Pure Silver Leaf Kaju Katli',
+    slug: 'kaju-katli',
+    categoryId: 'cat-mithai',
+    categorySlug: 'mithai',
+    price: 499,
+    originalPrice: 549,
+    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80',
+    images: ['https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80'],
+    description: 'Royal cashew diamond fudge handcrafted with whole Goan cashews, pure cardamom, and edible silver vark.',
+    ingredients: ['Premium Goan Cashews', 'Pure Desi Cow Ghee', 'Raw Cane Sugar', 'Cardamom', 'Edible Silver Leaf'],
+    benefits: ['Rich in Healthy Fats & Zinc', 'Zero Added Flour or Fillers', 'Melt-in-Mouth Texture', 'Freshly Handcrafted'],
+    rating: 4.9,
+    reviewCount: 380,
+    stockQuantity: 35,
+    lowStockThreshold: 10,
+    isFeatured: true,
+    isBestSeller: true,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
     id: 'coconut-ladoo',
     name: 'Fresh Coconut Ladoo',
     slug: 'coconut-ladoo',
@@ -747,6 +770,29 @@ export async function getProducts(options?: {
   search?: string;
 }): Promise<Product[]> {
   const store = getStoreData();
+
+  try {
+    const dbProducts = await prisma.product.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    if (dbProducts && dbProducts.length > 0) {
+      const formatted = dbProducts.map(formatProduct);
+      const productMap = new Map<string, Product>();
+      for (const p of formatted) {
+        productMap.set(p.id, p);
+        productMap.set(p.slug, p);
+      }
+      for (const p of store.products) {
+        if (!productMap.has(p.id) && !productMap.has(p.slug)) {
+          productMap.set(p.id, p);
+        }
+      }
+      store.products = Array.from(new Set(productMap.values()));
+    }
+  } catch (err: any) {
+    console.warn('[Products] DB query fallback note:', err.message);
+  }
+
   let list = [...store.products];
 
   if (options?.isActive !== undefined) {
@@ -778,6 +824,19 @@ export async function getProducts(options?: {
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
+  try {
+    const dbProduct = await prisma.product.findFirst({
+      where: {
+        OR: [{ id: id }, { slug: id }],
+      },
+    });
+    if (dbProduct) {
+      return formatProduct(dbProduct);
+    }
+  } catch {
+    // fallback
+  }
+
   const store = getStoreData();
   return store.products.find((p) => p.id === id || p.slug === id) || null;
 }
@@ -834,50 +893,54 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
   }
   saveStoreData(store);
 
-  // Background sync with PostgreSQL if available
-  prisma.product.upsert({
-    where: { slug: newProduct.slug },
-    update: {
-      name: newProduct.name,
-      description: newProduct.description,
-      price: newProduct.price,
-      originalPrice: newProduct.originalPrice,
-      categoryId: newProduct.categoryId,
-      categorySlug: newProduct.categorySlug,
-      image: newProduct.image,
-      images: newProduct.images,
-      ingredients: newProduct.ingredients,
-      benefits: newProduct.benefits,
-      rating: newProduct.rating,
-      reviewCount: newProduct.reviewCount,
-      stockQuantity: newProduct.stockQuantity,
-      lowStockThreshold: newProduct.lowStockThreshold,
-      isFeatured: newProduct.isFeatured,
-      isBestSeller: newProduct.isBestSeller,
-      isActive: newProduct.isActive,
-    },
-    create: {
-      id,
-      name: newProduct.name,
-      slug: newProduct.slug,
-      description: newProduct.description,
-      price: newProduct.price,
-      originalPrice: newProduct.originalPrice,
-      categoryId: newProduct.categoryId,
-      categorySlug: newProduct.categorySlug,
-      image: newProduct.image,
-      images: newProduct.images,
-      ingredients: newProduct.ingredients,
-      benefits: newProduct.benefits,
-      rating: newProduct.rating,
-      reviewCount: newProduct.reviewCount,
-      stockQuantity: newProduct.stockQuantity,
-      lowStockThreshold: newProduct.lowStockThreshold,
-      isFeatured: newProduct.isFeatured,
-      isBestSeller: newProduct.isBestSeller,
-      isActive: newProduct.isActive,
-    },
-  }).catch(() => {});
+  // Sync with PostgreSQL
+  try {
+    await prisma.product.upsert({
+      where: { slug: newProduct.slug },
+      update: {
+        name: newProduct.name,
+        description: newProduct.description,
+        price: newProduct.price,
+        originalPrice: newProduct.originalPrice,
+        categoryId: newProduct.categoryId,
+        categorySlug: newProduct.categorySlug,
+        image: newProduct.image,
+        images: newProduct.images,
+        ingredients: newProduct.ingredients,
+        benefits: newProduct.benefits,
+        rating: newProduct.rating,
+        reviewCount: newProduct.reviewCount,
+        stockQuantity: newProduct.stockQuantity,
+        lowStockThreshold: newProduct.lowStockThreshold,
+        isFeatured: newProduct.isFeatured,
+        isBestSeller: newProduct.isBestSeller,
+        isActive: newProduct.isActive,
+      },
+      create: {
+        id,
+        name: newProduct.name,
+        slug: newProduct.slug,
+        description: newProduct.description,
+        price: newProduct.price,
+        originalPrice: newProduct.originalPrice,
+        categoryId: newProduct.categoryId,
+        categorySlug: newProduct.categorySlug,
+        image: newProduct.image,
+        images: newProduct.images,
+        ingredients: newProduct.ingredients,
+        benefits: newProduct.benefits,
+        rating: newProduct.rating,
+        reviewCount: newProduct.reviewCount,
+        stockQuantity: newProduct.stockQuantity,
+        lowStockThreshold: newProduct.lowStockThreshold,
+        isFeatured: newProduct.isFeatured,
+        isBestSeller: newProduct.isBestSeller,
+        isActive: newProduct.isActive,
+      },
+    });
+  } catch (err: any) {
+    console.warn('[Product] PostgreSQL sync warning:', err.message);
+  }
 
   return newProduct;
 }
@@ -921,22 +984,23 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     saveStoreData(store);
   }
 
-  // Background sync with PostgreSQL if available
-  prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } })
-    .then((prod) => {
-      if (prod) {
-        const data: any = { ...updates };
-        delete data.id;
-        delete data.createdAt;
-        delete data.updatedAt;
-        if (updates.price !== undefined) data.price = Number(updates.price);
-        if (updates.originalPrice !== undefined) data.originalPrice = updates.originalPrice ? Number(updates.originalPrice) : null;
-        if (updates.stockQuantity !== undefined) data.stockQuantity = Number(updates.stockQuantity);
-        if (updates.lowStockThreshold !== undefined) data.lowStockThreshold = Number(updates.lowStockThreshold);
-        return prisma.product.update({ where: { id: prod.id }, data });
-      }
-    })
-    .catch(() => {});
+  try {
+    const prod = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (prod) {
+      const data: any = { ...updates };
+      delete data.id;
+      delete data.createdAt;
+      delete data.updatedAt;
+      if (updates.price !== undefined) data.price = Number(updates.price);
+      if (updates.originalPrice !== undefined) data.originalPrice = updates.originalPrice ? Number(updates.originalPrice) : null;
+      if (updates.stockQuantity !== undefined) data.stockQuantity = Number(updates.stockQuantity);
+      if (updates.lowStockThreshold !== undefined) data.lowStockThreshold = Number(updates.lowStockThreshold);
+      const res = await prisma.product.update({ where: { id: prod.id }, data });
+      if (!updatedProduct) updatedProduct = formatProduct(res);
+    }
+  } catch (err: any) {
+    console.warn('[Product] PostgreSQL update warning:', err.message);
+  }
 
   return updatedProduct;
 }
@@ -947,11 +1011,14 @@ export async function deleteProduct(id: string): Promise<boolean> {
   store.products = store.products.filter((p) => p.id !== id && p.slug !== id);
   saveStoreData(store);
 
-  prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } })
-    .then((prod) => {
-      if (prod) return prisma.product.delete({ where: { id: prod.id } });
-    })
-    .catch(() => {});
+  try {
+    const prod = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (prod) {
+      await prisma.product.delete({ where: { id: prod.id } });
+    }
+  } catch (err: any) {
+    console.warn('[Product] PostgreSQL delete warning:', err.message);
+  }
 
   return store.products.length < initialLen;
 }
@@ -962,6 +1029,37 @@ export async function deleteProduct(id: string): Promise<boolean> {
 
 export async function getCategories(includeInactive = false): Promise<Category[]> {
   const store = getStoreData();
+
+  try {
+    const dbCategories = await prisma.category.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+    if (dbCategories && dbCategories.length > 0) {
+      const catMap = new Map<string, Category>();
+      for (const c of dbCategories) {
+        catMap.set(c.id, {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          description: c.description,
+          image: c.image,
+          icon: c.icon,
+          isActive: c.isActive,
+          createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
+          updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
+        });
+      }
+      for (const c of store.categories) {
+        if (!catMap.has(c.id) && !catMap.has(c.slug)) {
+          catMap.set(c.id, c);
+        }
+      }
+      store.categories = Array.from(catMap.values());
+    }
+  } catch {
+    // fallback
+  }
+
   let list = [...store.categories];
   if (!includeInactive) {
     list = list.filter((c) => c.isActive);
@@ -970,6 +1068,27 @@ export async function getCategories(includeInactive = false): Promise<Category[]
 }
 
 export async function getCategoryById(id: string): Promise<Category | null> {
+  try {
+    const dbCat = await prisma.category.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
+    });
+    if (dbCat) {
+      return {
+        id: dbCat.id,
+        name: dbCat.name,
+        slug: dbCat.slug,
+        description: dbCat.description,
+        image: dbCat.image,
+        icon: dbCat.icon,
+        isActive: dbCat.isActive,
+        createdAt: dbCat.createdAt instanceof Date ? dbCat.createdAt.toISOString() : String(dbCat.createdAt),
+        updatedAt: dbCat.updatedAt instanceof Date ? dbCat.updatedAt.toISOString() : String(dbCat.updatedAt),
+      };
+    }
+  } catch {
+    // fallback
+  }
+
   const store = getStoreData();
   return store.categories.find((c) => c.id === id || c.slug === id) || null;
 }
@@ -1012,25 +1131,29 @@ export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | '
   }
   saveStoreData(store);
 
-  prisma.category.upsert({
-    where: { slug: newCategory.slug },
-    update: {
-      name: newCategory.name,
-      description: newCategory.description,
-      image: newCategory.image,
-      icon: newCategory.icon,
-      isActive: newCategory.isActive,
-    },
-    create: {
-      id,
-      name: newCategory.name,
-      slug: newCategory.slug,
-      description: newCategory.description,
-      image: newCategory.image,
-      icon: newCategory.icon,
-      isActive: newCategory.isActive,
-    },
-  }).catch(() => {});
+  try {
+    await prisma.category.upsert({
+      where: { slug: newCategory.slug },
+      update: {
+        name: newCategory.name,
+        description: newCategory.description,
+        image: newCategory.image,
+        icon: newCategory.icon,
+        isActive: newCategory.isActive,
+      },
+      create: {
+        id,
+        name: newCategory.name,
+        slug: newCategory.slug,
+        description: newCategory.description,
+        image: newCategory.image,
+        icon: newCategory.icon,
+        isActive: newCategory.isActive,
+      },
+    });
+  } catch (err: any) {
+    console.warn('[Category] PostgreSQL sync warning:', err.message);
+  }
 
   return newCategory;
 }
