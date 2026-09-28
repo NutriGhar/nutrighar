@@ -65,67 +65,61 @@ function ProductsContent() {
     const q = searchQuery.trim().toLowerCase();
 
     let filtered = products.filter((product) => {
-      const catSlug = (product.categorySlug || product.category || '').toLowerCase();
-      const catId = (product.categoryId || '').toLowerCase();
-      const prodName = product.name.toLowerCase();
+      const catSlug = (product.categorySlug || product.category || '').toLowerCase().trim();
+      const catId = (product.categoryId || '').toLowerCase().trim();
+      const prodName = (product.name || '').toLowerCase();
       
       let matchesCategory = false;
-      if (!selCat) {
+      if (!selCat || selCat === 'all') {
         matchesCategory = true;
-      } else if (selCat === 'mithai' || selCat === 'cat-mithai' || selCat === 'mithai-ladoos') {
-        matchesCategory =
-          catSlug === 'mithai' ||
-          catSlug === 'mithai-ladoos' ||
-          catId === 'cat-mithai' ||
-          catSlug.includes('mithai') ||
-          catSlug.includes('ladoo') ||
-          prodName.includes('ladoo') ||
-          prodName.includes('mithai') ||
-          prodName.includes('katli') ||
-          prodName.includes('pedha') ||
-          prodName.includes('barfi');
-      } else if (selCat === 'peanut-butter' || selCat === 'cat-peanut-butter') {
-        matchesCategory =
-          catSlug === 'peanut-butter' ||
-          catId === 'cat-peanut-butter' ||
-          catSlug.includes('peanut') ||
-          catSlug.includes('butter') ||
-          prodName.includes('peanut') ||
-          prodName.includes('butter') ||
-          prodName.includes('spread');
-      } else if (selCat === 'protein-nutrition' || selCat === 'cat-protein-nutrition' || selCat === 'protein') {
-        matchesCategory =
-          catSlug === 'protein-nutrition' ||
-          catSlug === 'protein' ||
-          catId === 'cat-protein-nutrition' ||
-          catSlug.includes('protein') ||
-          catSlug.includes('nutrition') ||
-          prodName.includes('protein');
-      } else if (selCat === 'healthy-snacks' || selCat === 'cat-healthy-snacks' || selCat === 'snacks') {
-        matchesCategory =
-          catSlug === 'healthy-snacks' ||
-          catSlug === 'snacks' ||
-          catId === 'cat-healthy-snacks' ||
-          catSlug.includes('snack') ||
-          catSlug.includes('nut') ||
-          prodName.includes('almond') ||
-          prodName.includes('cashew') ||
-          prodName.includes('trail') ||
-          prodName.includes('snack') ||
-          prodName.includes('seed') ||
-          prodName.includes('roasted');
       } else {
-        matchesCategory =
+        // Direct exact match on category slug or ID
+        const directMatch =
           catSlug === selCat ||
           catId === selCat ||
-          catSlug.includes(selCat) ||
-          selCat.includes(catSlug);
+          catId === `cat-${selCat}` ||
+          catSlug === selCat.replace(/^cat-/, '');
+
+        if (directMatch) {
+          matchesCategory = true;
+        } else if (selCat === 'mithai' || selCat === 'cat-mithai' || selCat === 'mithai-ladoos') {
+          matchesCategory =
+            catSlug.includes('mithai') ||
+            catSlug.includes('ladoo') ||
+            catSlug.includes('sweet') ||
+            catId.includes('mithai');
+        } else if (selCat === 'peanut-butter' || selCat === 'cat-peanut-butter') {
+          matchesCategory =
+            catSlug.includes('peanut') ||
+            catSlug.includes('butter') ||
+            catId.includes('peanut');
+        } else if (selCat === 'protein-nutrition' || selCat === 'cat-protein-nutrition' || selCat === 'protein') {
+          matchesCategory =
+            catSlug.includes('protein') ||
+            catSlug.includes('nutrition') ||
+            catId.includes('protein');
+        } else if (selCat === 'healthy-snacks' || selCat === 'cat-healthy-snacks' || selCat === 'snacks') {
+          matchesCategory =
+            catSlug.includes('snack') ||
+            catSlug.includes('nut') ||
+            catSlug.includes('dry-fruit') ||
+            catId.includes('snack');
+        } else {
+          // Dynamic category match for any custom category created by admin
+          const cleanSel = selCat.replace(/^cat-/, '').replace(/[^a-z0-9]/g, '');
+          const cleanProdCat = catSlug.replace(/^cat-/, '').replace(/[^a-z0-9]/g, '');
+          matchesCategory =
+            cleanProdCat === cleanSel ||
+            cleanProdCat.includes(cleanSel) ||
+            cleanSel.includes(cleanProdCat);
+        }
       }
 
       const matchesSearch =
         !q ||
         prodName.includes(q) ||
-        product.description.toLowerCase().includes(q);
+        (product.description || '').toLowerCase().includes(q) ||
+        catSlug.includes(q);
 
       return matchesCategory && matchesSearch;
     });

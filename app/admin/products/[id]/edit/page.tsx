@@ -61,7 +61,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           setDescription(p.description);
           setPrice(String(p.price));
           setOriginalPrice(p.originalPrice ? String(p.originalPrice) : '');
-          setCategoryId(p.categoryId || (catData.data?.[0]?.id ?? ''));
+          const matchingCat = catData.data?.find((c: any) => c.id === p.categoryId || c.slug === p.categorySlug || c.slug === p.categoryId || c.id === `cat-${p.categorySlug}`);
+          setCategoryId(matchingCat ? matchingCat.id : (p.categoryId || catData.data?.[0]?.id || ''));
           setStockQuantity(String(p.stockQuantity));
           setLowStockThreshold(String(p.lowStockThreshold));
           setWeight(p.weight || '500g');
@@ -125,7 +126,9 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
     try {
       setIsSubmitting(true);
-      const selectedCat = categories.find((c) => c.id === categoryId);
+      const selectedCat = categories.find((c) => c.id === categoryId || c.slug === categoryId);
+      const catSlug = selectedCat?.slug || categoryId.replace(/^cat-/, '') || 'mithai';
+      const finalCategoryId = selectedCat?.id || (categoryId.startsWith('cat-') ? categoryId : `cat-${categoryId}`);
 
       const ingredients = ingredientsText
         .split(',')
@@ -143,8 +146,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         description: description.trim(),
         price: Number(price),
         originalPrice: originalPrice ? Number(originalPrice) : undefined,
-        categoryId,
-        categorySlug: selectedCat?.slug || 'healthy-snacks',
+        categoryId: finalCategoryId,
+        categorySlug: catSlug,
         image: image.trim(),
         images: [image.trim()],
         ingredients: ingredients.length > 0 ? ingredients : ['Natural ingredients'],

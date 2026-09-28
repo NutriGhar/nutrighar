@@ -100,7 +100,9 @@ export default function NewProductPage() {
 
     try {
       setIsSubmitting(true);
-      const selectedCat = categories.find((c) => c.id === categoryId);
+      const selectedCat = categories.find((c) => c.id === categoryId || c.slug === categoryId);
+      const catSlug = selectedCat?.slug || categoryId.replace(/^cat-/, '') || 'mithai';
+      const finalCategoryId = selectedCat?.id || (categoryId.startsWith('cat-') ? categoryId : `cat-${categoryId}`);
 
       const ingredients = ingredientsText
         .split(',')
@@ -118,8 +120,8 @@ export default function NewProductPage() {
         description: description.trim(),
         price: Number(price),
         originalPrice: originalPrice ? Number(originalPrice) : undefined,
-        categoryId,
-        categorySlug: selectedCat?.slug || 'healthy-snacks',
+        categoryId: finalCategoryId,
+        categorySlug: catSlug,
         image: image.trim(),
         images: [image.trim()],
         ingredients: ingredients.length > 0 ? ingredients : ['Natural ingredients'],

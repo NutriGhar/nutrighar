@@ -789,43 +789,14 @@ export async function getProducts(options?: {
       where: { section: 'catalog_products' },
     });
     if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      const dbProducts = catalogRecord.data as unknown as Product[];
-      const productMap = new Map<string, Product>();
-      for (const p of dbProducts) {
-        productMap.set(p.slug || p.id, p);
-      }
-      for (const p of store.products) {
-        const key = p.slug || p.id;
-        const existing = productMap.get(key);
-        if (!existing) {
-          productMap.set(key, p);
-        } else {
-          const dbTime = new Date(existing.updatedAt || 0).getTime();
-          const localTime = new Date(p.updatedAt || 0).getTime();
-          if (localTime > dbTime) {
-            productMap.set(key, p);
-          }
-        }
-      }
-      store.products = Array.from(productMap.values());
+      store.products = catalogRecord.data as unknown as Product[];
     } else {
       // Fallback: try relational table
       const dbRelProducts = await prisma.product.findMany({
         orderBy: { createdAt: 'desc' },
       });
       if (dbRelProducts && dbRelProducts.length > 0) {
-        const formatted = dbRelProducts.map(formatProduct);
-        const productMap = new Map<string, Product>();
-        for (const p of formatted) {
-          productMap.set(p.slug || p.id, p);
-        }
-        for (const p of store.products) {
-          const key = p.slug || p.id;
-          if (!productMap.has(key)) {
-            productMap.set(key, p);
-          }
-        }
-        store.products = Array.from(productMap.values());
+        store.products = dbRelProducts.map(formatProduct);
       }
     }
   } catch (err: any) {
@@ -838,11 +809,27 @@ export async function getProducts(options?: {
     list = list.filter((p) => p.isActive === options.isActive);
   }
   if (options?.categorySlug) {
-    const cat = options.categorySlug.toLowerCase();
-    list = list.filter((p) => (p.categorySlug || '').toLowerCase() === cat || (p.categoryId || '').toLowerCase() === cat);
+    const cat = options.categorySlug.toLowerCase().trim();
+    list = list.filter((p) => {
+      const pCatSlug = (p.categorySlug || '').toLowerCase().trim();
+      const pCatId = (p.categoryId || '').toLowerCase().trim();
+      return (
+        pCatSlug === cat ||
+        pCatId === cat ||
+        pCatId === `cat-${cat}` ||
+        pCatSlug === cat.replace(/^cat-/, '') ||
+        pCatSlug.includes(cat) ||
+        cat.includes(pCatSlug)
+      );
+    });
   }
   if (options?.categoryId) {
-    list = list.filter((p) => p.categoryId === options.categoryId);
+    const catId = options.categoryId.toLowerCase().trim();
+    list = list.filter((p) => {
+      const pCatId = (p.categoryId || '').toLowerCase().trim();
+      const pCatSlug = (p.categorySlug || '').toLowerCase().trim();
+      return pCatId === catId || pCatSlug === catId || pCatId === `cat-${catId}`;
+    });
   }
   if (options?.isFeatured !== undefined) {
     list = list.filter((p) => Boolean(p.isFeatured) === options.isFeatured);
@@ -933,8 +920,18 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
     updatedAt: now,
   };
 
-  // 1. Save to persistent file & in-memory store immediately
   const store = getStoreData();
+
+  // Pull latest PostgreSQL catalog_products first
+  try {
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_products' },
+    });
+    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
+      store.products = catalogRecord.data as unknown as Product[];
+    }
+  } catch {}
+
   const existingIdx = store.products.findIndex((p) => p.id === id || p.slug === slug);
   if (existingIdx !== -1) {
     store.products[existingIdx] = newProduct;
@@ -943,7 +940,7 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
   }
   saveStoreData(store);
 
-  // 2. Sync to PostgreSQL WebsiteContent catalog section (Rock-solid, shared across all lambdas)
+  // 2. Sync to PostgreSQL WebsiteContent catalog section (shared across all lambdas)
   try {
     await prisma.websiteContent.upsert({
       where: { section: 'catalog_products' },
@@ -1035,7 +1032,16 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
 
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
   const store = getStoreData();
-  const index = store.products.findIndex((p) => p.id === id || p.slug === id);
+
+  // Pull latest PostgreSQL catalog_products first
+  try {
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_products' },
+    });
+    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
+      store.products = catalogRecord.data as unknown as Product[];
+    }
+  } catch {}
 
   let imageUrl = updates.image;
   if (imageUrl && imageUrl.startsWith('data:image/')) {
@@ -1052,6 +1058,7 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
 
   let updatedProduct: Product | null = null;
   const now = new Date().toISOString();
+  const index = store.products.findIndex((p) => p.id === id || p.slug === id);
 
   if (index !== -1) {
     const current = store.products[index];
@@ -1143,6 +1150,17 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
 
 export async function deleteProduct(id: string): Promise<boolean> {
   const store = getStoreData();
+
+  // Pull latest PostgreSQL catalog_products first
+  try {
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_products' },
+    });
+    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
+      store.products = catalogRecord.data as unknown as Product[];
+    }
+  } catch {}
+
   const initialLen = store.products.length;
   store.products = store.products.filter((p) => p.id !== id && p.slug !== id);
   saveStoreData(store);
