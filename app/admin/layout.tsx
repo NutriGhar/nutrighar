@@ -111,7 +111,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.375v4.5A2.25 2.25 0 004.5 21h15a2.25 2.25 0 002.25-2.25v-4.5m-19.5 0v-6.75A2.25 2.25 0 014.5 5.25h4.125a2.25 2.25 0 011.591.659l1.637 1.636a2.25 2.25 0 001.591.66h5.806A2.25 2.25 0 0121 10.5v3.375" />
         </svg>
       ),
-      active: pathname === '/admin/categories',
+      active: pathname.startsWith('/admin/categories'),
     },
     {
       name: 'Customer Orders',

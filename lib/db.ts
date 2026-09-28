@@ -1336,6 +1336,19 @@ export async function updateCategory(id: string, updates: Partial<Category>): Pr
   const store = getStoreData();
   const index = store.categories.findIndex((c) => c.id === id || c.slug === id);
 
+  let imageUrl = updates.image;
+  if (imageUrl && imageUrl.startsWith('data:image/')) {
+    const uploadRes = await uploadProductImage({
+      name: `cat-${id}`,
+      type: 'image/jpeg',
+      base64OrUrl: imageUrl,
+    });
+    if (uploadRes.success && uploadRes.url) {
+      imageUrl = uploadRes.url;
+      updates.image = imageUrl;
+    }
+  }
+
   let updatedCategory: Category | null = null;
   const now = new Date().toISOString();
 

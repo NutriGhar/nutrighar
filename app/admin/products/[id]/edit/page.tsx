@@ -290,9 +290,19 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
-              Category *
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                Category *
+              </label>
+              <Link
+                href="/admin/categories"
+                target="_blank"
+                className="text-xs font-bold text-[#1E382B] hover:text-[#9C5838] underline inline-flex items-center gap-1"
+              >
+                <span>Manage / Add Categories</span>
+                <span>↗</span>
+              </Link>
+            </div>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
