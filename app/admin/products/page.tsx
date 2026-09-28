@@ -236,17 +236,24 @@ export default function AdminProductsPage() {
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3.5">
                           <div className="w-12 h-12 rounded-xl bg-[#EFE8DE] relative overflow-hidden flex-shrink-0 border border-[#E8E1D7]">
-                            <Image
-                              src={product.image}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={product.image || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80'}
                               alt={product.name}
-                              fill
-                              className="object-cover"
-                              sizes="48px"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
+                              }}
+                              className="w-full h-full object-cover"
                             />
                           </div>
                           <div>
-                            <div className="font-serif font-semibold text-[#1C1917]">
-                              {product.name}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-serif font-semibold text-[#1C1917]">
+                                {product.name}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-[#EFE8DE] text-[#1E382B] text-[11px] font-bold">
+                                ⚖️ {product.weight || '500g'}
+                              </span>
                             </div>
                             <div className="text-xs text-stone-500 font-mono">
                               /{product.slug}

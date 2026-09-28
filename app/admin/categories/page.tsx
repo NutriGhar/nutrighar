@@ -54,7 +54,7 @@ export default function AdminCategoriesPage() {
     setName('');
     setSlug('');
     setDescription('');
-    setImage('https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80');
+    setImage('https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&auto=format&fit=crop&q=80');
     setIcon('🍯');
     setIsActive(true);
     setError(null);
@@ -205,14 +205,16 @@ export default function AdminCategoriesPage() {
               >
                 <div>
                   {/* Category Banner Image */}
-                  <div className="relative h-36 w-full bg-[#EBE2D5]">
+                  <div className="relative h-36 w-full bg-[#EBE2D5] overflow-hidden">
                     {cat.image && (
-                      <Image
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
                         src={cat.image}
                         alt={cat.name}
-                        fill
-                        className="object-cover"
-                        sizes="300px"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
+                        }}
+                        className="w-full h-full object-cover"
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

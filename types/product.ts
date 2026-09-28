@@ -21,6 +21,7 @@ export interface Product {
   isActive?: boolean;
   stockQuantity?: number;
   lowStockThreshold?: number;
+  weight?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

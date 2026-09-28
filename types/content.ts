@@ -27,6 +27,7 @@ export interface Product {
   reviewCount: number;
   stockQuantity: number;
   lowStockThreshold: number;
+  weight?: string | null;
   isFeatured: boolean;
   isBestSeller: boolean;
   isActive: boolean;

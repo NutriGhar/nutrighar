@@ -35,6 +35,7 @@ export interface Product {
   reviewCount: number;
   stockQuantity: number;
   lowStockThreshold: number;
+  weight?: string | null;
   isFeatured: boolean;
   isBestSeller: boolean;
   isActive: boolean;
@@ -410,6 +411,7 @@ function formatProduct(p: any): Product {
     reviewCount: p.reviewCount,
     stockQuantity: p.stockQuantity,
     lowStockThreshold: p.lowStockThreshold,
+    weight: p.weight || '500g',
     isFeatured: p.isFeatured,
     isBestSeller: p.isBestSeller,
     isActive: p.isActive,
@@ -524,8 +526,8 @@ export const DEFAULT_PRODUCTS: Product[] = [
     categorySlug: 'mithai',
     price: 499,
     originalPrice: 549,
-    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80'],
+    image: 'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&auto=format&fit=crop&q=80',
+    images: ['https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&auto=format&fit=crop&q=80'],
     description: 'Royal cashew diamond fudge handcrafted with whole Goan cashews, pure cardamom, and edible silver vark.',
     ingredients: ['Premium Goan Cashews', 'Pure Desi Cow Ghee', 'Raw Cane Sugar', 'Cardamom', 'Edible Silver Leaf'],
     benefits: ['Rich in Healthy Fats & Zinc', 'Zero Added Flour or Fillers', 'Melt-in-Mouth Texture', 'Freshly Handcrafted'],
@@ -780,11 +782,20 @@ export async function getProducts(options?: {
       const productMap = new Map<string, Product>();
       for (const p of formatted) {
         productMap.set(p.id, p);
-        productMap.set(p.slug, p);
+        if (p.slug) productMap.set(p.slug, p);
       }
       for (const p of store.products) {
-        if (!productMap.has(p.id) && !productMap.has(p.slug)) {
+        const existing = productMap.get(p.id) || (p.slug ? productMap.get(p.slug) : undefined);
+        if (!existing) {
           productMap.set(p.id, p);
+          if (p.slug) productMap.set(p.slug, p);
+        } else {
+          const dbTime = new Date(existing.updatedAt || 0).getTime();
+          const localTime = new Date(p.updatedAt || 0).getTime();
+          if (localTime >= dbTime) {
+            productMap.set(p.id, p);
+            if (p.slug) productMap.set(p.slug, p);
+          }
         }
       }
       store.products = Array.from(new Set(productMap.values()));
@@ -876,6 +887,7 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
     reviewCount: Number(data.reviewCount) || 0,
     stockQuantity: Number(data.stockQuantity) >= 0 ? Number(data.stockQuantity) : 50,
     lowStockThreshold: Number(data.lowStockThreshold) >= 0 ? Number(data.lowStockThreshold) : 10,
+    weight: data.weight || '500g',
     isFeatured: Boolean(data.isFeatured),
     isBestSeller: Boolean(data.isBestSeller),
     isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
@@ -912,10 +924,11 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
         reviewCount: newProduct.reviewCount,
         stockQuantity: newProduct.stockQuantity,
         lowStockThreshold: newProduct.lowStockThreshold,
+        weight: newProduct.weight || '500g',
         isFeatured: newProduct.isFeatured,
         isBestSeller: newProduct.isBestSeller,
         isActive: newProduct.isActive,
-      },
+      } as any,
       create: {
         id,
         name: newProduct.name,
@@ -933,10 +946,11 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
         reviewCount: newProduct.reviewCount,
         stockQuantity: newProduct.stockQuantity,
         lowStockThreshold: newProduct.lowStockThreshold,
+        weight: newProduct.weight || '500g',
         isFeatured: newProduct.isFeatured,
         isBestSeller: newProduct.isBestSeller,
         isActive: newProduct.isActive,
-      },
+      } as any,
     });
   } catch (err: any) {
     console.warn('[Product] PostgreSQL sync warning:', err.message);
@@ -970,6 +984,7 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     const newOrigPrice = updates.originalPrice !== undefined ? (updates.originalPrice ? Number(updates.originalPrice) : null) : current.originalPrice;
     const newStock = updates.stockQuantity !== undefined ? Number(updates.stockQuantity) : current.stockQuantity;
     const newLowStock = updates.lowStockThreshold !== undefined ? Number(updates.lowStockThreshold) : current.lowStockThreshold;
+    const newWeight = updates.weight !== undefined ? updates.weight : (current.weight || '500g');
 
     store.products[index] = {
       ...current,
@@ -978,6 +993,7 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
       originalPrice: newOrigPrice,
       stockQuantity: newStock,
       lowStockThreshold: newLowStock,
+      weight: newWeight,
       updatedAt: new Date().toISOString(),
     };
     updatedProduct = store.products[index];
@@ -995,6 +1011,7 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
       if (updates.originalPrice !== undefined) data.originalPrice = updates.originalPrice ? Number(updates.originalPrice) : null;
       if (updates.stockQuantity !== undefined) data.stockQuantity = Number(updates.stockQuantity);
       if (updates.lowStockThreshold !== undefined) data.lowStockThreshold = Number(updates.lowStockThreshold);
+      if (updates.weight !== undefined) data.weight = updates.weight;
       const res = await prisma.product.update({ where: { id: prod.id }, data });
       if (!updatedProduct) updatedProduct = formatProduct(res);
     }

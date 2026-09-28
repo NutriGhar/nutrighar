@@ -31,6 +31,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const [categoryId, setCategoryId] = useState('');
   const [stockQuantity, setStockQuantity] = useState('50');
   const [lowStockThreshold, setLowStockThreshold] = useState('10');
+  const [weight, setWeight] = useState('500g');
   const [image, setImage] = useState('');
   const [ingredientsText, setIngredientsText] = useState('');
   const [benefitsText, setBenefitsText] = useState('');
@@ -63,6 +64,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           setCategoryId(p.categoryId || (catData.data?.[0]?.id ?? ''));
           setStockQuantity(String(p.stockQuantity));
           setLowStockThreshold(String(p.lowStockThreshold));
+          setWeight(p.weight || '500g');
           setImage(p.image);
           setIngredientsText(p.ingredients?.join(', ') || '');
           setBenefitsText(p.benefits?.join(', ') || '');
@@ -149,6 +151,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         benefits: benefits.length > 0 ? benefits : ['Freshly handcrafted'],
         stockQuantity: Number(stockQuantity) || 0,
         lowStockThreshold: Number(lowStockThreshold) || 10,
+        weight: weight.trim() || '500g',
         isFeatured,
         isBestSeller,
         isActive,
@@ -380,6 +383,43 @@ export default function EditProductPage({ params }: EditProductPageProps) {
                 min="0"
                 className="w-full px-4 py-3.5 bg-stone-50 border-2 border-stone-300 rounded-xl text-base text-stone-900 font-medium focus:bg-white focus:border-[#1E382B] focus:outline-none transition-colors"
               />
+            </div>
+
+            {/* Weight / Pack Size */}
+            <div className="sm:col-span-2 bg-[#FAF7F2] p-4 rounded-xl border border-stone-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                  Weight / Pack Size (e.g., 250g, 400g, 500g, 1kg) *
+                </label>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] text-stone-500 font-medium mr-1">Quick Select:</span>
+                  {['250g', '400g', '500g', '1kg'].map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => setWeight(w)}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                        weight === w
+                          ? 'bg-[#1E382B] text-white shadow-xs'
+                          : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-100'
+                      }`}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <input
+                type="text"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                required
+                placeholder="e.g. 500g, 400g, 1kg, 250g Pack"
+                className="w-full px-4 py-3 bg-white border-2 border-stone-300 rounded-xl text-base text-stone-900 font-bold focus:border-[#1E382B] focus:outline-none transition-colors"
+              />
+              <p className="text-[11px] text-stone-500 mt-1.5">
+                Displayed prominently on product cards, category catalogs, and the product details page.
+              </p>
             </div>
           </div>
         </div>
