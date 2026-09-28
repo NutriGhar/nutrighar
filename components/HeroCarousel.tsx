@@ -23,65 +23,55 @@ const HERO_SLIDES: HeroSlide[] = [
   {
     id: 'protein-nutrition',
     tag: 'CLEAN FITNESS NUTRITION',
-    title: 'Your Favourite Treats,',
-    titleItalic: 'Enriched With Clean Protein.',
+    title: 'Your Favourite Treats, Enriched With Clean Protein',
+    titleItalic: 'Clean Protein Nutrition',
     subtitle: '12g+ clean protein per piece with roasted California almonds, pure A2 desi cow ghee, and zero refined sugar.',
     buttonText: 'Shop High Protein',
     buttonLink: '/products?category=protein-nutrition',
-    secondaryButtonText: 'Explore Collections',
-    secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1400&auto=format&fit=crop&q=85',
+    image: '/images/clean-protein-pouch-banner.jpg',
     badgeText: '12g Protein / Piece',
-  },
-  {
-    id: 'dry-fruits-nuts',
-    tag: 'HANDPICKED SUPERFOODS',
-    title: 'Slow-Roasted Nuts,',
-    titleItalic: 'All Flavour, Zero Excess Oil.',
-    subtitle: 'Premium California almonds, whole cashews, and crunch-roasted seed mixes prepared fresh in small batches.',
-    buttonText: 'Explore Roasted Nuts',
-    buttonLink: '/products?category=healthy-snacks',
-    secondaryButtonText: 'View All Snacks',
-    secondaryButtonLink: '/products?category=healthy-snacks',
-    image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=1400&auto=format&fit=crop&q=85',
-    badgeText: '100% Whole Nuts',
-  },
-  {
-    id: 'mithai-ladoos',
-    tag: 'HERITAGE RECIPES',
-    title: 'Pure A2 Desi Ghee Ladoos,',
-    titleItalic: 'The Warmth of Home Kitchen.',
-    subtitle: 'Melt-in-mouth Besan and Motichoor ladoos slow-cooked in 100% pure desi cow ghee and organic jaggery.',
-    buttonText: 'Shop Mithai & Ladoos',
-    buttonLink: '/products?category=mithai',
-    secondaryButtonText: 'Discover Flavours',
-    secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=1400&auto=format&fit=crop&q=85',
-    badgeText: 'Pure Cow Ghee',
   },
   {
     id: 'peanut-butter',
     tag: '100% NATURAL BUTTER',
-    title: 'Stone-Ground Peanuts,',
-    titleItalic: 'Zero Added Palm Oil & Preservatives.',
-    subtitle: 'Slow stone-ground daily for an irresistibly rich texture and deep roasted aroma. Pure plant-based energy.',
+    title: 'Stone-Ground Peanuts, Zero Palm Oil',
+    titleItalic: 'Pure Nut Butter',
+    subtitle: 'Slow stone-ground daily for an irresistibly rich texture and deep roasted aroma.',
     buttonText: 'Discover Butters',
     buttonLink: '/products?category=peanut-butter',
-    secondaryButtonText: 'All Spreads',
-    secondaryButtonLink: '/products',
     image: '/images/peanut-butter-banner.jpg',
     badgeText: 'Stone-Ground Daily',
   },
   {
+    id: 'mithai-ladoos',
+    tag: 'HERITAGE RECIPES',
+    title: 'Pure A2 Desi Ghee Ladoos',
+    titleItalic: 'Warmth of Home',
+    subtitle: 'Melt-in-mouth Besan and Dry fruit ladoos slow-cooked in 100% pure desi cow ghee.',
+    buttonText: 'Shop Mithai & Ladoos',
+    buttonLink: '/products?category=mithai',
+    image: '/images/dry-fruit-ladoos-banner.jpg',
+    badgeText: 'Pure Cow Ghee',
+  },
+  {
+    id: 'dry-fruits-nuts',
+    tag: 'HANDPICKED SUPERFOODS',
+    title: 'Slow-Roasted Nuts, All Flavour Zero Excess Oil',
+    titleItalic: 'Artisanal Superfoods',
+    subtitle: 'Premium California almonds, whole cashews, and crunch-roasted seed mixes.',
+    buttonText: 'Explore Roasted Nuts',
+    buttonLink: '/products?category=healthy-snacks',
+    image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=1400&auto=format&fit=crop&q=85',
+    badgeText: '100% Whole Nuts',
+  },
+  {
     id: 'nut-cake-cookies',
     tag: 'HEALTHY BAKERY CRAFT',
-    title: 'Wholesome Nut Cakes,',
-    titleItalic: 'Guilt-Free Cookies & Bakes.',
-    subtitle: 'Nut-dense artisan cakes and crunchy whole grain cookies sweetened with forest honey and natural jaggery.',
+    title: 'Wholesome Nut Cakes & Guilt-Free Cookies',
+    titleItalic: 'Zero Maida',
+    subtitle: 'Nut-dense artisan cakes and crunchy whole grain cookies sweetened with forest honey.',
     buttonText: 'Explore Healthy Treats',
     buttonLink: '/products?category=healthy-snacks',
-    secondaryButtonText: 'Shop All Bakes',
-    secondaryButtonLink: '/products',
     image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1400&auto=format&fit=crop&q=85',
     badgeText: 'Zero Maida / No Preservatives',
   },
@@ -93,9 +83,13 @@ export interface HeroCarouselProps {
 
 export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
   const { content } = useContent();
-  const [slides, setSlides] = useState<HeroSlide[]>(initialSlides && initialSlides.length > 0 ? initialSlides : HERO_SLIDES);
+  const [slides, setSlides] = useState<HeroSlide[]>(
+    initialSlides && initialSlides.length > 0 ? initialSlides : HERO_SLIDES
+  );
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -116,7 +110,7 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
     setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   };
 
-  // Auto-play timer
+  // Auto-play timer (5 seconds)
   useEffect(() => {
     if (isPlaying && totalSlides > 1) {
       timerRef.current = setInterval(() => {
@@ -128,235 +122,120 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
     };
   }, [isPlaying, currentSlide, totalSlides]);
 
+  // Touch swipe support for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 45;
+    if (distance > minSwipeDistance) {
+      nextSlide();
+    } else if (distance < -minSwipeDistance) {
+      prevSlide();
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   if (totalSlides === 0) return null;
 
   const safeIndex = currentSlide >= totalSlides ? 0 : currentSlide;
   const slide = slides[safeIndex];
 
   return (
-    <div className="relative w-full overflow-hidden bg-[#FAF7F2]">
-      {/* Main Banner Slide Container */}
-      <div className="relative w-full min-h-[460px] sm:min-h-[520px] lg:min-h-[580px] flex items-center">
-        
-        {/* Slide Background Image - 100% Pure Natural Brightness */}
-        {slides.map((s, idx) => (
-          <div
-            key={s.id || `slide-${idx}`}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              idx === safeIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-            }`}
+    <section className="relative w-full bg-[#FAF7F2] select-none">
+      
+      {/* 100% Full-Brightness Crystal Clear Clickable Banner */}
+      <div
+        className="relative w-full aspect-[4/3.8] sm:aspect-[16/7] lg:aspect-[21/8] min-h-[300px] sm:min-h-[420px] overflow-hidden cursor-pointer"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <Link
+          href={slide.buttonLink || '/products'}
+          className="block relative w-full h-full"
+          aria-label={slide.title || 'View Collection'}
+        >
+          {slides.map((s, idx) => (
+            <div
+              key={s.id || `slide-${idx}`}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                idx === safeIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+              }`}
+            >
+              {/* 100% Full natural resolution image with ZERO black gradient and ZERO dark overlay */}
+              <Image
+                src={s.image}
+                alt={s.title || 'Nutri Ghar Product Banner'}
+                fill
+                priority={idx === 0}
+                className="object-cover object-center"
+                sizes="100vw"
+              />
+            </div>
+          ))}
+        </Link>
+
+        {/* Desktop Left & Right Arrow Buttons */}
+        <div className="hidden sm:flex absolute inset-y-0 left-0 right-0 items-center justify-between px-4 z-20 pointer-events-none">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              prevSlide();
+            }}
+            className="w-10 h-10 rounded-full bg-white/80 hover:bg-white text-stone-800 shadow-md flex items-center justify-center transition-all cursor-pointer pointer-events-auto hover:scale-105"
+            aria-label="Previous Slide"
           >
-            <Image
-              src={s.image}
-              alt={s.title || 'Nutri Ghar Product Banner'}
-              fill
-              priority={idx === 0}
-              className="object-cover object-center brightness-105 contrast-[1.02]"
-              sizes="100vw"
-            />
-            {/* Ultra-soft ambient gradient so photos remain 100% bright & vivid */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent sm:bg-gradient-to-r sm:from-black/50 sm:via-transparent sm:to-transparent" />
-          </div>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              nextSlide();
+            }}
+            className="w-10 h-10 rounded-full bg-white/80 hover:bg-white text-stone-800 shadow-md flex items-center justify-center transition-all cursor-pointer pointer-events-auto hover:scale-105"
+            aria-label="Next Slide"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Clean Minimal Slider Dots Below Banner (Exact Reference Style: ○ ● ○ ○ ○) */}
+      <div className="w-full bg-[#FAF7F2] py-3.5 sm:py-4 flex items-center justify-center gap-2 border-b border-stone-200">
+        {slides.map((_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => setCurrentSlide(idx)}
+            className={`transition-all duration-300 rounded-full cursor-pointer ${
+              idx === safeIndex
+                ? 'w-6 h-2.5 bg-stone-900 rounded-full'
+                : 'w-2.5 h-2.5 bg-stone-300 hover:bg-stone-500'
+            }`}
+            aria-label={`Go to slide ${idx + 1}`}
+            title={`Slide ${idx + 1}`}
+          />
         ))}
-
-        {/* Content Overlay: Crystal Clear Glass Card */}
-        <div className="relative z-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-          <div className="max-w-md sm:max-w-xl bg-black/40 backdrop-blur-md p-5 sm:p-8 rounded-3xl border border-white/25 shadow-2xl text-white space-y-3 sm:space-y-4 animate-fadeIn" key={safeIndex}>
-            
-            {/* Pill Tag & Mobile Badge */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              {slide.tag && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/20 backdrop-blur-md text-[#FDF0A6] text-[10px] sm:text-xs font-black tracking-[0.16em] uppercase border border-white/30 shadow-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FDF0A6]" />
-                  <span>{slide.tag}</span>
-                </div>
-              )}
-              {slide.badgeText && (
-                <div className="inline-flex sm:hidden items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#1E382B]/90 backdrop-blur-md text-[#FDF0A6] text-[10px] font-bold uppercase tracking-wider border border-white/20 shadow-xs">
-                  <span className="w-1 h-1 rounded-full bg-[#E5B56A]" />
-                  <span>{slide.badgeText}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Headline */}
-            <h1 className="font-serif text-xl sm:text-3xl md:text-4xl font-bold leading-snug tracking-tight text-white drop-shadow-md break-words">
-              {slide.title} {slide.titleItalic && <br className="hidden sm:inline" />}{' '}
-              {slide.titleItalic && (
-                <span className="font-serif italic font-normal text-[#E5B56A]">
-                  {slide.titleItalic}
-                </span>
-              )}
-            </h1>
-
-            {/* Subtitle */}
-            {slide.subtitle && (
-              <p className="text-xs sm:text-sm text-stone-100 leading-relaxed font-light drop-shadow-xs break-words line-clamp-2 sm:line-clamp-none">
-                {slide.subtitle}
-              </p>
-            )}
-
-            {/* Action Buttons: Clean row on mobile & desktop */}
-            <div className="pt-1 sm:pt-2">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                {slide.buttonText && (
-                  <Link
-                    href={slide.buttonLink || '/products'}
-                    className="min-h-[38px] sm:min-h-[44px] px-5 sm:px-7 py-2 sm:py-2.5 rounded-full bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs sm:text-sm font-bold tracking-wider uppercase shadow-lg hover:shadow-xl transition-all duration-300 group inline-flex items-center justify-center gap-1.5 sm:gap-2 border border-white/20 cursor-pointer text-center leading-none"
-                  >
-                    <span>{slide.buttonText}</span>
-                    <span className="group-hover:translate-x-1 transition-transform leading-none">→</span>
-                  </Link>
-                )}
-                
-                {slide.secondaryButtonText && (
-                  <Link
-                    href={slide.secondaryButtonLink || '/products'}
-                    className="inline-flex min-h-[38px] sm:min-h-[44px] px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/40 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-300 items-center justify-center text-center cursor-pointer leading-none shadow-md"
-                  >
-                    <span>{slide.secondaryButtonText}</span>
-                  </Link>
-                )}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Floating Quality Badge (Desktop Only) */}
-        {slide.badgeText && (
-          <div className="hidden sm:flex absolute bottom-8 right-8 z-20 bg-white/95 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider text-[#1E382B] shadow-xl border border-stone-200 items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#4E652B]" />
-            <span>{slide.badgeText}</span>
-          </div>
-        )}
-
       </div>
 
-      {/* ========================================================
-          Fresh Kitchen Batch Countdown Strip (Matching Reference Image 1)
-      ======================================================== */}
-      <div className="w-full bg-[#4E652B] text-white py-2.5 px-4 shadow-inner">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
-          <div className="flex items-center gap-2 text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-[#E7F0AB]">
-            <span className="w-2 h-2 rounded-full bg-[#E5B56A] animate-pulse" />
-            <span>Fresh Weekly Batch Cooking Now • Dispatches In:</span>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
-            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
-              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">2</div>
-              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Days</div>
-            </div>
-            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
-              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">14</div>
-              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Hours</div>
-            </div>
-            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
-              <div className="font-serif text-sm sm:text-base font-bold text-white leading-tight">35</div>
-              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Mins</div>
-            </div>
-            <div className="bg-black/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-md">
-              <div className="font-serif text-sm sm:text-base font-bold text-[#E5B56A] leading-tight">20</div>
-              <div className="text-[8px] sm:text-[9px] uppercase tracking-wider text-stone-300">Secs</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================
-          Interactive Slider Controls Bar (Matching Reference Image 3)
-          [ < ]  [ ○ ] [ ○ ] [ ● ] [ ○ ] [ ○ ]  [ > ]   |   [ || ]
-      ======================================================== */}
-      <div className="w-full bg-white border-b border-stone-200 py-3.5 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          
-          {/* Quick Product Tabs */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-600 overflow-x-auto py-1">
-            {slides.map((s, idx) => (
-              <button
-                key={s.id || `tab-${idx}`}
-                onClick={() => setCurrentSlide(idx)}
-                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
-                  idx === safeIndex
-                    ? 'bg-[#4E652B] text-white shadow-xs'
-                    : 'hover:bg-stone-100 text-stone-700'
-                }`}
-              >
-                {s.tag ? s.tag : `Slide ${idx + 1}`}
-              </button>
-            ))}
-          </div>
-
-          {/* Centered Controls (<  o  o  •  o  o  >  ||) */}
-          <div className="flex items-center gap-4 sm:gap-6 mx-auto md:mx-0">
-            
-            {/* Previous Arrow Button (<) */}
-            <button
-              onClick={prevSlide}
-              className="w-8 h-8 rounded-full border border-stone-300 hover:border-stone-800 text-stone-700 hover:text-stone-900 flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Previous Slide"
-              title="Previous Slide"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-            </button>
-
-            {/* Slide Indicator Dots (○ ○ ● ○ ○) */}
-            <div className="flex items-center gap-2.5">
-              {slides.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`transition-all duration-300 rounded-full cursor-pointer ${
-                    idx === safeIndex
-                      ? 'w-3 h-3 bg-stone-900 ring-2 ring-stone-400'
-                      : 'w-2.5 h-2.5 bg-stone-300 hover:bg-stone-500'
-                  }`}
-                  aria-label={`Go to slide ${idx + 1}`}
-                  title={`Slide ${idx + 1}`}
-                />
-              ))}
-            </div>
-
-            {/* Next Arrow Button (>) */}
-            <button
-              onClick={nextSlide}
-              className="w-8 h-8 rounded-full border border-stone-300 hover:border-stone-800 text-stone-700 hover:text-stone-900 flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Next Slide"
-              title="Next Slide"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </button>
-
-            <div className="h-4 w-[1px] bg-stone-300 mx-1" />
-
-            {/* Pause / Play Button (|| / ▶) */}
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="w-8 h-8 rounded-full text-stone-700 hover:text-stone-900 hover:bg-stone-100 flex items-center justify-center transition-colors cursor-pointer"
-              aria-label={isPlaying ? 'Pause auto-rotation' : 'Play auto-rotation'}
-              title={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
-
-          </div>
-
-        </div>
-      </div>
-
-    </div>
+    </section>
   );
 }
