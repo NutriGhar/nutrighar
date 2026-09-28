@@ -1011,6 +1011,7 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
   }
 
   let updatedProduct: Product | null = null;
+  const now = new Date().toISOString();
 
   if (index !== -1) {
     const current = store.products[index];
@@ -1019,16 +1020,19 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     const newStock = updates.stockQuantity !== undefined ? Number(updates.stockQuantity) : current.stockQuantity;
     const newLowStock = updates.lowStockThreshold !== undefined ? Number(updates.lowStockThreshold) : current.lowStockThreshold;
     const newWeight = updates.weight !== undefined ? updates.weight : (current.weight || '500g');
+    const newImage = updates.image || current.image;
 
     store.products[index] = {
       ...current,
       ...updates,
+      image: newImage,
+      images: updates.images?.length ? updates.images : [newImage],
       price: newPrice,
       originalPrice: newOrigPrice,
       stockQuantity: newStock,
       lowStockThreshold: newLowStock,
       weight: newWeight,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     };
     updatedProduct = store.products[index];
     saveStoreData(store);
@@ -1040,12 +1044,41 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
       const data: any = { ...updates };
       delete data.id;
       delete data.createdAt;
-      delete data.updatedAt;
+      data.updatedAt = new Date();
+      if (updates.image) {
+        data.image = updates.image;
+        data.images = updates.images || [updates.image];
+      }
       if (updates.price !== undefined) data.price = Number(updates.price);
       if (updates.originalPrice !== undefined) data.originalPrice = updates.originalPrice ? Number(updates.originalPrice) : null;
       if (updates.stockQuantity !== undefined) data.stockQuantity = Number(updates.stockQuantity);
       if (updates.lowStockThreshold !== undefined) data.lowStockThreshold = Number(updates.lowStockThreshold);
       if (updates.weight !== undefined) data.weight = updates.weight;
+
+      // Ensure category foreign key if category is being updated
+      if (updates.categoryId || updates.categorySlug) {
+        const catSlug = updates.categorySlug || prod.categorySlug || 'mithai';
+        const catInStore = store.categories.find((c) => c.id === updates.categoryId || c.slug === catSlug);
+        const catName = catInStore ? catInStore.name : 'Category';
+        try {
+          const dbCat = await prisma.category.upsert({
+            where: { slug: catSlug },
+            update: { name: catName },
+            create: {
+              id: updates.categoryId || `cat-${catSlug}`,
+              name: catName,
+              slug: catSlug,
+              description: catInStore?.description || '',
+              icon: catInStore?.icon || '📦',
+              isActive: true,
+            },
+          });
+          if (dbCat && dbCat.id) {
+            data.categoryId = dbCat.id;
+          }
+        } catch {}
+      }
+
       const res = await prisma.product.update({ where: { id: prod.id }, data });
       if (!updatedProduct) updatedProduct = formatProduct(res);
     }
