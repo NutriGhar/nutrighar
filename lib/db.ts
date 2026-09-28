@@ -783,14 +783,15 @@ export async function getProducts(options?: {
 }): Promise<Product[]> {
   const store = getStoreData();
 
+  // 1. Sync from PostgreSQL catalog_products (Guaranteed JSON storage on PostgreSQL)
   try {
-    const dbProducts = await prisma.product.findMany({
-      orderBy: { createdAt: 'desc' },
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_products' },
     });
-    if (dbProducts && dbProducts.length > 0) {
-      const formatted = dbProducts.map(formatProduct);
+    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
+      const dbProducts = catalogRecord.data as unknown as Product[];
       const productMap = new Map<string, Product>();
-      for (const p of formatted) {
+      for (const p of dbProducts) {
         productMap.set(p.slug || p.id, p);
       }
       for (const p of store.products) {
@@ -801,12 +802,31 @@ export async function getProducts(options?: {
         } else {
           const dbTime = new Date(existing.updatedAt || 0).getTime();
           const localTime = new Date(p.updatedAt || 0).getTime();
-          if (localTime >= dbTime) {
+          if (localTime > dbTime) {
             productMap.set(key, p);
           }
         }
       }
       store.products = Array.from(productMap.values());
+    } else {
+      // Fallback: try relational table
+      const dbRelProducts = await prisma.product.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      if (dbRelProducts && dbRelProducts.length > 0) {
+        const formatted = dbRelProducts.map(formatProduct);
+        const productMap = new Map<string, Product>();
+        for (const p of formatted) {
+          productMap.set(p.slug || p.id, p);
+        }
+        for (const p of store.products) {
+          const key = p.slug || p.id;
+          if (!productMap.has(key)) {
+            productMap.set(key, p);
+          }
+        }
+        store.products = Array.from(productMap.values());
+      }
     }
   } catch (err: any) {
     console.warn('[Products] DB query fallback note:', err.message);
@@ -844,10 +864,20 @@ export async function getProducts(options?: {
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
+  const store = getStoreData();
+
   try {
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_products' },
+    });
+    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
+      const match = (catalogRecord.data as unknown as Product[]).find((p) => p.id === id || p.slug === id);
+      if (match) return match;
+    }
+
     const dbProduct = await prisma.product.findFirst({
       where: {
-        OR: [{ id: id }, { slug: id }],
+        OR: [{ id }, { slug: id }],
       },
     });
     if (dbProduct) {
@@ -857,7 +887,6 @@ export async function getProductById(id: string): Promise<Product | null> {
     // fallback
   }
 
-  const store = getStoreData();
   return store.products.find((p) => p.id === id || p.slug === id) || null;
 }
 
@@ -904,7 +933,7 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
     updatedAt: now,
   };
 
-  // Save to persistent file store immediately
+  // 1. Save to persistent file & in-memory store immediately
   const store = getStoreData();
   const existingIdx = store.products.findIndex((p) => p.id === id || p.slug === slug);
   if (existingIdx !== -1) {
@@ -914,7 +943,18 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
   }
   saveStoreData(store);
 
-  // Sync with PostgreSQL
+  // 2. Sync to PostgreSQL WebsiteContent catalog section (Rock-solid, shared across all lambdas)
+  try {
+    await prisma.websiteContent.upsert({
+      where: { section: 'catalog_products' },
+      update: { data: store.products as any },
+      create: { section: 'catalog_products', data: store.products as any },
+    });
+  } catch (contentErr: any) {
+    console.warn('[Catalog Products Sync] Note:', contentErr.message);
+  }
+
+  // 3. Sync with PostgreSQL Relational table
   try {
     const catSlug = newProduct.categorySlug || 'mithai';
     const catInStore = store.categories.find((c) => c.id === newProduct.categoryId || c.slug === catSlug);
@@ -1038,6 +1078,18 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     saveStoreData(store);
   }
 
+  // 2. Sync to PostgreSQL WebsiteContent catalog section (shared across all lambdas)
+  try {
+    await prisma.websiteContent.upsert({
+      where: { section: 'catalog_products' },
+      update: { data: store.products as any },
+      create: { section: 'catalog_products', data: store.products as any },
+    });
+  } catch (contentErr: any) {
+    console.warn('[Catalog Products Sync] Note:', contentErr.message);
+  }
+
+  // 3. Sync with PostgreSQL Relational table
   try {
     const prod = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
     if (prod) {
@@ -1095,6 +1147,17 @@ export async function deleteProduct(id: string): Promise<boolean> {
   store.products = store.products.filter((p) => p.id !== id && p.slug !== id);
   saveStoreData(store);
 
+  // Sync to PostgreSQL WebsiteContent catalog section
+  try {
+    await prisma.websiteContent.upsert({
+      where: { section: 'catalog_products' },
+      update: { data: store.products as any },
+      create: { section: 'catalog_products', data: store.products as any },
+    });
+  } catch (contentErr: any) {
+    console.warn('[Catalog Products Sync] Note:', contentErr.message);
+  }
+
   try {
     const prod = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
     if (prod) {
@@ -1115,30 +1178,37 @@ export async function getCategories(includeInactive = false): Promise<Category[]
   const store = getStoreData();
 
   try {
-    const dbCategories = await prisma.category.findMany({
-      orderBy: { createdAt: 'asc' },
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_categories' },
     });
-    if (dbCategories && dbCategories.length > 0) {
-      const catMap = new Map<string, Category>();
-      for (const c of dbCategories) {
-        catMap.set(c.id, {
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          description: c.description,
-          image: c.image,
-          icon: c.icon,
-          isActive: c.isActive,
-          createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
-          updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
-        });
-      }
-      for (const c of store.categories) {
-        if (!catMap.has(c.id) && !catMap.has(c.slug)) {
-          catMap.set(c.id, c);
+    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
+      store.categories = catalogRecord.data as unknown as Category[];
+    } else {
+      const dbCategories = await prisma.category.findMany({
+        orderBy: { createdAt: 'asc' },
+      });
+      if (dbCategories && dbCategories.length > 0) {
+        const catMap = new Map<string, Category>();
+        for (const c of dbCategories) {
+          catMap.set(c.id, {
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            description: c.description,
+            image: c.image,
+            icon: c.icon,
+            isActive: c.isActive,
+            createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
+            updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
+          });
         }
+        for (const c of store.categories) {
+          if (!catMap.has(c.id) && !catMap.has(c.slug)) {
+            catMap.set(c.id, c);
+          }
+        }
+        store.categories = Array.from(catMap.values());
       }
-      store.categories = Array.from(catMap.values());
     }
   } catch {
     // fallback
@@ -1152,7 +1222,17 @@ export async function getCategories(includeInactive = false): Promise<Category[]
 }
 
 export async function getCategoryById(id: string): Promise<Category | null> {
+  const store = getStoreData();
+
   try {
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_categories' },
+    });
+    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
+      const match = (catalogRecord.data as unknown as Category[]).find((c) => c.id === id || c.slug === id);
+      if (match) return match;
+    }
+
     const dbCat = await prisma.category.findFirst({
       where: { OR: [{ id }, { slug: id }] },
     });
@@ -1173,7 +1253,6 @@ export async function getCategoryById(id: string): Promise<Category | null> {
     // fallback
   }
 
-  const store = getStoreData();
   return store.categories.find((c) => c.id === id || c.slug === id) || null;
 }
 
@@ -1215,6 +1294,17 @@ export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | '
   }
   saveStoreData(store);
 
+  // Sync to PostgreSQL WebsiteContent catalog section
+  try {
+    await prisma.websiteContent.upsert({
+      where: { section: 'catalog_categories' },
+      update: { data: store.categories as any },
+      create: { section: 'catalog_categories', data: store.categories as any },
+    });
+  } catch (contentErr: any) {
+    console.warn('[Catalog Categories Sync] Note:', contentErr.message);
+  }
+
   try {
     await prisma.category.upsert({
       where: { slug: newCategory.slug },
@@ -1246,31 +1336,59 @@ export async function updateCategory(id: string, updates: Partial<Category>): Pr
   const store = getStoreData();
   const index = store.categories.findIndex((c) => c.id === id || c.slug === id);
 
-  let updatedCat: Category | null = null;
+  let updatedCategory: Category | null = null;
+  const now = new Date().toISOString();
 
   if (index !== -1) {
     store.categories[index] = {
       ...store.categories[index],
       ...updates,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     };
-    updatedCat = store.categories[index];
+    updatedCategory = store.categories[index];
     saveStoreData(store);
   }
 
-  prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } })
-    .then((category) => {
-      if (category) {
-        const data: any = { ...updates };
-        delete data.id;
-        delete data.createdAt;
-        delete data.updatedAt;
-        return prisma.category.update({ where: { id: category.id }, data });
-      }
-    })
-    .catch(() => {});
+  // Sync to PostgreSQL WebsiteContent catalog section
+  try {
+    await prisma.websiteContent.upsert({
+      where: { section: 'catalog_categories' },
+      update: { data: store.categories as any },
+      create: { section: 'catalog_categories', data: store.categories as any },
+    });
+  } catch (contentErr: any) {
+    console.warn('[Catalog Categories Sync] Note:', contentErr.message);
+  }
 
-  return updatedCat;
+  try {
+    const cat = await prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (cat) {
+      const res = await prisma.category.update({
+        where: { id: cat.id },
+        data: {
+          ...updates,
+          updatedAt: new Date(),
+        },
+      });
+      if (!updatedCategory) {
+        updatedCategory = {
+          id: res.id,
+          name: res.name,
+          slug: res.slug,
+          description: res.description,
+          image: res.image,
+          icon: res.icon,
+          isActive: res.isActive,
+          createdAt: res.createdAt instanceof Date ? res.createdAt.toISOString() : String(res.createdAt),
+          updatedAt: res.updatedAt instanceof Date ? res.updatedAt.toISOString() : String(res.updatedAt),
+        };
+      }
+    }
+  } catch (err: any) {
+    console.warn('[Category] PostgreSQL update warning:', err.message);
+  }
+
+  return updatedCategory;
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
@@ -1279,14 +1397,30 @@ export async function deleteCategory(id: string): Promise<boolean> {
   store.categories = store.categories.filter((c) => c.id !== id && c.slug !== id);
   saveStoreData(store);
 
-  prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } })
-    .then((category) => {
-      if (category) return prisma.category.delete({ where: { id: category.id } });
-    })
-    .catch(() => {});
+  // Sync to PostgreSQL WebsiteContent catalog section
+  try {
+    await prisma.websiteContent.upsert({
+      where: { section: 'catalog_categories' },
+      update: { data: store.categories as any },
+      create: { section: 'catalog_categories', data: store.categories as any },
+    });
+  } catch (contentErr: any) {
+    console.warn('[Catalog Categories Sync] Note:', contentErr.message);
+  }
+
+  try {
+    const cat = await prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (cat) {
+      await prisma.category.delete({ where: { id: cat.id } });
+    }
+  } catch (err: any) {
+    console.warn('[Category] PostgreSQL delete warning:', err.message);
+  }
 
   return store.categories.length < initialLen;
 }
+
+
 
 // -------------------------------------------------------------
 // ORDER OPERATIONS
