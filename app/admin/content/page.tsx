@@ -561,15 +561,16 @@ export default function AdminContentPage() {
                     </div>
 
                     {/* Carousel Dots Preview Bar */}
-                    <div className="bg-[#FAF7F2] py-2.5 px-4 flex items-center justify-center gap-2 border-t border-stone-200">
+                    <div className="bg-[#FAF7F2] py-2 px-4 flex items-center justify-center gap-2 border-t border-stone-200">
                       {currentSlides.map((_, idx) => (
                         <span
                           key={idx}
-                          className={`transition-all rounded-full ${
+                          className={`transition-all rounded-full shrink-0 ${
                             idx === selectedSlideIndex
-                              ? 'w-5 h-2 bg-stone-900'
+                              ? 'w-5 h-2 bg-[#1E382B]'
                               : 'w-2 h-2 bg-stone-300'
                           }`}
+                          style={{ height: '8px', minHeight: 'unset', maxHeight: '8px' }}
                         />
                       ))}
                     </div>

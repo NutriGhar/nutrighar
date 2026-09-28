@@ -218,18 +218,19 @@ export default function HeroCarousel({ initialSlides }: HeroCarouselProps) {
         </div>
       </div>
 
-      {/* Clean Minimal Slider Dots Below Banner (Exact Reference Style: ○ ● ○ ○ ○) */}
-      <div className="w-full bg-[#FAF7F2] py-3.5 sm:py-4 flex items-center justify-center gap-2 border-b border-stone-200">
+      {/* Clean Minimal Slider Dots Below Banner */}
+      <div className="w-full bg-[#FAF7F2] py-2.5 sm:py-3 flex items-center justify-center gap-2 border-b border-stone-200/80">
         {slides.map((_, idx) => (
           <button
             key={idx}
             type="button"
             onClick={() => setCurrentSlide(idx)}
-            className={`transition-all duration-300 rounded-full cursor-pointer ${
+            className={`transition-all duration-300 rounded-full cursor-pointer p-0 m-0 border-0 shrink-0 focus:outline-none ${
               idx === safeIndex
-                ? 'w-6 h-2.5 bg-stone-900 rounded-full'
-                : 'w-2.5 h-2.5 bg-stone-300 hover:bg-stone-500'
+                ? 'w-5 h-2 bg-[#1E382B]'
+                : 'w-2 h-2 bg-stone-300 hover:bg-stone-400'
             }`}
+            style={{ height: '8px', minHeight: 'unset', maxHeight: '8px' }}
             aria-label={`Go to slide ${idx + 1}`}
             title={`Slide ${idx + 1}`}
           />
