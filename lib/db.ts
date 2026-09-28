@@ -773,6 +773,45 @@ function saveStoreData(data: StoreData): void {
 // PRODUCT OPERATIONS
 // -------------------------------------------------------------
 
+/**
+ * Pull the canonical products list from PostgreSQL `catalog_products`.
+ * If the record doesn't exist yet (very first run), seed it with DEFAULT_PRODUCTS.
+ * If it exists but is empty ([]), that means the user deleted everything — respect it.
+ */
+async function pullProductsFromDB(store: StoreData): Promise<void> {
+  try {
+    const catalogRecord = await prisma.websiteContent.findUnique({
+      where: { section: 'catalog_products' },
+    });
+
+    if (catalogRecord) {
+      // Record exists — use whatever is in it (even if empty array)
+      if (Array.isArray(catalogRecord.data)) {
+        store.products = catalogRecord.data as unknown as Product[];
+      } else {
+        // Malformed data — treat as empty
+        console.warn('[pullProductsFromDB] catalog_products has non-array data, resetting');
+        store.products = [];
+      }
+    } else {
+      // Record does NOT exist — first-ever use.  Seed it with defaults.
+      console.log('[pullProductsFromDB] catalog_products not found, seeding defaults');
+      store.products = [...DEFAULT_PRODUCTS];
+      try {
+        await prisma.websiteContent.create({
+          data: { section: 'catalog_products', data: store.products as any },
+        });
+      } catch (seedErr: any) {
+        console.error('[pullProductsFromDB] Failed to seed catalog_products:', seedErr.message);
+      }
+    }
+    saveStoreData(store);
+  } catch (dbErr: any) {
+    console.error('[pullProductsFromDB] PostgreSQL read failed, using in-memory fallback:', dbErr.message);
+    // Don't touch store.products — keep whatever getStoreData() loaded
+  }
+}
+
 export async function getProducts(options?: {
   categoryId?: string;
   categorySlug?: string;
@@ -783,25 +822,8 @@ export async function getProducts(options?: {
 }): Promise<Product[]> {
   const store = getStoreData();
 
-  // 1. Sync from PostgreSQL catalog_products (Guaranteed JSON storage on PostgreSQL)
-  try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_products' },
-    });
-    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      store.products = catalogRecord.data as unknown as Product[];
-    } else {
-      // Fallback: try relational table
-      const dbRelProducts = await prisma.product.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
-      if (dbRelProducts && dbRelProducts.length > 0) {
-        store.products = dbRelProducts.map(formatProduct);
-      }
-    }
-  } catch (err: any) {
-    console.warn('[Products] DB query fallback note:', err.message);
-  }
+  // Always pull latest from PostgreSQL
+  await pullProductsFromDB(store);
 
   let list = [...store.products];
 
@@ -853,15 +875,14 @@ export async function getProducts(options?: {
 export async function getProductById(id: string): Promise<Product | null> {
   const store = getStoreData();
 
-  try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_products' },
-    });
-    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      const match = (catalogRecord.data as unknown as Product[]).find((p) => p.id === id || p.slug === id);
-      if (match) return match;
-    }
+  // Pull latest from PostgreSQL (same canonical source as getProducts)
+  await pullProductsFromDB(store);
 
+  const match = store.products.find((p) => p.id === id || p.slug === id);
+  if (match) return match;
+
+  // Fallback: try relational table directly
+  try {
     const dbProduct = await prisma.product.findFirst({
       where: {
         OR: [{ id }, { slug: id }],
@@ -870,7 +891,8 @@ export async function getProductById(id: string): Promise<Product | null> {
     if (dbProduct) {
       return formatProduct(dbProduct);
     }
-  } catch {
+  } catch (err: any) {
+    console.error('[getProductById] Relational DB fallback failed:', err.message);
     // fallback
   }
 
@@ -922,15 +944,8 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
 
   const store = getStoreData();
 
-  // Pull latest PostgreSQL catalog_products first
-  try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_products' },
-    });
-    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      store.products = catalogRecord.data as unknown as Product[];
-    }
-  } catch {}
+  // Pull latest from PostgreSQL before mutating (critical for multi-lambda consistency)
+  await pullProductsFromDB(store);
 
   const existingIdx = store.products.findIndex((p) => p.id === id || p.slug === slug);
   if (existingIdx !== -1) {
@@ -940,15 +955,18 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
   }
   saveStoreData(store);
 
-  // 2. Sync to PostgreSQL WebsiteContent catalog section (shared across all lambdas)
+  // Persist to PostgreSQL WebsiteContent catalog section (shared across all lambdas)
+  // This MUST succeed for the product to be visible on other lambdas
   try {
     await prisma.websiteContent.upsert({
       where: { section: 'catalog_products' },
       update: { data: store.products as any },
       create: { section: 'catalog_products', data: store.products as any },
     });
+    console.log(`[createProduct] ✅ Saved ${store.products.length} products to catalog_products`);
   } catch (contentErr: any) {
-    console.warn('[Catalog Products Sync] Note:', contentErr.message);
+    console.error('[createProduct] ❌ CRITICAL: Failed to save catalog_products:', contentErr.message);
+    // Still continue — the product is in memory at least for this lambda
   }
 
   // 3. Sync with PostgreSQL Relational table
@@ -1033,15 +1051,8 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
   const store = getStoreData();
 
-  // Pull latest PostgreSQL catalog_products first
-  try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_products' },
-    });
-    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      store.products = catalogRecord.data as unknown as Product[];
-    }
-  } catch {}
+  // Pull latest from PostgreSQL before mutating
+  await pullProductsFromDB(store);
 
   let imageUrl = updates.image;
   if (imageUrl && imageUrl.startsWith('data:image/')) {
@@ -1085,15 +1096,16 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     saveStoreData(store);
   }
 
-  // 2. Sync to PostgreSQL WebsiteContent catalog section (shared across all lambdas)
+  // Persist to PostgreSQL WebsiteContent catalog section
   try {
     await prisma.websiteContent.upsert({
       where: { section: 'catalog_products' },
       update: { data: store.products as any },
       create: { section: 'catalog_products', data: store.products as any },
     });
+    console.log(`[updateProduct] ✅ Saved ${store.products.length} products to catalog_products`);
   } catch (contentErr: any) {
-    console.warn('[Catalog Products Sync] Note:', contentErr.message);
+    console.error('[updateProduct] ❌ CRITICAL: Failed to save catalog_products:', contentErr.message);
   }
 
   // 3. Sync with PostgreSQL Relational table
@@ -1151,29 +1163,23 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
 export async function deleteProduct(id: string): Promise<boolean> {
   const store = getStoreData();
 
-  // Pull latest PostgreSQL catalog_products first
-  try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_products' },
-    });
-    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      store.products = catalogRecord.data as unknown as Product[];
-    }
-  } catch {}
+  // Pull latest from PostgreSQL before mutating
+  await pullProductsFromDB(store);
 
   const initialLen = store.products.length;
   store.products = store.products.filter((p) => p.id !== id && p.slug !== id);
   saveStoreData(store);
 
-  // Sync to PostgreSQL WebsiteContent catalog section
+  // Persist to PostgreSQL WebsiteContent catalog section
   try {
     await prisma.websiteContent.upsert({
       where: { section: 'catalog_products' },
       update: { data: store.products as any },
       create: { section: 'catalog_products', data: store.products as any },
     });
+    console.log(`[deleteProduct] ✅ Saved ${store.products.length} products to catalog_products`);
   } catch (contentErr: any) {
-    console.warn('[Catalog Products Sync] Note:', contentErr.message);
+    console.error('[deleteProduct] ❌ CRITICAL: Failed to save catalog_products:', contentErr.message);
   }
 
   try {
@@ -1192,45 +1198,46 @@ export async function deleteProduct(id: string): Promise<boolean> {
 // CATEGORY OPERATIONS
 // -------------------------------------------------------------
 
-export async function getCategories(includeInactive = false): Promise<Category[]> {
-  const store = getStoreData();
-
+/**
+ * Pull the canonical categories list from PostgreSQL `catalog_categories`.
+ * Same logic as pullProductsFromDB — seed defaults on first run, respect empty arrays.
+ */
+async function pullCategoriesFromDB(store: StoreData): Promise<void> {
   try {
     const catalogRecord = await prisma.websiteContent.findUnique({
       where: { section: 'catalog_categories' },
     });
-    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      store.categories = catalogRecord.data as unknown as Category[];
+
+    if (catalogRecord) {
+      if (Array.isArray(catalogRecord.data)) {
+        store.categories = catalogRecord.data as unknown as Category[];
+      } else {
+        console.warn('[pullCategoriesFromDB] catalog_categories has non-array data, resetting');
+        store.categories = [];
+      }
     } else {
-      const dbCategories = await prisma.category.findMany({
-        orderBy: { createdAt: 'asc' },
-      });
-      if (dbCategories && dbCategories.length > 0) {
-        const catMap = new Map<string, Category>();
-        for (const c of dbCategories) {
-          catMap.set(c.id, {
-            id: c.id,
-            name: c.name,
-            slug: c.slug,
-            description: c.description,
-            image: c.image,
-            icon: c.icon,
-            isActive: c.isActive,
-            createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
-            updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
-          });
-        }
-        for (const c of store.categories) {
-          if (!catMap.has(c.id) && !catMap.has(c.slug)) {
-            catMap.set(c.id, c);
-          }
-        }
-        store.categories = Array.from(catMap.values());
+      // First-ever use — seed with defaults
+      console.log('[pullCategoriesFromDB] catalog_categories not found, seeding defaults');
+      store.categories = [...DEFAULT_CATEGORIES];
+      try {
+        await prisma.websiteContent.create({
+          data: { section: 'catalog_categories', data: store.categories as any },
+        });
+      } catch (seedErr: any) {
+        console.error('[pullCategoriesFromDB] Failed to seed catalog_categories:', seedErr.message);
       }
     }
-  } catch {
-    // fallback
+    saveStoreData(store);
+  } catch (dbErr: any) {
+    console.error('[pullCategoriesFromDB] PostgreSQL read failed, using in-memory fallback:', dbErr.message);
   }
+}
+
+export async function getCategories(includeInactive = false): Promise<Category[]> {
+  const store = getStoreData();
+
+  // Pull latest from PostgreSQL
+  await pullCategoriesFromDB(store);
 
   let list = [...store.categories];
   if (!includeInactive) {
@@ -1242,34 +1249,8 @@ export async function getCategories(includeInactive = false): Promise<Category[]
 export async function getCategoryById(id: string): Promise<Category | null> {
   const store = getStoreData();
 
-  try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_categories' },
-    });
-    if (catalogRecord && Array.isArray(catalogRecord.data) && catalogRecord.data.length > 0) {
-      const match = (catalogRecord.data as unknown as Category[]).find((c) => c.id === id || c.slug === id);
-      if (match) return match;
-    }
-
-    const dbCat = await prisma.category.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
-    });
-    if (dbCat) {
-      return {
-        id: dbCat.id,
-        name: dbCat.name,
-        slug: dbCat.slug,
-        description: dbCat.description,
-        image: dbCat.image,
-        icon: dbCat.icon,
-        isActive: dbCat.isActive,
-        createdAt: dbCat.createdAt instanceof Date ? dbCat.createdAt.toISOString() : String(dbCat.createdAt),
-        updatedAt: dbCat.updatedAt instanceof Date ? dbCat.updatedAt.toISOString() : String(dbCat.updatedAt),
-      };
-    }
-  } catch {
-    // fallback
-  }
+  // Pull latest from PostgreSQL
+  await pullCategoriesFromDB(store);
 
   return store.categories.find((c) => c.id === id || c.slug === id) || null;
 }
@@ -1304,6 +1285,10 @@ export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | '
   };
 
   const store = getStoreData();
+
+  // Pull latest from PostgreSQL before mutating
+  await pullCategoriesFromDB(store);
+
   const existingIdx = store.categories.findIndex((c) => c.id === id || c.slug === slug);
   if (existingIdx !== -1) {
     store.categories[existingIdx] = newCategory;
@@ -1312,15 +1297,16 @@ export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | '
   }
   saveStoreData(store);
 
-  // Sync to PostgreSQL WebsiteContent catalog section
+  // Persist to PostgreSQL WebsiteContent catalog section
   try {
     await prisma.websiteContent.upsert({
       where: { section: 'catalog_categories' },
       update: { data: store.categories as any },
       create: { section: 'catalog_categories', data: store.categories as any },
     });
+    console.log(`[createCategory] ✅ Saved ${store.categories.length} categories to catalog_categories`);
   } catch (contentErr: any) {
-    console.warn('[Catalog Categories Sync] Note:', contentErr.message);
+    console.error('[createCategory] ❌ CRITICAL: Failed to save catalog_categories:', contentErr.message);
   }
 
   try {
@@ -1352,7 +1338,9 @@ export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | '
 
 export async function updateCategory(id: string, updates: Partial<Category>): Promise<Category | null> {
   const store = getStoreData();
-  const index = store.categories.findIndex((c) => c.id === id || c.slug === id);
+
+  // Pull latest from PostgreSQL before mutating
+  await pullCategoriesFromDB(store);
 
   let imageUrl = updates.image;
   if (imageUrl && imageUrl.startsWith('data:image/')) {
@@ -1369,6 +1357,7 @@ export async function updateCategory(id: string, updates: Partial<Category>): Pr
 
   let updatedCategory: Category | null = null;
   const now = new Date().toISOString();
+  const index = store.categories.findIndex((c) => c.id === id || c.slug === id);
 
   if (index !== -1) {
     store.categories[index] = {
@@ -1380,15 +1369,16 @@ export async function updateCategory(id: string, updates: Partial<Category>): Pr
     saveStoreData(store);
   }
 
-  // Sync to PostgreSQL WebsiteContent catalog section
+  // Persist to PostgreSQL WebsiteContent catalog section
   try {
     await prisma.websiteContent.upsert({
       where: { section: 'catalog_categories' },
       update: { data: store.categories as any },
       create: { section: 'catalog_categories', data: store.categories as any },
     });
+    console.log(`[updateCategory] ✅ Saved ${store.categories.length} categories to catalog_categories`);
   } catch (contentErr: any) {
-    console.warn('[Catalog Categories Sync] Note:', contentErr.message);
+    console.error('[updateCategory] ❌ CRITICAL: Failed to save catalog_categories:', contentErr.message);
   }
 
   try {
@@ -1424,19 +1414,24 @@ export async function updateCategory(id: string, updates: Partial<Category>): Pr
 
 export async function deleteCategory(id: string): Promise<boolean> {
   const store = getStoreData();
+
+  // Pull latest from PostgreSQL before mutating
+  await pullCategoriesFromDB(store);
+
   const initialLen = store.categories.length;
   store.categories = store.categories.filter((c) => c.id !== id && c.slug !== id);
   saveStoreData(store);
 
-  // Sync to PostgreSQL WebsiteContent catalog section
+  // Persist to PostgreSQL WebsiteContent catalog section
   try {
     await prisma.websiteContent.upsert({
       where: { section: 'catalog_categories' },
       update: { data: store.categories as any },
       create: { section: 'catalog_categories', data: store.categories as any },
     });
+    console.log(`[deleteCategory] ✅ Saved ${store.categories.length} categories to catalog_categories`);
   } catch (contentErr: any) {
-    console.warn('[Catalog Categories Sync] Note:', contentErr.message);
+    console.error('[deleteCategory] ❌ CRITICAL: Failed to save catalog_categories:', contentErr.message);
   }
 
   try {
