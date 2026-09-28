@@ -272,21 +272,18 @@ export default function AdminContentPage() {
     if (!content) return;
     const newSlide: HeroSlideContent = {
       id: `custom-slide-${Date.now()}`,
-      tag: 'NEW COLLECTION',
-      title: 'Freshly Handcrafted Treats,',
-      titleItalic: 'Pure Nutrition From Home.',
-      subtitle: 'Prepared fresh in small batches using premium whole ingredients and authentic recipes.',
-      buttonText: 'Shop Collection',
+      tag: 'FEATURED BANNER',
+      title: 'New Product Banner',
+      titleItalic: '',
+      subtitle: '',
+      buttonText: 'Shop Now',
       buttonLink: '/products',
-      secondaryButtonText: 'Explore All',
-      secondaryButtonLink: '/products',
       image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1400&auto=format&fit=crop&q=85',
-      badgeText: '100% Wholesome',
     };
     const updated = [...currentSlides, newSlide];
     setContent({ ...content, heroSlides: updated });
     setSelectedSlideIndex(updated.length - 1);
-    showToast('Added a new slide template!');
+    showToast('Added a new banner slide!');
   };
 
   const handleDeleteSlide = (indexToDelete: number) => {
@@ -414,7 +411,7 @@ export default function AdminContentPage() {
                   Hero Carousel & Product Banners
                 </h2>
                 <p className="text-xs text-[#6B635B] font-light mt-0.5">
-                  Upload your own product images and customize headline text, tags, badges, and button links for each banner slide.
+                  Upload high-resolution visual banner graphics (clean full-bleed style). Clicking each banner takes customers straight to that category or product.
                 </p>
               </div>
 
@@ -425,7 +422,7 @@ export default function AdminContentPage() {
                   className="px-3.5 py-2 rounded-xl bg-[#4E652B] hover:bg-[#3D5021] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>+</span>
-                  <span>Add Slide</span>
+                  <span>Add Banner Slide</span>
                 </button>
                 <button
                   type="button"
@@ -441,7 +438,7 @@ export default function AdminContentPage() {
             {/* Slide Selector Carousel Tabs */}
             <div className="space-y-3">
               <span className="text-xs font-bold uppercase tracking-wider text-stone-700 block">
-                Select Slide to Edit ({currentSlides.length} Total Slides)
+                Select Slide to Edit ({currentSlides.length} Total Banner Slides)
               </span>
               <div className="flex items-center gap-2.5 overflow-x-auto pb-2">
                 {currentSlides.map((slideItem, idx) => {
@@ -457,21 +454,23 @@ export default function AdminContentPage() {
                           : 'border-stone-200 bg-white hover:border-stone-400'
                       }`}
                     >
-                      <div className="w-9 h-9 rounded-xl overflow-hidden bg-stone-100 relative shrink-0 border border-stone-200">
-                        <Image
-                          src={slideItem.image}
-                          alt={slideItem.title}
-                          fill
-                          className="object-cover"
-                          sizes="36px"
-                        />
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-stone-100 relative shrink-0 border border-stone-200">
+                        {slideItem.image ? (
+                          <img
+                            src={slideItem.image}
+                            alt={slideItem.title || `Slide ${idx + 1}`}
+                            className="w-full h-full object-cover object-center"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-stone-400 text-xs">📸</div>
+                        )}
                       </div>
                       <div className="text-left">
                         <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#9C5838]">
                           Slide #{idx + 1}
                         </div>
-                        <div className="text-xs font-bold text-stone-900 max-w-[150px] truncate">
-                          {slideItem.title || 'Untitled Slide'}
+                        <div className="text-xs font-bold text-stone-900 max-w-[170px] truncate">
+                          {slideItem.title || `Banner Slide #${idx + 1}`}
                         </div>
                       </div>
                     </button>
@@ -490,8 +489,8 @@ export default function AdminContentPage() {
                     <span className="px-3 py-1 rounded-full bg-[#1E382B] text-white text-xs font-bold uppercase tracking-wider">
                       Editing Slide #{selectedSlideIndex + 1}
                     </span>
-                    <span className="text-xs text-stone-500 font-medium truncate max-w-[200px]">
-                      {activeSlide.tag || 'Slide Settings'}
+                    <span className="text-xs text-stone-700 font-semibold truncate max-w-[240px]">
+                      {activeSlide.title || `Slide #${selectedSlideIndex + 1}`}
                     </span>
                   </div>
 
@@ -525,72 +524,72 @@ export default function AdminContentPage() {
                   </div>
                 </div>
 
-                {/* Live Banner Mockup Preview */}
+                {/* 100% Crystal-Clear Live Banner Preview (Matching Storefront Carousel) */}
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-2">
-                    Live Banner Preview (Slide #{selectedSlideIndex + 1})
-                  </span>
-                  <div className="relative w-full h-[220px] sm:h-[260px] rounded-2xl overflow-hidden shadow-inner border border-stone-300 bg-black flex items-center p-6 sm:p-8">
-                    <Image
-                      src={activeSlide.image}
-                      alt={activeSlide.title}
-                      fill
-                      className="object-cover"
-                      sizes="800px"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/20" />
-                    
-                    <div className="relative z-10 max-w-lg text-white space-y-2">
-                      {activeSlide.tag && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[#FDF0A6] text-[10px] font-extrabold tracking-widest uppercase border border-white/25">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#FDF0A6]" />
-                          {activeSlide.tag}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-stone-700 block">
+                      Live Banner Preview (100% Natural Clarity • No Overlay Text)
+                    </span>
+                    <span className="text-[11px] text-stone-500 font-medium">
+                      Slide #{selectedSlideIndex + 1} of {currentSlides.length}
+                    </span>
+                  </div>
+
+                  <div className="rounded-2xl overflow-hidden border border-stone-300 bg-stone-900 shadow-md">
+                    {/* Visual Banner Preview Box */}
+                    <div className="relative w-full aspect-[21/8] sm:aspect-[21/7] min-h-[200px] sm:min-h-[260px] bg-stone-100 flex items-center justify-center overflow-hidden">
+                      {activeSlide.image ? (
+                        <img
+                          src={activeSlide.image}
+                          alt={activeSlide.title || 'Nutri Ghar Banner'}
+                          className="w-full h-full object-cover object-center"
+                        />
+                      ) : (
+                        <div className="text-center p-8 text-stone-400">
+                          <span className="text-4xl block mb-2">🖼️</span>
+                          <span className="text-xs font-semibold">No Image Uploaded Yet</span>
                         </div>
                       )}
-                      <h3 className="font-serif text-xl sm:text-2xl font-normal leading-tight text-white drop-shadow-xs">
-                        {activeSlide.title}{' '}
-                        <span className="italic text-[#E5B56A]">{activeSlide.titleItalic}</span>
-                      </h3>
-                      <p className="text-xs text-stone-200 line-clamp-2 font-light">
-                        {activeSlide.subtitle}
-                      </p>
-                      <div className="flex items-center gap-2 pt-1">
-                        <span className="px-4 py-1.5 rounded-full bg-[#4E652B] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                          {activeSlide.buttonText || 'Shop'} →
+
+                      {/* Click Target Floating Badge */}
+                      <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[11px] font-medium flex items-center gap-1.5 shadow-md">
+                        <span className="text-[#E5B56A]">🔗 Links to:</span>
+                        <span className="font-mono text-stone-200 truncate max-w-[200px]">
+                          {activeSlide.buttonLink || '/products'}
                         </span>
-                        {activeSlide.secondaryButtonText && (
-                          <span className="px-3 py-1.5 rounded-full bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider border border-white/30">
-                            {activeSlide.secondaryButtonText}
-                          </span>
-                        )}
                       </div>
                     </div>
 
-                    {activeSlide.badgeText && (
-                      <div className="hidden sm:flex absolute bottom-4 right-4 z-10 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#1E382B] shadow-lg border border-stone-200 items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#4E652B]" />
-                        <span>{activeSlide.badgeText}</span>
-                      </div>
-                    )}
+                    {/* Carousel Dots Preview Bar */}
+                    <div className="bg-[#FAF7F2] py-2.5 px-4 flex items-center justify-center gap-2 border-t border-stone-200">
+                      {currentSlides.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`transition-all rounded-full ${
+                            idx === selectedSlideIndex
+                              ? 'w-5 h-2 bg-stone-900'
+                              : 'w-2 h-2 bg-stone-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* Image Upload / Photo Settings */}
+                {/* Banner Photo Upload & URL Settings */}
                 <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#E8E1D7] space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
-                        Slide Image / Product Photo
-                      </span>
-                      <span className="text-[11px] text-stone-500 font-light">
-                        Upload your high-resolution product photography (recommended 1400×600 or larger) or provide a photo URL.
-                      </span>
-                    </div>
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block">
+                      Banner Image / Product Photography
+                    </span>
+                    <span className="text-[11px] text-stone-500 font-light">
+                      Upload your high-resolution banner photo (recommended 1400×600 or 1920×800) or enter a photo URL.
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                     {/* File Upload Dropzone */}
-                    <div className="border-2 border-dashed border-[#D8CEBE] hover:border-[#1E382B] rounded-2xl p-4 text-center bg-[#FAF7F2] transition-colors">
+                    <div className="border-2 border-dashed border-[#D8CEBE] hover:border-[#1E382B] rounded-2xl p-5 text-center bg-[#FAF7F2] transition-colors">
                       <input
                         type="file"
                         accept="image/*"
@@ -604,147 +603,98 @@ export default function AdminContentPage() {
                       >
                         <span className="text-2xl">📸</span>
                         <span className="text-xs font-bold text-[#1E382B] hover:underline">
-                          {isUploadingImage ? 'Uploading Image...' : 'Click to Upload Product Image'}
+                          {isUploadingImage ? 'Uploading Image...' : 'Click to Upload Banner Image'}
                         </span>
                         <span className="text-[10px] text-stone-500 font-light">
-                          Supports JPG, PNG, WebP (from your computer/phone)
+                          Supports JPG, PNG, WebP (from computer or mobile)
                         </span>
                       </label>
                     </div>
 
                     {/* Image URL fallback */}
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
-                        Or Paste Image Web URL
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700">
+                        Or Paste Image Direct URL
                       </label>
                       <input
                         type="url"
                         value={activeSlide.image}
                         onChange={(e) => updateActiveSlide({ image: e.target.value })}
-                        placeholder="https://images.unsplash.com/..."
+                        placeholder="https://... or /images/..."
                         className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
                       />
+                      <div className="text-[10px] text-stone-500 flex items-center gap-1">
+                        <span>💡 Tip:</span>
+                        <span>Use pre-designed banner graphics with your own text already embedded on the artwork.</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Text Copy & Badges Form */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-[#E8E1D7]">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Category Tag / Eyebrow Pill
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.tag}
-                      onChange={(e) => updateActiveSlide({ tag: e.target.value })}
-                      placeholder="e.g., CLEAN FITNESS NUTRITION"
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
+                {/* Banner Settings: Slide Name & Navigation Link */}
+                <div className="bg-white p-5 rounded-2xl border border-[#E8E1D7] space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
+                        Slide Name / Identifier
+                      </label>
+                      <input
+                        type="text"
+                        value={activeSlide.title}
+                        onChange={(e) => updateActiveSlide({ title: e.target.value })}
+                        placeholder="e.g., Clean Protein Nutrition Banner"
+                        className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                      />
+                      <span className="text-[10px] text-stone-500 mt-1 block">
+                        Used for slide tab labeling and accessibility (alt tag).
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
+                        Target Navigation Link (Where Click Navigates)
+                      </label>
+                      <input
+                        type="text"
+                        value={activeSlide.buttonLink}
+                        onChange={(e) => updateActiveSlide({ buttonLink: e.target.value })}
+                        placeholder="e.g., /products?category=protein-nutrition"
+                        className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
+                      />
+                      <span className="text-[10px] text-stone-500 mt-1 block">
+                        Full URL or page path when customer taps this banner.
+                      </span>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Floating Quality Badge
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.badgeText || ''}
-                      onChange={(e) => updateActiveSlide({ badgeText: e.target.value })}
-                      placeholder="e.g., 12g Protein / Piece"
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Main Headline (Line 1)
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.title}
-                      onChange={(e) => updateActiveSlide({ title: e.target.value })}
-                      placeholder="e.g., Your Favourite Treats,"
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Italic Accent Headline (Line 2)
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.titleItalic}
-                      onChange={(e) => updateActiveSlide({ titleItalic: e.target.value })}
-                      placeholder="e.g., Enriched With Clean Protein."
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Slide Subtitle / Description
-                    </label>
-                    <textarea
-                      value={activeSlide.subtitle}
-                      onChange={(e) => updateActiveSlide({ subtitle: e.target.value })}
-                      rows={2}
-                      placeholder="Describe the freshness, ingredients, and craft..."
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Primary Button Text
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.buttonText}
-                      onChange={(e) => updateActiveSlide({ buttonText: e.target.value })}
-                      placeholder="e.g., Shop High Protein"
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Primary Button Link
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.buttonLink}
-                      onChange={(e) => updateActiveSlide({ buttonLink: e.target.value })}
-                      placeholder="e.g., /products?category=protein-nutrition"
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Secondary Button Text (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.secondaryButtonText || ''}
-                      onChange={(e) => updateActiveSlide({ secondaryButtonText: e.target.value })}
-                      placeholder="e.g., Explore Collections"
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1C1917] mb-1.5">
-                      Secondary Button Link (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={activeSlide.secondaryButtonLink || ''}
-                      onChange={(e) => updateActiveSlide({ secondaryButtonLink: e.target.value })}
-                      placeholder="e.g., /products"
-                      className="w-full px-3.5 py-2 bg-[#FAF7F2] border border-[#D8CEBE] rounded-xl text-xs text-[#1C1917] focus:outline-none focus:border-[#1E382B]"
-                    />
+                  {/* Quick-Select Destination Links */}
+                  <div className="pt-2 border-t border-stone-100">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block mb-2">
+                      ⚡ Quick-Set Target Destination:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[
+                        { label: 'All Products', path: '/products' },
+                        { label: 'Clean Protein', path: '/products?category=protein-nutrition' },
+                        { label: 'Peanut Butter', path: '/products?category=peanut-butter' },
+                        { label: 'Mithai & Ladoos', path: '/products?category=mithai' },
+                        { label: 'Healthy Snacks', path: '/products?category=healthy-snacks' },
+                        { label: 'Contact Us', path: '/contact' },
+                      ].map((item) => (
+                        <button
+                          key={item.path}
+                          type="button"
+                          onClick={() => updateActiveSlide({ buttonLink: item.path })}
+                          className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                            activeSlide.buttonLink === item.path
+                              ? 'bg-[#1E382B] text-white border-[#1E382B]'
+                              : 'bg-[#FAF7F2] text-stone-700 border-stone-300 hover:bg-stone-200'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
