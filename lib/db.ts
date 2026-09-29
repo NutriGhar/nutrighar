@@ -1,10 +1,15 @@
-// Central Database & Data Access Service Layer for Nutri Ghar
-// Supports PostgreSQL via Prisma ORM with durable, persistent disk-backed JSON storage
+// ============================================================
+// lib/db.ts — Pure PostgreSQL Data Access Layer for Nutri Ghar
+// ALL data is stored and read from PostgreSQL via Prisma.
+// No JSON files. No in-memory store. No filesystem writes.
+// ============================================================
 
-import fs from 'fs';
-import path from 'path';
 import prisma from '@/lib/prisma';
 import { uploadProductImage } from '@/lib/storage';
+
+// ============================================================
+// INTERFACES
+// ============================================================
 
 export interface Category {
   id: string;
@@ -188,6 +193,10 @@ export interface WebsiteContent {
   };
 }
 
+// ============================================================
+// DEFAULT CONTENT (used as fallback if DB has no record yet)
+// ============================================================
+
 export const DEFAULT_PRODUCT_SPOTLIGHT: ProductSpotlightContent = {
   eyebrow: 'PRODUCT SPOTLIGHT',
   heading: 'Protein Power Ladoo',
@@ -209,99 +218,18 @@ export const DEFAULT_TESTIMONIALS: TestimonialsContent = {
   eyebrow: 'VERIFIED EXPERIENCES',
   heading: 'Loved Across Indian Homes',
   items: [
-    {
-      id: 'test-1',
-      name: 'Priya Sharma',
-      location: 'Mumbai',
-      product: 'Besan Ladoo',
-      rating: 5,
-      review: 'The Besan Ladoos taste exactly like the ones my grandmother prepared during festivals. Pure ghee aroma with zero artificial aftertaste.',
-    },
-    {
-      id: 'test-2',
-      name: 'Rajesh Kumar',
-      location: 'Bengaluru',
-      product: 'Creamy Peanut Butter',
-      rating: 5,
-      review: 'Finding a peanut butter that doesn\'t use added palm oil or sugar was impossible until Nutri Ghar. It has become my morning gym staple.',
-    },
-    {
-      id: 'test-3',
-      name: 'Anjali Verma',
-      location: 'Delhi NCR',
-      product: 'Protein Power Ladoo',
-      rating: 5,
-      review: 'The Protein Power Ladoos are genuinely incredible. 12g of protein in something that tastes like a traditional delicacy is genius.',
-    },
+    { id: 'test-1', name: 'Priya Sharma', location: 'Mumbai', product: 'Besan Ladoo', rating: 5, review: 'The Besan Ladoos taste exactly like the ones my grandmother prepared during festivals. Pure ghee aroma with zero artificial aftertaste.' },
+    { id: 'test-2', name: 'Rajesh Kumar', location: 'Bengaluru', product: 'Creamy Peanut Butter', rating: 5, review: 'Finding a peanut butter that doesn\'t use added palm oil or sugar was impossible until Nutri Ghar. It has become my morning gym staple.' },
+    { id: 'test-3', name: 'Anjali Verma', location: 'Delhi NCR', product: 'Protein Power Ladoo', rating: 5, review: 'The Protein Power Ladoos are genuinely incredible. 12g of protein in something that tastes like a traditional delicacy is genius.' },
   ],
 };
 
 export const DEFAULT_HERO_SLIDES: HeroSlideContent[] = [
-  {
-    id: 'protein-nutrition',
-    tag: 'CLEAN FITNESS NUTRITION',
-    title: 'Your Favourite Treats,',
-    titleItalic: 'Enriched With Clean Protein.',
-    subtitle: '12g+ clean protein per piece with roasted California almonds, pure A2 desi cow ghee, and zero refined sugar.',
-    buttonText: 'Shop High Protein',
-    buttonLink: '/products?category=protein-nutrition',
-    secondaryButtonText: 'Explore Collections',
-    secondaryButtonLink: '/products',
-    image: '/images/clean-protein-pouch-banner.jpg',
-    badgeText: 'Pure Nuts & Seeds Blend',
-  },
-  {
-    id: 'dry-fruits-nuts',
-    tag: 'HANDPICKED SUPERFOODS',
-    title: 'Slow-Roasted Nuts,',
-    titleItalic: 'All Flavour, Zero Excess Oil.',
-    subtitle: 'Premium California almonds, whole cashews, and crunch-roasted seed mixes prepared fresh in small batches.',
-    buttonText: 'Explore Roasted Nuts',
-    buttonLink: '/products?category=healthy-snacks',
-    secondaryButtonText: 'View All Snacks',
-    secondaryButtonLink: '/products?category=healthy-snacks',
-    image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=1400&auto=format&fit=crop&q=85',
-    badgeText: '100% Whole Nuts',
-  },
-  {
-    id: 'mithai-ladoos',
-    tag: 'HERITAGE RECIPES',
-    title: 'Pure A2 Desi Ghee Ladoos,',
-    titleItalic: 'The Warmth of Home Kitchen.',
-    subtitle: 'Melt-in-mouth Besan and Motichoor ladoos slow-cooked in 100% pure desi cow ghee and organic jaggery.',
-    buttonText: 'Shop Mithai & Ladoos',
-    buttonLink: '/products?category=mithai',
-    secondaryButtonText: 'Discover Flavours',
-    secondaryButtonLink: '/products',
-    image: '/images/dry-fruit-ladoos-banner.jpg',
-    badgeText: 'Pure Cow Ghee',
-  },
-  {
-    id: 'peanut-butter',
-    tag: '100% NATURAL BUTTER',
-    title: 'Stone-Ground Peanuts,',
-    titleItalic: 'Zero Added Palm Oil & Preservatives.',
-    subtitle: 'Slow stone-ground daily for an irresistibly rich texture and deep roasted aroma. Pure plant-based energy.',
-    buttonText: 'Discover Butters',
-    buttonLink: '/products?category=peanut-butter',
-    secondaryButtonText: 'All Spreads',
-    secondaryButtonLink: '/products',
-    image: '/images/peanut-butter-banner.jpg',
-    badgeText: 'Stone-Ground Daily',
-  },
-  {
-    id: 'nut-cake-cookies',
-    tag: 'HEALTHY BAKERY CRAFT',
-    title: 'Wholesome Nut Cakes,',
-    titleItalic: 'Guilt-Free Cookies & Bakes.',
-    subtitle: 'Nut-dense artisan cakes and crunchy whole grain cookies sweetened with forest honey and natural jaggery.',
-    buttonText: 'Explore Healthy Treats',
-    buttonLink: '/products?category=healthy-snacks',
-    secondaryButtonText: 'Shop All Bakes',
-    secondaryButtonLink: '/products',
-    image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1400&auto=format&fit=crop&q=85',
-    badgeText: 'Zero Maida / No Preservatives',
-  },
+  { id: 'protein-nutrition', tag: 'CLEAN FITNESS NUTRITION', title: 'Your Favourite Treats,', titleItalic: 'Enriched With Clean Protein.', subtitle: '12g+ clean protein per piece with roasted California almonds, pure A2 desi cow ghee, and zero refined sugar.', buttonText: 'Shop High Protein', buttonLink: '/products?category=protein-nutrition', secondaryButtonText: 'Explore Collections', secondaryButtonLink: '/products', image: '/images/clean-protein-pouch-banner.jpg', badgeText: 'Pure Nuts & Seeds Blend' },
+  { id: 'dry-fruits-nuts', tag: 'HANDPICKED SUPERFOODS', title: 'Slow-Roasted Nuts,', titleItalic: 'All Flavour, Zero Excess Oil.', subtitle: 'Premium California almonds, whole cashews, and crunch-roasted seed mixes prepared fresh in small batches.', buttonText: 'Explore Roasted Nuts', buttonLink: '/products?category=healthy-snacks', secondaryButtonText: 'View All Snacks', secondaryButtonLink: '/products?category=healthy-snacks', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=1400&auto=format&fit=crop&q=85', badgeText: '100% Whole Nuts' },
+  { id: 'mithai-ladoos', tag: 'HERITAGE RECIPES', title: 'Pure A2 Desi Ghee Ladoos,', titleItalic: 'The Warmth of Home Kitchen.', subtitle: 'Melt-in-mouth Besan and Motichoor ladoos slow-cooked in 100% pure desi cow ghee and organic jaggery.', buttonText: 'Shop Mithai & Ladoos', buttonLink: '/products?category=mithai', secondaryButtonText: 'Discover Flavours', secondaryButtonLink: '/products', image: '/images/dry-fruit-ladoos-banner.jpg', badgeText: 'Pure Cow Ghee' },
+  { id: 'peanut-butter', tag: '100% NATURAL BUTTER', title: 'Stone-Ground Peanuts,', titleItalic: 'Zero Added Palm Oil & Preservatives.', subtitle: 'Slow stone-ground daily for an irresistibly rich texture and deep roasted aroma. Pure plant-based energy.', buttonText: 'Discover Butters', buttonLink: '/products?category=peanut-butter', secondaryButtonText: 'All Spreads', secondaryButtonLink: '/products', image: '/images/peanut-butter-banner.jpg', badgeText: 'Stone-Ground Daily' },
+  { id: 'nut-cake-cookies', tag: 'HEALTHY BAKERY CRAFT', title: 'Wholesome Nut Cakes,', titleItalic: 'Guilt-Free Cookies & Bakes.', subtitle: 'Nut-dense artisan cakes and crunchy whole grain cookies sweetened with forest honey and natural jaggery.', buttonText: 'Explore Healthy Treats', buttonLink: '/products?category=healthy-snacks', secondaryButtonText: 'Shop All Bakes', secondaryButtonLink: '/products', image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1400&auto=format&fit=crop&q=85', badgeText: 'Zero Maida / No Preservatives' },
 ];
 
 export const DEFAULT_CURATED_COLLECTIONS: CuratedCollectionsContent = {
@@ -309,89 +237,48 @@ export const DEFAULT_CURATED_COLLECTIONS: CuratedCollectionsContent = {
   heading: 'Pure Food For Everyday Living',
   description: 'From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.',
   cards: [
-    {
-      id: 'col-mithai',
-      categorySlug: 'mithai',
-      tag: 'HERITAGE SWEETS',
-      title: 'Mithai & Ladoos',
-      description: 'Pure A2 desi cow ghee ladoos crafted with whole dry fruits.',
-      image: '/images/dry-fruit-ladoos-banner.jpg',
-    },
-    {
-      id: 'col-peanut-butter',
-      categorySlug: 'peanut-butter',
-      tag: 'STONE-GROUND',
-      title: 'Peanut Butter',
-      description: '100% slow-roasted peanuts stone-ground daily.',
-      image: '/images/peanut-butter-banner.jpg',
-    },
-    {
-      id: 'col-protein-nutrition',
-      categorySlug: 'protein-nutrition',
-      tag: 'CLEAN PROTEIN',
-      title: 'Protein & Recovery',
-      description: 'Stone-ground nuts, seeds and clean protein superfood mix.',
-      image: '/images/clean-protein-pouch-banner.jpg',
-    },
-    {
-      id: 'col-healthy-snacks',
-      categorySlug: 'healthy-snacks',
-      tag: 'GUILT-FREE CRUNCH',
-      title: 'Healthy Snacks',
-      description: 'Slow-roasted California almonds, cashews and seed mixes.',
-      image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80',
-    },
+    { id: 'col-mithai', categorySlug: 'mithai', tag: 'HERITAGE SWEETS', title: 'Mithai & Ladoos', description: 'Pure A2 desi cow ghee ladoos crafted with whole dry fruits.', image: '/images/dry-fruit-ladoos-banner.jpg' },
+    { id: 'col-peanut-butter', categorySlug: 'peanut-butter', tag: 'STONE-GROUND', title: 'Peanut Butter', description: '100% slow-roasted peanuts stone-ground daily.', image: '/images/peanut-butter-banner.jpg' },
+    { id: 'col-protein-nutrition', categorySlug: 'protein-nutrition', tag: 'CLEAN PROTEIN', title: 'Protein & Recovery', description: 'Stone-ground nuts, seeds and clean protein superfood mix.', image: '/images/clean-protein-pouch-banner.jpg' },
+    { id: 'col-healthy-snacks', categorySlug: 'healthy-snacks', tag: 'GUILT-FREE CRUNCH', title: 'Healthy Snacks', description: 'Slow-roasted California almonds, cashews and seed mixes.', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80' },
   ],
 };
 
 const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
-  hero: {
-    eyebrow: 'HOMEMADE WELLNESS',
-    headline: 'Goodness That',
-    headlineItalic: 'Feels Like Home.',
-    supportingText: 'Naturally made foods and nutrition products crafted with care for your everyday wellness. Pure A2 ghee, stone-ground nuts, and authentic home-style craft.',
-    primaryButtonText: 'Shop Bestsellers',
-    secondaryButtonText: 'Explore Collections',
-    heroImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&auto=format&fit=crop&q=80',
-  },
+  hero: { eyebrow: 'HOMEMADE WELLNESS', headline: 'Goodness That', headlineItalic: 'Feels Like Home.', supportingText: 'Naturally made foods and nutrition products crafted with care for your everyday wellness. Pure A2 ghee, stone-ground nuts, and authentic home-style craft.', primaryButtonText: 'Shop Bestsellers', secondaryButtonText: 'Explore Collections', heroImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&auto=format&fit=crop&q=80' },
   heroSlides: DEFAULT_HERO_SLIDES,
   curatedCollections: DEFAULT_CURATED_COLLECTIONS,
   productSpotlight: DEFAULT_PRODUCT_SPOTLIGHT,
   testimonials: DEFAULT_TESTIMONIALS,
-  announcement: {
-    enabled: true,
-    text: 'Freshly Made • Wholesome Ingredients • Delivered with Care',
-  },
-  brandStory: {
-    eyebrow: 'THE NUTRI GHAR WAY',
-    heading: 'Rooted in Tradition.',
-    headingItalic: 'Made for Today.',
-    paragraph1: 'At Nutri Ghar, we believe you shouldn’t have to choose between the pure, heartwarming flavors of Indian heritage and the clean nutritional standards demanded by modern living.',
-    paragraph2: 'Every jar of stone-ground peanut butter and every handcrafted batch of ladoos begins with 100% whole ingredients: pure A2 desi cow ghee, California almonds, rich roasted gram flour, and wild forest honey.',
-    paragraph3: 'No industrial shortcuts. Zero palm oil, no artificial flavorings, and no chemical preservatives. Just honest, wholesome nutrition prepared exactly the way it would be in your family home.',
-    storyImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1000&auto=format&fit=crop&q=80',
-    quote: '“Food made with the warmth of a mother’s kitchen nourishes not just the body, but the soul.”',
-  },
-  contact: {
-    phone: '+91 79761 19153',
-    email: 'Nutrighar2917@gmail.com',
-    whatsapp: '+91 79761 19153',
-    address: 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001',
-    fssaiLicense: 'FSSAI Lic: 10823005000214',
-  },
-  footer: {
-    aboutText: 'Nutri Ghar represents healthy food made with the warmth and trust of home. Small batches crafted with pure ingredients, zero chemical preservatives, and traditional recipes.',
-    instagramUrl: 'https://instagram.com',
-    whatsappUrl: 'https://wa.me/917976119153',
-    facebookUrl: 'https://facebook.com',
-    copyrightText: `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.`,
-  },
-  newsletter: {
-    heading: 'A Little Goodness in Your Inbox.',
-    description: 'Receive thoughtful wellness notes, seasonal kitchen recipes, and priority access to fresh batches.',
-    promoNote: 'We respect your privacy. No spam, ever. Unsubscribe anytime.',
-  },
+  announcement: { enabled: true, text: 'Freshly Made • Wholesome Ingredients • Delivered with Care' },
+  brandStory: { eyebrow: 'THE NUTRI GHAR WAY', heading: 'Rooted in Tradition.', headingItalic: 'Made for Today.', paragraph1: 'At Nutri Ghar, we believe you shouldn\'t have to choose between the pure, heartwarming flavors of Indian heritage and the clean nutritional standards demanded by modern living.', paragraph2: 'Every jar of stone-ground peanut butter and every handcrafted batch of ladoos begins with 100% whole ingredients: pure A2 desi cow ghee, California almonds, rich roasted gram flour, and wild forest honey.', paragraph3: 'No industrial shortcuts. Zero palm oil, no artificial flavorings, and no chemical preservatives. Just honest, wholesome nutrition prepared exactly the way it would be in your family home.', storyImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1000&auto=format&fit=crop&q=80', quote: '"Food made with the warmth of a mother\'s kitchen nourishes not just the body, but the soul."' },
+  contact: { phone: '+91 79761 19153', email: 'Nutrighar2917@gmail.com', whatsapp: '+91 79761 19153', address: 'Nutri Ghar Artisanal Kitchen, Sector 14, Gurugram, Haryana - 122001', fssaiLicense: 'FSSAI Lic: 10823005000214' },
+  footer: { aboutText: 'Nutri Ghar represents healthy food made with the warmth and trust of home. Small batches crafted with pure ingredients, zero chemical preservatives, and traditional recipes.', instagramUrl: 'https://instagram.com', whatsappUrl: 'https://wa.me/917976119153', facebookUrl: 'https://facebook.com', copyrightText: `© ${new Date().getFullYear()} Nutri Ghar. Pure homemade nutrition crafted with care.` },
+  newsletter: { heading: 'A Little Goodness in Your Inbox.', description: 'Receive thoughtful wellness notes, seasonal kitchen recipes, and priority access to fresh batches.', promoNote: 'We respect your privacy. No spam, ever. Unsubscribe anytime.' },
 };
+
+// ============================================================
+// DEFAULT SEED DATA
+// ============================================================
+
+export const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'cat-mithai', name: 'Mithai & Ladoo', slug: 'mithai', description: 'Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.', image: '/images/dry-fruit-ladoos-banner.jpg', icon: '🍯', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-peanut-butter', name: 'Peanut Butter', slug: 'peanut-butter', description: '100% stone-ground natural nut butters with zero palm oil or chemical preservatives.', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80', icon: '🥜', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-protein-nutrition', name: 'Protein & Nutrition', slug: 'protein-nutrition', description: 'Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.', image: '/images/clean-protein-pouch-banner.jpg', icon: '💪', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-healthy-snacks', name: 'Healthy Snacks', slug: 'healthy-snacks', description: 'Slow-roasted premium nuts, crunchy seeds, and sun-dried fruit assortments.', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80', icon: '🥗', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+];
+
+export const DEFAULT_PRODUCTS: Product[] = [
+  { id: 'besan-ladoo', name: 'Besan Ladoo', slug: 'besan-ladoo', categoryId: 'cat-mithai', categorySlug: 'mithai', price: 299, originalPrice: 349, image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&auto=format&fit=crop&q=80', images: ['https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&auto=format&fit=crop&q=80'], description: 'Authentic gram flour ladoos made with pure desi cow ghee and cardamom.', ingredients: ['Roasted Gram Flour', 'Pure A2 Cow Ghee', 'Raw Cane Sugar', 'Cardamom', 'California Almonds'], benefits: ['Rich in Plant Protein', 'Natural Energy Boost', 'Pure Natural Ingredients', 'Freshly Handcrafted'], rating: 4.8, reviewCount: 234, stockQuantity: 45, lowStockThreshold: 10, isFeatured: true, isBestSeller: true, isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'dry-fruit-ladoo', name: 'Premium Dry Fruit Ladoo', slug: 'dry-fruit-ladoo', categoryId: 'cat-mithai', categorySlug: 'mithai', price: 449, originalPrice: 499, image: '/images/dry-fruit-ladoo-product.jpg', images: ['/images/dry-fruit-ladoo-product.jpg', '/images/dry-fruit-ladoos-banner.jpg'], description: 'Luxurious ladoos packed with almonds, cashews, dates, and zero refined sugar.', ingredients: ['Almonds', 'Cashews', 'Medjool Dates', 'Pistachios', 'Pure Cow Ghee'], benefits: ['Rich in Antioxidants', 'Zero Refined Sugar', 'Nutrient Dense Superfood', 'Maternal Kitchen Recipe'], rating: 4.9, reviewCount: 342, stockQuantity: 32, lowStockThreshold: 8, isFeatured: true, isBestSeller: true, isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'classic-peanut-butter', name: 'Classic Creamy Peanut Butter', slug: 'classic-peanut-butter', categoryId: 'cat-peanut-butter', categorySlug: 'peanut-butter', price: 249, originalPrice: 299, image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80', images: ['https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80'], description: '100% slow-roasted peanuts stone-ground to silky perfection with zero palm oil.', ingredients: ['100% Roasted Gujarat Peanuts', 'Himalayan Pink Salt'], benefits: ['High Protein (30g/100g)', 'Zero Added Palm Oil', 'No Preservatives', 'Slow Stone Ground'], rating: 4.9, reviewCount: 421, stockQuantity: 60, lowStockThreshold: 15, isFeatured: true, isBestSeller: true, isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'whey-protein-isolate', name: 'NutriGhar Clean Protein & Healthy Mix (500g)', slug: 'whey-protein-isolate', categoryId: 'cat-protein-nutrition', categorySlug: 'protein-nutrition', price: 599, originalPrice: 699, image: '/images/clean-protein-pouch-product.jpg', images: ['/images/clean-protein-pouch-product.jpg', '/images/clean-protein-pouch-banner.jpg'], description: '100% stone-ground healthy mix of roasted California almonds, walnuts, chia seeds, pumpkin seeds, and clean plant protein.', ingredients: ['California Almonds', 'Walnuts', 'Chia Seeds', 'Pumpkin Seeds', 'Flax Seeds', 'Clean Plant Protein', 'Cardamom'], benefits: ['20g Clean Protein per Serving', '100% Stone-Ground Superfoods', 'Zero Palm Oil & Zero Maida', 'Eco-Friendly Kraft Packaging'], rating: 4.9, reviewCount: 198, stockQuantity: 40, lowStockThreshold: 10, isFeatured: true, isBestSeller: true, isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'roasted-almonds', name: 'Himalayan Pink Salt Almonds', slug: 'roasted-almonds', categoryId: 'cat-healthy-snacks', categorySlug: 'healthy-snacks', price: 399, originalPrice: 449, image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80', images: ['https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80'], description: 'Jumbo California almonds slow-roasted without oil, seasoned with pink rock salt.', ingredients: ['Jumbo California Almonds', 'Himalayan Pink Rock Salt'], benefits: ['Oil-Free Roasting', 'Rich in Vitamin E', 'Brain & Heart Health', 'Guilt-Free Crunch'], rating: 4.8, reviewCount: 312, stockQuantity: 40, lowStockThreshold: 10, isFeatured: true, isBestSeller: true, isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+];
+
+// ============================================================
+// HELPERS
+// ============================================================
 
 function formatProduct(p: any): Product {
   return {
@@ -400,7 +287,7 @@ function formatProduct(p: any): Product {
     slug: p.slug,
     description: p.description,
     price: p.price,
-    originalPrice: p.originalPrice,
+    originalPrice: p.originalPrice ?? null,
     categoryId: p.categoryId,
     categorySlug: p.categorySlug,
     image: p.image,
@@ -411,406 +298,93 @@ function formatProduct(p: any): Product {
     reviewCount: p.reviewCount,
     stockQuantity: p.stockQuantity,
     lowStockThreshold: p.lowStockThreshold,
-    weight: p.weight || '500g',
-    isFeatured: p.isFeatured,
-    isBestSeller: p.isBestSeller,
-    isActive: p.isActive,
-    createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
-    updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : p.updatedAt,
+    weight: p.weight ?? '500g',
+    isFeatured: Boolean(p.isFeatured),
+    isBestSeller: Boolean(p.isBestSeller),
+    isActive: Boolean(p.isActive),
+    createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt),
+    updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : String(p.updatedAt),
   };
 }
 
-// -------------------------------------------------------------
-// IN-MEMORY FALLBACK STORES (For Zero-Config Resilience on Vercel)
-// -------------------------------------------------------------
-
-export const DEFAULT_CATEGORIES: Category[] = [
-  {
-    id: 'cat-mithai',
-    name: 'Mithai & Ladoo',
-    slug: 'mithai',
-    description: 'Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.',
-    image: '/images/dry-fruit-ladoos-banner.jpg',
-    icon: '🍯',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'cat-peanut-butter',
-    name: 'Peanut Butter',
-    slug: 'peanut-butter',
-    description: '100% stone-ground natural nut butters with zero palm oil or chemical preservatives.',
-    image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
-    icon: '🥜',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'cat-protein-nutrition',
-    name: 'Protein & Nutrition',
-    slug: 'protein-nutrition',
-    description: 'Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.',
-    image: '/images/clean-protein-pouch-banner.jpg',
-    icon: '💪',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'cat-healthy-snacks',
-    name: 'Healthy Snacks',
-    slug: 'healthy-snacks',
-    description: 'Slow-roasted premium nuts, crunchy seeds, and sun-dried fruit assortments.',
-    image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80',
-    icon: '🥗',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-export const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: 'besan-ladoo',
-    name: 'Besan Ladoo',
-    slug: 'besan-ladoo',
-    categoryId: 'cat-mithai',
-    categorySlug: 'mithai',
-    price: 299,
-    originalPrice: 349,
-    image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&auto=format&fit=crop&q=80'],
-    description: 'Authentic gram flour ladoos made with pure desi cow ghee and cardamom.',
-    ingredients: ['Roasted Gram Flour', 'Pure A2 Cow Ghee', 'Raw Cane Sugar', 'Cardamom', 'California Almonds'],
-    benefits: ['Rich in Plant Protein', 'Natural Energy Boost', 'Pure Natural Ingredients', 'Freshly Handcrafted'],
-    rating: 4.8,
-    reviewCount: 234,
-    stockQuantity: 45,
-    lowStockThreshold: 10,
-    isFeatured: true,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'dry-fruit-ladoo',
-    name: 'Premium Dry Fruit Ladoo',
-    slug: 'dry-fruit-ladoo',
-    categoryId: 'cat-mithai',
-    categorySlug: 'mithai',
-    price: 449,
-    originalPrice: 499,
-    image: '/images/dry-fruit-ladoo-product.jpg',
-    images: ['/images/dry-fruit-ladoo-product.jpg', '/images/dry-fruit-ladoos-banner.jpg'],
-    description: 'Luxurious ladoos packed with almonds, cashews, dates, and zero refined sugar.',
-    ingredients: ['Almonds', 'Cashews', 'Medjool Dates', 'Pistachios', 'Pure Cow Ghee'],
-    benefits: ['Rich in Antioxidants', 'Zero Refined Sugar', 'Nutrient Dense Superfood', 'Maternal Kitchen Recipe'],
-    rating: 4.9,
-    reviewCount: 342,
-    stockQuantity: 32,
-    lowStockThreshold: 8,
-    isFeatured: true,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'kaju-katli',
-    name: 'Pure Silver Leaf Kaju Katli',
-    slug: 'kaju-katli',
-    categoryId: 'cat-mithai',
-    categorySlug: 'mithai',
-    price: 499,
-    originalPrice: 549,
-    image: 'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&auto=format&fit=crop&q=80'],
-    description: 'Royal cashew diamond fudge handcrafted with whole Goan cashews, pure cardamom, and edible silver vark.',
-    ingredients: ['Premium Goan Cashews', 'Pure Desi Cow Ghee', 'Raw Cane Sugar', 'Cardamom', 'Edible Silver Leaf'],
-    benefits: ['Rich in Healthy Fats & Zinc', 'Zero Added Flour or Fillers', 'Melt-in-Mouth Texture', 'Freshly Handcrafted'],
-    rating: 4.9,
-    reviewCount: 380,
-    stockQuantity: 35,
-    lowStockThreshold: 10,
-    isFeatured: true,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'coconut-ladoo',
-    name: 'Fresh Coconut Ladoo',
-    slug: 'coconut-ladoo',
-    categoryId: 'cat-mithai',
-    categorySlug: 'mithai',
-    price: 279,
-    originalPrice: 319,
-    image: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1587314168485-3236d6710814?w=800&auto=format&fit=crop&q=80'],
-    description: 'Delicate coconut ladoos made with freshly grated coconut and condensed milk.',
-    ingredients: ['Fresh Coconut', 'Whole Milk', 'Raw Sugar', 'Green Cardamom'],
-    benefits: ['Rich in Essential Minerals', 'Naturally Gluten Free', 'Pure Freshly Made', 'Traditional Taste'],
-    rating: 4.7,
-    reviewCount: 156,
-    stockQuantity: 28,
-    lowStockThreshold: 10,
-    isFeatured: true,
-    isBestSeller: false,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'classic-peanut-butter',
-    name: 'Classic Creamy Peanut Butter',
-    slug: 'classic-peanut-butter',
-    categoryId: 'cat-peanut-butter',
-    categorySlug: 'peanut-butter',
-    price: 249,
-    originalPrice: 299,
-    image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80'],
-    description: '100% slow-roasted peanuts stone-ground to silky perfection with zero palm oil.',
-    ingredients: ['100% Roasted Gujarat Peanuts', 'Himalayan Pink Salt'],
-    benefits: ['High Protein (30g/100g)', 'Zero Added Palm Oil', 'No Preservatives', 'Slow Stone Ground'],
-    rating: 4.9,
-    reviewCount: 421,
-    stockQuantity: 60,
-    lowStockThreshold: 15,
-    isFeatured: true,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'crunchy-peanut-butter',
-    name: 'Crunchy Dark Roast Peanut Butter',
-    slug: 'crunchy-peanut-butter',
-    categoryId: 'cat-peanut-butter',
-    categorySlug: 'peanut-butter',
-    price: 269,
-    originalPrice: 319,
-    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&auto=format&fit=crop&q=80'],
-    description: 'Dark roasted peanut butter loaded with satisfying crunchy peanut bits.',
-    ingredients: ['Roasted Peanuts', 'Crushed Peanut Chunks', 'Himalayan Pink Salt'],
-    benefits: ['Delightful Crunch', 'Zero Hydrogenated Oils', 'Natural Heart Healthy Fats', 'Clean Fuel'],
-    rating: 4.8,
-    reviewCount: 289,
-    stockQuantity: 50,
-    lowStockThreshold: 12,
-    isFeatured: false,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'whey-protein-isolate',
-    name: 'NutriGhar Clean Protein & Healthy Mix (500g)',
-    slug: 'whey-protein-isolate',
-    categoryId: 'cat-protein-nutrition',
-    categorySlug: 'protein-nutrition',
-    price: 599,
-    originalPrice: 699,
-    image: '/images/clean-protein-pouch-product.jpg',
-    images: ['/images/clean-protein-pouch-product.jpg', '/images/clean-protein-pouch-banner.jpg'],
-    description: '100% stone-ground healthy mix of roasted California almonds, walnuts, chia seeds, pumpkin seeds, and clean plant protein in eco-friendly kraft paper packaging.',
-    ingredients: ['California Almonds', 'Walnuts', 'Chia Seeds', 'Pumpkin Seeds', 'Flax Seeds', 'Clean Plant Protein', 'Cardamom'],
-    benefits: ['20g Clean Protein per Serving', '100% Stone-Ground Superfoods', 'Zero Palm Oil & Zero Maida', 'Eco-Friendly Kraft Packaging'],
-    rating: 4.9,
-    reviewCount: 198,
-    stockQuantity: 40,
-    lowStockThreshold: 10,
-    isFeatured: true,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'roasted-almonds',
-    name: 'Himalayan Pink Salt Almonds',
-    slug: 'roasted-almonds',
-    categoryId: 'cat-healthy-snacks',
-    categorySlug: 'healthy-snacks',
-    price: 399,
-    originalPrice: 449,
-    image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80'],
-    description: 'Jumbo California almonds slow-roasted without oil, seasoned with pink rock salt.',
-    ingredients: ['Jumbo California Almonds', 'Himalayan Pink Rock Salt'],
-    benefits: ['Oil-Free Roasting', 'Rich in Vitamin E', 'Brain & Heart Health', 'Guilt-Free Crunch'],
-    rating: 4.8,
-    reviewCount: 312,
-    stockQuantity: 40,
-    lowStockThreshold: 10,
-    isFeatured: true,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'superfood-trail-mix',
-    name: '7-Seed Superfood Trail Mix',
-    slug: 'superfood-trail-mix',
-    categoryId: 'cat-healthy-snacks',
-    categorySlug: 'healthy-snacks',
-    price: 349,
-    originalPrice: 399,
-    image: 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&auto=format&fit=crop&q=80',
-    images: ['https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&auto=format&fit=crop&q=80'],
-    description: 'Crunchy blend of pumpkin, sunflower, chia, flax, watermelon seeds, and dried berries.',
-    ingredients: ['Pumpkin Seeds', 'Sunflower Seeds', 'Chia Seeds', 'Flax Seeds', 'Cranberries', 'Black Raisins'],
-    benefits: ['Rich in Omega-3 & Zinc', 'High Dietary Fiber', 'Immunity Booster', 'Natural Energy Snack'],
-    rating: 4.9,
-    reviewCount: 278,
-    stockQuantity: 45,
-    lowStockThreshold: 10,
-    isFeatured: true,
-    isBestSeller: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-// -------------------------------------------------------------
-// PERSISTENT FILE-BACKED JSON STORE (Ensures Zero Data Loss)
-// -------------------------------------------------------------
-
-interface StoreData {
-  products: Product[];
-  categories: Category[];
-  orders: Order[];
-  content: WebsiteContent;
-  subscribers?: string[];
-}
-
-let inMemoryStore: StoreData | null = null;
-
-const DATA_FILE = path.join(process.cwd(), 'data', 'nutrighar_data.json');
-const TMP_DATA_FILE = path.join('/tmp', 'nutrighar_data.json');
-
-function getStoreData(): StoreData {
-  if (inMemoryStore) {
-    return inMemoryStore;
-  }
-
-  try {
-    let raw: string | null = null;
-    if (fs.existsSync(TMP_DATA_FILE)) {
-      try {
-        raw = fs.readFileSync(TMP_DATA_FILE, 'utf-8');
-      } catch {}
-    }
-    if (!raw && fs.existsSync(DATA_FILE)) {
-      try {
-        raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      } catch {}
-    }
-
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.categories)) {
-        inMemoryStore = {
-          products: parsed.products,
-          categories: parsed.categories,
-          orders: Array.isArray(parsed.orders) ? parsed.orders : [],
-          content: parsed.content || DEFAULT_WEBSITE_CONTENT,
-          subscribers: Array.isArray(parsed.subscribers) ? parsed.subscribers : [],
-        };
-        return inMemoryStore;
-      }
-    }
-  } catch (err) {
-    console.error('Error reading data file:', err);
-  }
-
-  // Initial seed
-  const initialData: StoreData = {
-    products: DEFAULT_PRODUCTS,
-    categories: DEFAULT_CATEGORIES,
-    orders: [],
-    content: DEFAULT_WEBSITE_CONTENT,
-    subscribers: [],
+function formatCategory(c: any): Category {
+  return {
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    description: c.description ?? null,
+    image: c.image ?? null,
+    icon: c.icon ?? null,
+    isActive: Boolean(c.isActive),
+    createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
+    updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
   };
-
-  inMemoryStore = initialData;
-  saveStoreData(initialData);
-  return initialData;
 }
 
-function saveStoreData(data: StoreData): void {
-  inMemoryStore = data;
-  
-  // 1. Write to /tmp/nutrighar_data.json (always writable in Vercel serverless)
-  try {
-    fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch {
-    // Ignore tmp write errors
-  }
-
-  // 2. Also write to data/nutrighar_data.json if filesystem is writable
-  try {
-    const dataDir = path.join(process.cwd(), 'data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch {
-    // Read-only filesystem in production
-  }
+function formatOrder(o: any): Order {
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    customerName: o.customerName,
+    customerEmail: o.customerEmail,
+    customerPhone: o.customerPhone,
+    addressLine1: o.addressLine1,
+    addressLine2: o.addressLine2 ?? null,
+    city: o.city,
+    state: o.state,
+    postalCode: o.postalCode,
+    orderStatus: o.orderStatus as Order['orderStatus'],
+    paymentStatus: o.paymentStatus as Order['paymentStatus'],
+    subtotal: o.subtotal,
+    deliveryCharge: o.deliveryCharge,
+    totalAmount: o.totalAmount,
+    customerId: o.customerId ?? null,
+    items: Array.isArray(o.items)
+      ? o.items.map((i: any) => ({
+          id: i.id,
+          orderId: i.orderId,
+          productId: i.productId ?? null,
+          productName: i.productName,
+          productPrice: i.productPrice,
+          productCategory: i.productCategory ?? null,
+          productImage: i.productImage ?? null,
+          quantity: i.quantity,
+          total: i.total,
+        }))
+      : [],
+    createdAt: o.createdAt instanceof Date ? o.createdAt.toISOString() : String(o.createdAt),
+    updatedAt: o.updatedAt instanceof Date ? o.updatedAt.toISOString() : String(o.updatedAt),
+  };
 }
 
-// -------------------------------------------------------------
-// PRODUCT OPERATIONS
-// -------------------------------------------------------------
-
-/**
- * Pull the canonical products list from PostgreSQL `catalog_products`.
- * If the record doesn't exist yet (very first run), seed it with DEFAULT_PRODUCTS.
- * If it exists but is empty ([]), that means the user deleted everything — respect it.
- */
-async function pullProductsFromDB(store: StoreData): Promise<void> {
+// Ensure category exists in DB, upsert if needed
+async function ensureCategoryInDB(categoryId: string, categorySlug: string, categories: Category[]): Promise<string> {
+  const catInList = categories.find((c) => c.id === categoryId || c.slug === categorySlug);
+  const catName = catInList?.name ?? categorySlug;
+  const id = catInList?.id ?? `cat-${categorySlug}`;
   try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_products' },
+    const dbCat = await prisma.category.upsert({
+      where: { slug: categorySlug },
+      update: { name: catName },
+      create: {
+        id,
+        name: catName,
+        slug: categorySlug,
+        description: catInList?.description ?? '',
+        icon: catInList?.icon ?? '📦',
+        image: catInList?.image ?? null,
+        isActive: true,
+      },
     });
-
-    if (catalogRecord) {
-      // Record exists — use whatever is in it (even if empty array)
-      if (Array.isArray(catalogRecord.data)) {
-        store.products = catalogRecord.data as unknown as Product[];
-      } else {
-        // Malformed data — treat as empty
-        console.warn('[pullProductsFromDB] catalog_products has non-array data, resetting');
-        store.products = [];
-      }
-    } else {
-      // Record does NOT exist — first-ever use.  Seed it with defaults.
-      console.log('[pullProductsFromDB] catalog_products not found, seeding defaults');
-      store.products = [...DEFAULT_PRODUCTS];
-      try {
-        await prisma.websiteContent.create({
-          data: { section: 'catalog_products', data: store.products as any },
-        });
-      } catch (seedErr: any) {
-        console.error('[pullProductsFromDB] Failed to seed catalog_products:', seedErr.message);
-      }
-    }
-    saveStoreData(store);
-  } catch (dbErr: any) {
-    console.error('[pullProductsFromDB] PostgreSQL read failed, using in-memory fallback:', dbErr.message);
-    // Don't touch store.products — keep whatever getStoreData() loaded
+    return dbCat.id;
+  } catch {
+    return id;
   }
 }
+
+// ============================================================
+// PRODUCT OPERATIONS — Pure PostgreSQL
+// ============================================================
 
 export async function getProducts(options?: {
   categoryId?: string;
@@ -820,650 +394,357 @@ export async function getProducts(options?: {
   isActive?: boolean;
   search?: string;
 }): Promise<Product[]> {
-  const store = getStoreData();
+  try {
+    const where: any = {};
 
-  // Always pull latest from PostgreSQL
-  await pullProductsFromDB(store);
+    if (options?.isActive !== undefined) {
+      where.isActive = options.isActive;
+    }
+    if (options?.isFeatured !== undefined) {
+      where.isFeatured = options.isFeatured;
+    }
+    if (options?.isBestSeller !== undefined) {
+      where.isBestSeller = options.isBestSeller;
+    }
+    if (options?.categorySlug) {
+      where.categorySlug = options.categorySlug;
+    }
+    if (options?.categoryId) {
+      where.categoryId = options.categoryId;
+    }
+    if (options?.search) {
+      where.OR = [
+        { name: { contains: options.search, mode: 'insensitive' } },
+        { description: { contains: options.search, mode: 'insensitive' } },
+        { categorySlug: { contains: options.search, mode: 'insensitive' } },
+      ];
+    }
 
-  let list = [...store.products];
-
-  if (options?.isActive !== undefined) {
-    list = list.filter((p) => p.isActive === options.isActive);
-  }
-  if (options?.categorySlug) {
-    const cat = options.categorySlug.toLowerCase().trim();
-    list = list.filter((p) => {
-      const pCatSlug = (p.categorySlug || '').toLowerCase().trim();
-      const pCatId = (p.categoryId || '').toLowerCase().trim();
-      return (
-        pCatSlug === cat ||
-        pCatId === cat ||
-        pCatId === `cat-${cat}` ||
-        pCatSlug === cat.replace(/^cat-/, '') ||
-        pCatSlug.includes(cat) ||
-        cat.includes(pCatSlug)
-      );
+    const products = await prisma.product.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
     });
-  }
-  if (options?.categoryId) {
-    const catId = options.categoryId.toLowerCase().trim();
-    list = list.filter((p) => {
-      const pCatId = (p.categoryId || '').toLowerCase().trim();
-      const pCatSlug = (p.categorySlug || '').toLowerCase().trim();
-      return pCatId === catId || pCatSlug === catId || pCatId === `cat-${catId}`;
-    });
-  }
-  if (options?.isFeatured !== undefined) {
-    list = list.filter((p) => Boolean(p.isFeatured) === options.isFeatured);
-  }
-  if (options?.isBestSeller !== undefined) {
-    list = list.filter((p) => Boolean(p.isBestSeller) === options.isBestSeller);
-  }
-  if (options?.search) {
-    const q = options.search.toLowerCase();
-    list = list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        (p.categorySlug || '').toLowerCase().includes(q)
-    );
-  }
 
-  return list;
+    if (products.length === 0 && !options?.categorySlug && !options?.categoryId && !options?.search) {
+      // First-ever use: seed defaults into DB
+      await seedDefaultData();
+      return DEFAULT_PRODUCTS.filter((p) => {
+        if (options?.isActive !== undefined && p.isActive !== options.isActive) return false;
+        if (options?.isFeatured !== undefined && p.isFeatured !== options.isFeatured) return false;
+        if (options?.isBestSeller !== undefined && p.isBestSeller !== options.isBestSeller) return false;
+        return true;
+      });
+    }
+
+    return products.map(formatProduct);
+  } catch (err: any) {
+    console.error('[getProducts] DB error:', err.message);
+    return DEFAULT_PRODUCTS;
+  }
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL (same canonical source as getProducts)
-  await pullProductsFromDB(store);
-
-  const match = store.products.find((p) => p.id === id || p.slug === id);
-  if (match) return match;
-
-  // Fallback: try relational table directly
   try {
-    const dbProduct = await prisma.product.findFirst({
-      where: {
-        OR: [{ id }, { slug: id }],
-      },
+    const product = await prisma.product.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
     });
-    if (dbProduct) {
-      return formatProduct(dbProduct);
-    }
+    if (!product) return null;
+    return formatProduct(product);
   } catch (err: any) {
-    console.error('[getProductById] Relational DB fallback failed:', err.message);
-    // fallback
+    console.error('[getProductById] DB error:', err.message);
+    return DEFAULT_PRODUCTS.find((p) => p.id === id || p.slug === id) ?? null;
   }
-
-  return store.products.find((p) => p.id === id || p.slug === id) || null;
 }
 
 export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
   const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const id = slug || `prod-${Date.now()}`;
-  const now = new Date().toISOString();
 
-  // Handle Base64 image upload if provided
+  // Handle base64 image upload
   let imageUrl = data.image;
   if (imageUrl && imageUrl.startsWith('data:image/')) {
-    const uploadRes = await uploadProductImage({
-      name: slug,
-      type: 'image/jpeg',
-      base64OrUrl: imageUrl,
-    });
-    if (uploadRes.success && uploadRes.url) {
-      imageUrl = uploadRes.url;
-    }
+    const uploadRes = await uploadProductImage({ name: slug, type: 'image/jpeg', base64OrUrl: imageUrl });
+    if (uploadRes.success && uploadRes.url) imageUrl = uploadRes.url;
   }
 
-  const newProduct: Product = {
-    id,
-    name: data.name,
-    slug,
-    description: data.description,
-    price: Number(data.price),
-    originalPrice: data.originalPrice ? Number(data.originalPrice) : null,
-    categoryId: data.categoryId || 'cat-mithai',
-    categorySlug: data.categorySlug || 'mithai',
-    image: imageUrl,
-    images: data.images?.length ? data.images : [imageUrl],
-    ingredients: data.ingredients || [],
-    benefits: data.benefits || [],
-    rating: Number(data.rating) || 5.0,
-    reviewCount: Number(data.reviewCount) || 0,
-    stockQuantity: Number(data.stockQuantity) >= 0 ? Number(data.stockQuantity) : 50,
-    lowStockThreshold: Number(data.lowStockThreshold) >= 0 ? Number(data.lowStockThreshold) : 10,
-    weight: data.weight || '500g',
-    isFeatured: Boolean(data.isFeatured),
-    isBestSeller: Boolean(data.isBestSeller),
-    isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
-    createdAt: now,
-    updatedAt: now,
-  };
+  // Ensure category exists in DB
+  const categories = await getCategories(true);
+  const dbCategoryId = await ensureCategoryInDB(data.categoryId, data.categorySlug, categories);
 
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL before mutating (critical for multi-lambda consistency)
-  await pullProductsFromDB(store);
-
-  const existingIdx = store.products.findIndex((p) => p.id === id || p.slug === slug);
-  if (existingIdx !== -1) {
-    store.products[existingIdx] = newProduct;
-  } else {
-    store.products.unshift(newProduct);
-  }
-  saveStoreData(store);
-
-  // Persist to PostgreSQL WebsiteContent catalog section (shared across all lambdas)
-  // This MUST succeed for the product to be visible on other lambdas
   try {
-    await prisma.websiteContent.upsert({
-      where: { section: 'catalog_products' },
-      update: { data: store.products as any },
-      create: { section: 'catalog_products', data: store.products as any },
-    });
-    console.log(`[createProduct] ✅ Saved ${store.products.length} products to catalog_products`);
-  } catch (contentErr: any) {
-    console.error('[createProduct] ❌ CRITICAL: Failed to save catalog_products:', contentErr.message);
-    // Still continue — the product is in memory at least for this lambda
-  }
-
-  // 3. Sync with PostgreSQL Relational table
-  try {
-    const catSlug = newProduct.categorySlug || 'mithai';
-    const catInStore = store.categories.find((c) => c.id === newProduct.categoryId || c.slug === catSlug);
-    const catName = catInStore ? catInStore.name : 'Mithai & Ladoo';
-
-    let dbCategoryId = newProduct.categoryId;
-    try {
-      const dbCat = await prisma.category.upsert({
-        where: { slug: catSlug },
-        update: { name: catName },
-        create: {
-          id: newProduct.categoryId || `cat-${catSlug}`,
-          name: catName,
-          slug: catSlug,
-          description: catInStore?.description || '',
-          icon: catInStore?.icon || '📦',
-          isActive: true,
-        },
-      });
-      if (dbCat && dbCat.id) {
-        dbCategoryId = dbCat.id;
-      }
-    } catch (catErr: any) {
-      console.warn('[Category Sync] Note:', catErr.message);
-    }
-
-    await prisma.product.upsert({
-      where: { slug: newProduct.slug },
+    const created = await prisma.product.upsert({
+      where: { slug },
       update: {
-        name: newProduct.name,
-        description: newProduct.description,
-        price: newProduct.price,
-        originalPrice: newProduct.originalPrice,
+        name: data.name,
+        description: data.description,
+        price: Number(data.price),
+        originalPrice: data.originalPrice ? Number(data.originalPrice) : null,
         categoryId: dbCategoryId,
-        categorySlug: newProduct.categorySlug,
-        image: newProduct.image,
-        images: newProduct.images,
-        ingredients: newProduct.ingredients,
-        benefits: newProduct.benefits,
-        rating: newProduct.rating,
-        reviewCount: newProduct.reviewCount,
-        stockQuantity: newProduct.stockQuantity,
-        lowStockThreshold: newProduct.lowStockThreshold,
-        weight: newProduct.weight || '500g',
-        isFeatured: newProduct.isFeatured,
-        isBestSeller: newProduct.isBestSeller,
-        isActive: newProduct.isActive,
+        categorySlug: data.categorySlug,
+        image: imageUrl,
+        images: data.images?.length ? data.images : [imageUrl],
+        ingredients: data.ingredients ?? [],
+        benefits: data.benefits ?? [],
+        rating: Number(data.rating) || 5.0,
+        reviewCount: Number(data.reviewCount) || 0,
+        stockQuantity: Number(data.stockQuantity) >= 0 ? Number(data.stockQuantity) : 50,
+        lowStockThreshold: Number(data.lowStockThreshold) >= 0 ? Number(data.lowStockThreshold) : 10,
+        weight: data.weight ?? '500g',
+        isFeatured: Boolean(data.isFeatured),
+        isBestSeller: Boolean(data.isBestSeller),
+        isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
       } as any,
       create: {
         id,
-        name: newProduct.name,
-        slug: newProduct.slug,
-        description: newProduct.description,
-        price: newProduct.price,
-        originalPrice: newProduct.originalPrice,
+        name: data.name,
+        slug,
+        description: data.description,
+        price: Number(data.price),
+        originalPrice: data.originalPrice ? Number(data.originalPrice) : null,
         categoryId: dbCategoryId,
-        categorySlug: newProduct.categorySlug,
-        image: newProduct.image,
-        images: newProduct.images,
-        ingredients: newProduct.ingredients,
-        benefits: newProduct.benefits,
-        rating: newProduct.rating,
-        reviewCount: newProduct.reviewCount,
-        stockQuantity: newProduct.stockQuantity,
-        lowStockThreshold: newProduct.lowStockThreshold,
-        weight: newProduct.weight || '500g',
-        isFeatured: newProduct.isFeatured,
-        isBestSeller: newProduct.isBestSeller,
-        isActive: newProduct.isActive,
+        categorySlug: data.categorySlug,
+        image: imageUrl,
+        images: data.images?.length ? data.images : [imageUrl],
+        ingredients: data.ingredients ?? [],
+        benefits: data.benefits ?? [],
+        rating: Number(data.rating) || 5.0,
+        reviewCount: Number(data.reviewCount) || 0,
+        stockQuantity: Number(data.stockQuantity) >= 0 ? Number(data.stockQuantity) : 50,
+        lowStockThreshold: Number(data.lowStockThreshold) >= 0 ? Number(data.lowStockThreshold) : 10,
+        weight: data.weight ?? '500g',
+        isFeatured: Boolean(data.isFeatured),
+        isBestSeller: Boolean(data.isBestSeller),
+        isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
       } as any,
     });
+    console.log(`[createProduct] ✅ Saved product "${created.name}" to PostgreSQL`);
+    return formatProduct(created);
   } catch (err: any) {
-    console.warn('[Product] PostgreSQL sync warning:', err.message);
+    console.error('[createProduct] ❌ DB error:', err.message);
+    throw err;
   }
-
-  return newProduct;
 }
 
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL before mutating
-  await pullProductsFromDB(store);
-
+  // Handle base64 image
   let imageUrl = updates.image;
   if (imageUrl && imageUrl.startsWith('data:image/')) {
-    const uploadRes = await uploadProductImage({
-      name: `prod-${id}`,
-      type: 'image/jpeg',
-      base64OrUrl: imageUrl,
-    });
+    const uploadRes = await uploadProductImage({ name: `prod-${id}`, type: 'image/jpeg', base64OrUrl: imageUrl });
     if (uploadRes.success && uploadRes.url) {
       imageUrl = uploadRes.url;
       updates.image = imageUrl;
     }
   }
 
-  let updatedProduct: Product | null = null;
-  const now = new Date().toISOString();
-  const index = store.products.findIndex((p) => p.id === id || p.slug === id);
+  try {
+    const existing = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (!existing) return null;
 
-  if (index !== -1) {
-    const current = store.products[index];
-    const newPrice = updates.price !== undefined ? Number(updates.price) : current.price;
-    const newOrigPrice = updates.originalPrice !== undefined ? (updates.originalPrice ? Number(updates.originalPrice) : null) : current.originalPrice;
-    const newStock = updates.stockQuantity !== undefined ? Number(updates.stockQuantity) : current.stockQuantity;
-    const newLowStock = updates.lowStockThreshold !== undefined ? Number(updates.lowStockThreshold) : current.lowStockThreshold;
-    const newWeight = updates.weight !== undefined ? updates.weight : (current.weight || '500g');
-    const newImage = updates.image || current.image;
-
-    store.products[index] = {
-      ...current,
-      ...updates,
-      image: newImage,
-      images: updates.images?.length ? updates.images : [newImage],
-      price: newPrice,
-      originalPrice: newOrigPrice,
-      stockQuantity: newStock,
-      lowStockThreshold: newLowStock,
-      weight: newWeight,
-      updatedAt: now,
+    const data: any = {
+      updatedAt: new Date(),
+      ...(updates.name !== undefined && { name: updates.name }),
+      ...(updates.slug !== undefined && { slug: updates.slug }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.price !== undefined && { price: Number(updates.price) }),
+      ...(updates.originalPrice !== undefined && { originalPrice: updates.originalPrice ? Number(updates.originalPrice) : null }),
+      ...(updates.categorySlug !== undefined && { categorySlug: updates.categorySlug }),
+      ...(imageUrl !== undefined && { image: imageUrl, images: updates.images?.length ? updates.images : [imageUrl] }),
+      ...(updates.images?.length && !imageUrl && { images: updates.images }),
+      ...(updates.ingredients !== undefined && { ingredients: updates.ingredients }),
+      ...(updates.benefits !== undefined && { benefits: updates.benefits }),
+      ...(updates.rating !== undefined && { rating: Number(updates.rating) }),
+      ...(updates.reviewCount !== undefined && { reviewCount: Number(updates.reviewCount) }),
+      ...(updates.stockQuantity !== undefined && { stockQuantity: Number(updates.stockQuantity) }),
+      ...(updates.lowStockThreshold !== undefined && { lowStockThreshold: Number(updates.lowStockThreshold) }),
+      ...(updates.weight !== undefined && { weight: updates.weight }),
+      ...(updates.isFeatured !== undefined && { isFeatured: Boolean(updates.isFeatured) }),
+      ...(updates.isBestSeller !== undefined && { isBestSeller: Boolean(updates.isBestSeller) }),
+      ...(updates.isActive !== undefined && { isActive: Boolean(updates.isActive) }),
     };
-    updatedProduct = store.products[index];
-    saveStoreData(store);
-  }
 
-  // Persist to PostgreSQL WebsiteContent catalog section
-  try {
-    await prisma.websiteContent.upsert({
-      where: { section: 'catalog_products' },
-      update: { data: store.products as any },
-      create: { section: 'catalog_products', data: store.products as any },
-    });
-    console.log(`[updateProduct] ✅ Saved ${store.products.length} products to catalog_products`);
-  } catch (contentErr: any) {
-    console.error('[updateProduct] ❌ CRITICAL: Failed to save catalog_products:', contentErr.message);
-  }
-
-  // 3. Sync with PostgreSQL Relational table
-  try {
-    const prod = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
-    if (prod) {
-      const data: any = { ...updates };
-      delete data.id;
-      delete data.createdAt;
-      data.updatedAt = new Date();
-      if (updates.image) {
-        data.image = updates.image;
-        data.images = updates.images || [updates.image];
-      }
-      if (updates.price !== undefined) data.price = Number(updates.price);
-      if (updates.originalPrice !== undefined) data.originalPrice = updates.originalPrice ? Number(updates.originalPrice) : null;
-      if (updates.stockQuantity !== undefined) data.stockQuantity = Number(updates.stockQuantity);
-      if (updates.lowStockThreshold !== undefined) data.lowStockThreshold = Number(updates.lowStockThreshold);
-      if (updates.weight !== undefined) data.weight = updates.weight;
-
-      // Ensure category foreign key if category is being updated
-      if (updates.categoryId || updates.categorySlug) {
-        const catSlug = updates.categorySlug || prod.categorySlug || 'mithai';
-        const catInStore = store.categories.find((c) => c.id === updates.categoryId || c.slug === catSlug);
-        const catName = catInStore ? catInStore.name : 'Category';
-        try {
-          const dbCat = await prisma.category.upsert({
-            where: { slug: catSlug },
-            update: { name: catName },
-            create: {
-              id: updates.categoryId || `cat-${catSlug}`,
-              name: catName,
-              slug: catSlug,
-              description: catInStore?.description || '',
-              icon: catInStore?.icon || '📦',
-              isActive: true,
-            },
-          });
-          if (dbCat && dbCat.id) {
-            data.categoryId = dbCat.id;
-          }
-        } catch {}
-      }
-
-      const res = await prisma.product.update({ where: { id: prod.id }, data });
-      if (!updatedProduct) updatedProduct = formatProduct(res);
+    // Update category if changed
+    if (updates.categoryId || updates.categorySlug) {
+      const catSlug = updates.categorySlug ?? existing.categorySlug;
+      const catId = updates.categoryId ?? existing.categoryId;
+      const categories = await getCategories(true);
+      data.categoryId = await ensureCategoryInDB(catId, catSlug, categories);
+      data.categorySlug = catSlug;
     }
-  } catch (err: any) {
-    console.warn('[Product] PostgreSQL update warning:', err.message);
-  }
 
-  return updatedProduct;
+    const updated = await prisma.product.update({ where: { id: existing.id }, data });
+    console.log(`[updateProduct] ✅ Updated product "${updated.name}" in PostgreSQL`);
+    return formatProduct(updated);
+  } catch (err: any) {
+    console.error('[updateProduct] ❌ DB error:', err.message);
+    return null;
+  }
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL before mutating
-  await pullProductsFromDB(store);
-
-  const initialLen = store.products.length;
-  store.products = store.products.filter((p) => p.id !== id && p.slug !== id);
-  saveStoreData(store);
-
-  // Persist to PostgreSQL WebsiteContent catalog section
   try {
-    await prisma.websiteContent.upsert({
-      where: { section: 'catalog_products' },
-      update: { data: store.products as any },
-      create: { section: 'catalog_products', data: store.products as any },
-    });
-    console.log(`[deleteProduct] ✅ Saved ${store.products.length} products to catalog_products`);
-  } catch (contentErr: any) {
-    console.error('[deleteProduct] ❌ CRITICAL: Failed to save catalog_products:', contentErr.message);
-  }
-
-  try {
-    const prod = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
-    if (prod) {
-      await prisma.product.delete({ where: { id: prod.id } });
-    }
+    const existing = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (!existing) return false;
+    await prisma.product.delete({ where: { id: existing.id } });
+    console.log(`[deleteProduct] ✅ Deleted product "${existing.name}" from PostgreSQL`);
+    return true;
   } catch (err: any) {
-    console.warn('[Product] PostgreSQL delete warning:', err.message);
-  }
-
-  return store.products.length < initialLen;
-}
-
-// -------------------------------------------------------------
-// CATEGORY OPERATIONS
-// -------------------------------------------------------------
-
-/**
- * Pull the canonical categories list from PostgreSQL `catalog_categories`.
- * Same logic as pullProductsFromDB — seed defaults on first run, respect empty arrays.
- */
-async function pullCategoriesFromDB(store: StoreData): Promise<void> {
-  try {
-    const catalogRecord = await prisma.websiteContent.findUnique({
-      where: { section: 'catalog_categories' },
-    });
-
-    if (catalogRecord) {
-      if (Array.isArray(catalogRecord.data)) {
-        store.categories = catalogRecord.data as unknown as Category[];
-      } else {
-        console.warn('[pullCategoriesFromDB] catalog_categories has non-array data, resetting');
-        store.categories = [];
-      }
-    } else {
-      // First-ever use — seed with defaults
-      console.log('[pullCategoriesFromDB] catalog_categories not found, seeding defaults');
-      store.categories = [...DEFAULT_CATEGORIES];
-      try {
-        await prisma.websiteContent.create({
-          data: { section: 'catalog_categories', data: store.categories as any },
-        });
-      } catch (seedErr: any) {
-        console.error('[pullCategoriesFromDB] Failed to seed catalog_categories:', seedErr.message);
-      }
-    }
-    saveStoreData(store);
-  } catch (dbErr: any) {
-    console.error('[pullCategoriesFromDB] PostgreSQL read failed, using in-memory fallback:', dbErr.message);
+    console.error('[deleteProduct] ❌ DB error:', err.message);
+    return false;
   }
 }
+
+// ============================================================
+// CATEGORY OPERATIONS — Pure PostgreSQL
+// ============================================================
 
 export async function getCategories(includeInactive = false): Promise<Category[]> {
-  const store = getStoreData();
+  try {
+    const where = includeInactive ? {} : { isActive: true };
+    const categories = await prisma.category.findMany({
+      where,
+      orderBy: { createdAt: 'asc' },
+    });
 
-  // Pull latest from PostgreSQL
-  await pullCategoriesFromDB(store);
+    if (categories.length === 0) {
+      await seedDefaultData();
+      return includeInactive ? DEFAULT_CATEGORIES : DEFAULT_CATEGORIES.filter((c) => c.isActive);
+    }
 
-  let list = [...store.categories];
-  if (!includeInactive) {
-    list = list.filter((c) => c.isActive);
+    return categories.map(formatCategory);
+  } catch (err: any) {
+    console.error('[getCategories] DB error:', err.message);
+    return includeInactive ? DEFAULT_CATEGORIES : DEFAULT_CATEGORIES.filter((c) => c.isActive);
   }
-  return list;
 }
 
 export async function getCategoryById(id: string): Promise<Category | null> {
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL
-  await pullCategoriesFromDB(store);
-
-  return store.categories.find((c) => c.id === id || c.slug === id) || null;
+  try {
+    const cat = await prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (!cat) return null;
+    return formatCategory(cat);
+  } catch (err: any) {
+    console.error('[getCategoryById] DB error:', err.message);
+    return DEFAULT_CATEGORIES.find((c) => c.id === id || c.slug === id) ?? null;
+  }
 }
 
 export async function createCategory(data: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>): Promise<Category> {
   const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const id = `cat-${slug}`;
-  const now = new Date().toISOString();
 
   let imageUrl = data.image;
   if (imageUrl && imageUrl.startsWith('data:image/')) {
-    const uploadRes = await uploadProductImage({
-      name: `cat-${slug}`,
-      type: 'image/jpeg',
-      base64OrUrl: imageUrl,
-    });
-    if (uploadRes.success && uploadRes.url) {
-      imageUrl = uploadRes.url;
-    }
-  }
-
-  const newCategory: Category = {
-    id,
-    name: data.name,
-    slug,
-    description: data.description || null,
-    image: imageUrl || null,
-    icon: data.icon || '📦',
-    isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL before mutating
-  await pullCategoriesFromDB(store);
-
-  const existingIdx = store.categories.findIndex((c) => c.id === id || c.slug === slug);
-  if (existingIdx !== -1) {
-    store.categories[existingIdx] = newCategory;
-  } else {
-    store.categories.push(newCategory);
-  }
-  saveStoreData(store);
-
-  // Persist to PostgreSQL WebsiteContent catalog section
-  try {
-    await prisma.websiteContent.upsert({
-      where: { section: 'catalog_categories' },
-      update: { data: store.categories as any },
-      create: { section: 'catalog_categories', data: store.categories as any },
-    });
-    console.log(`[createCategory] ✅ Saved ${store.categories.length} categories to catalog_categories`);
-  } catch (contentErr: any) {
-    console.error('[createCategory] ❌ CRITICAL: Failed to save catalog_categories:', contentErr.message);
+    const uploadRes = await uploadProductImage({ name: `cat-${slug}`, type: 'image/jpeg', base64OrUrl: imageUrl });
+    if (uploadRes.success && uploadRes.url) imageUrl = uploadRes.url;
   }
 
   try {
-    await prisma.category.upsert({
-      where: { slug: newCategory.slug },
+    const created = await prisma.category.upsert({
+      where: { slug },
       update: {
-        name: newCategory.name,
-        description: newCategory.description,
-        image: newCategory.image,
-        icon: newCategory.icon,
-        isActive: newCategory.isActive,
+        name: data.name,
+        description: data.description ?? null,
+        image: imageUrl ?? null,
+        icon: data.icon ?? '📦',
+        isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
       },
       create: {
         id,
-        name: newCategory.name,
-        slug: newCategory.slug,
-        description: newCategory.description,
-        image: newCategory.image,
-        icon: newCategory.icon,
-        isActive: newCategory.isActive,
+        name: data.name,
+        slug,
+        description: data.description ?? null,
+        image: imageUrl ?? null,
+        icon: data.icon ?? '📦',
+        isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
       },
     });
+    console.log(`[createCategory] ✅ Saved category "${created.name}" to PostgreSQL`);
+    return formatCategory(created);
   } catch (err: any) {
-    console.warn('[Category] PostgreSQL sync warning:', err.message);
+    console.error('[createCategory] ❌ DB error:', err.message);
+    throw err;
   }
-
-  return newCategory;
 }
 
 export async function updateCategory(id: string, updates: Partial<Category>): Promise<Category | null> {
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL before mutating
-  await pullCategoriesFromDB(store);
-
   let imageUrl = updates.image;
   if (imageUrl && imageUrl.startsWith('data:image/')) {
-    const uploadRes = await uploadProductImage({
-      name: `cat-${id}`,
-      type: 'image/jpeg',
-      base64OrUrl: imageUrl,
-    });
-    if (uploadRes.success && uploadRes.url) {
-      imageUrl = uploadRes.url;
-      updates.image = imageUrl;
-    }
+    const uploadRes = await uploadProductImage({ name: `cat-${id}`, type: 'image/jpeg', base64OrUrl: imageUrl });
+    if (uploadRes.success && uploadRes.url) imageUrl = uploadRes.url;
   }
 
-  let updatedCategory: Category | null = null;
-  const now = new Date().toISOString();
-  const index = store.categories.findIndex((c) => c.id === id || c.slug === id);
+  try {
+    const existing = await prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (!existing) return null;
 
-  if (index !== -1) {
-    store.categories[index] = {
-      ...store.categories[index],
-      ...updates,
-      updatedAt: now,
+    const data: any = {
+      updatedAt: new Date(),
+      ...(updates.name !== undefined && { name: updates.name }),
+      ...(updates.slug !== undefined && { slug: updates.slug }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(imageUrl !== undefined && { image: imageUrl }),
+      ...(updates.icon !== undefined && { icon: updates.icon }),
+      ...(updates.isActive !== undefined && { isActive: Boolean(updates.isActive) }),
     };
-    updatedCategory = store.categories[index];
-    saveStoreData(store);
-  }
 
-  // Persist to PostgreSQL WebsiteContent catalog section
-  try {
-    await prisma.websiteContent.upsert({
-      where: { section: 'catalog_categories' },
-      update: { data: store.categories as any },
-      create: { section: 'catalog_categories', data: store.categories as any },
-    });
-    console.log(`[updateCategory] ✅ Saved ${store.categories.length} categories to catalog_categories`);
-  } catch (contentErr: any) {
-    console.error('[updateCategory] ❌ CRITICAL: Failed to save catalog_categories:', contentErr.message);
-  }
-
-  try {
-    const cat = await prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } });
-    if (cat) {
-      const res = await prisma.category.update({
-        where: { id: cat.id },
-        data: {
-          ...updates,
-          updatedAt: new Date(),
-        },
-      });
-      if (!updatedCategory) {
-        updatedCategory = {
-          id: res.id,
-          name: res.name,
-          slug: res.slug,
-          description: res.description,
-          image: res.image,
-          icon: res.icon,
-          isActive: res.isActive,
-          createdAt: res.createdAt instanceof Date ? res.createdAt.toISOString() : String(res.createdAt),
-          updatedAt: res.updatedAt instanceof Date ? res.updatedAt.toISOString() : String(res.updatedAt),
-        };
-      }
-    }
+    const updated = await prisma.category.update({ where: { id: existing.id }, data });
+    console.log(`[updateCategory] ✅ Updated category "${updated.name}" in PostgreSQL`);
+    return formatCategory(updated);
   } catch (err: any) {
-    console.warn('[Category] PostgreSQL update warning:', err.message);
+    console.error('[updateCategory] ❌ DB error:', err.message);
+    return null;
   }
-
-  return updatedCategory;
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
-  const store = getStoreData();
-
-  // Pull latest from PostgreSQL before mutating
-  await pullCategoriesFromDB(store);
-
-  const initialLen = store.categories.length;
-  store.categories = store.categories.filter((c) => c.id !== id && c.slug !== id);
-  saveStoreData(store);
-
-  // Persist to PostgreSQL WebsiteContent catalog section
   try {
-    await prisma.websiteContent.upsert({
-      where: { section: 'catalog_categories' },
-      update: { data: store.categories as any },
-      create: { section: 'catalog_categories', data: store.categories as any },
-    });
-    console.log(`[deleteCategory] ✅ Saved ${store.categories.length} categories to catalog_categories`);
-  } catch (contentErr: any) {
-    console.error('[deleteCategory] ❌ CRITICAL: Failed to save catalog_categories:', contentErr.message);
-  }
-
-  try {
-    const cat = await prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } });
-    if (cat) {
-      await prisma.category.delete({ where: { id: cat.id } });
-    }
+    const existing = await prisma.category.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    if (!existing) return false;
+    await prisma.category.delete({ where: { id: existing.id } });
+    console.log(`[deleteCategory] ✅ Deleted category "${existing.name}" from PostgreSQL`);
+    return true;
   } catch (err: any) {
-    console.warn('[Category] PostgreSQL delete warning:', err.message);
+    console.error('[deleteCategory] ❌ DB error:', err.message);
+    return false;
   }
-
-  return store.categories.length < initialLen;
 }
 
-
-
-// -------------------------------------------------------------
-// ORDER OPERATIONS
-// -------------------------------------------------------------
+// ============================================================
+// ORDER OPERATIONS — Pure PostgreSQL
+// ============================================================
 
 export async function getOrders(statusFilter?: string): Promise<Order[]> {
-  const store = getStoreData();
-  let list = [...store.orders];
-  if (statusFilter && statusFilter !== 'All') {
-    list = list.filter((o) => o.orderStatus.toLowerCase() === statusFilter.toLowerCase());
+  try {
+    const where: any = {};
+    if (statusFilter && statusFilter !== 'All') {
+      where.orderStatus = { equals: statusFilter, mode: 'insensitive' };
+    }
+
+    const orders = await prisma.order.findMany({
+      where,
+      include: { items: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return orders.map(formatOrder);
+  } catch (err: any) {
+    console.error('[getOrders] DB error:', err.message);
+    return [];
   }
-  return list;
 }
 
 export async function getOrderById(id: string): Promise<Order | null> {
-  const store = getStoreData();
-  return store.orders.find((o) => o.id === id || o.orderNumber === id) || null;
+  try {
+    const order = await prisma.order.findFirst({
+      where: { OR: [{ id }, { orderNumber: id }] },
+      include: { items: true },
+    });
+    if (!order) return null;
+    return formatOrder(order);
+  } catch (err: any) {
+    console.error('[getOrderById] DB error:', err.message);
+    return null;
+  }
 }
 
 export async function createOrder(data: {
@@ -1489,54 +770,78 @@ export async function createOrder(data: {
   const subtotal = data.items.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
   const deliveryCharge = subtotal > 500 ? 0 : 60;
   const totalAmount = subtotal + deliveryCharge;
-  const now = new Date().toISOString();
 
-  const newOrder: Order = {
-    id: `order-${Date.now()}`,
-    orderNumber,
-    customerName: data.customerName,
-    customerEmail: data.customerEmail,
-    customerPhone: data.customerPhone,
-    addressLine1: data.addressLine1,
-    addressLine2: data.addressLine2 || null,
-    city: data.city,
-    state: data.state,
-    postalCode: data.postalCode,
-    orderStatus: 'Pending',
-    paymentStatus: data.paymentStatus || 'Paid',
-    subtotal,
-    deliveryCharge,
-    totalAmount,
-    items: data.items.map((item, idx) => ({
-      id: `item-${Date.now()}-${idx}`,
-      orderId: `order-${Date.now()}`,
-      productId: item.productId || null,
-      productName: item.productName,
-      productPrice: item.productPrice,
-      productCategory: item.productCategory || null,
-      productImage: item.productImage || null,
-      quantity: item.quantity,
-      total: item.productPrice * item.quantity,
-    })),
-    createdAt: now,
-    updatedAt: now,
-  };
+  try {
+    // Resolve productId to actual DB product ID if it exists
+    const itemsWithResolvedIds = await Promise.all(
+      data.items.map(async (item) => {
+        let resolvedProductId: string | null = null;
+        if (item.productId) {
+          try {
+            const prod = await prisma.product.findFirst({
+              where: { OR: [{ id: item.productId }, { slug: item.productId }] },
+              select: { id: true },
+            });
+            resolvedProductId = prod?.id ?? null;
+          } catch {
+            resolvedProductId = null;
+          }
+        }
+        return {
+          productId: resolvedProductId,
+          productName: item.productName,
+          productPrice: Number(item.productPrice),
+          productCategory: item.productCategory ?? null,
+          productImage: item.productImage ?? null,
+          quantity: Number(item.quantity),
+          total: Number(item.productPrice) * Number(item.quantity),
+        };
+      })
+    );
 
-  const store = getStoreData();
-  store.orders.unshift(newOrder);
+    const order = await prisma.order.create({
+      data: {
+        orderNumber,
+        customerName: data.customerName,
+        customerEmail: data.customerEmail,
+        customerPhone: data.customerPhone,
+        addressLine1: data.addressLine1,
+        addressLine2: data.addressLine2 ?? null,
+        city: data.city,
+        state: data.state,
+        postalCode: data.postalCode,
+        orderStatus: 'Pending',
+        paymentStatus: data.paymentStatus ?? 'Paid',
+        subtotal,
+        deliveryCharge,
+        totalAmount,
+        items: {
+          create: itemsWithResolvedIds,
+        },
+      },
+      include: { items: true },
+    });
 
-  // Update product stock counts
-  for (const item of data.items) {
-    if (item.productId) {
-      const prod = store.products.find((p) => p.id === item.productId || p.slug === item.productId);
-      if (prod) {
-        prod.stockQuantity = Math.max(0, prod.stockQuantity - item.quantity);
+    // Decrement stock for each ordered product
+    for (const item of itemsWithResolvedIds) {
+      if (item.productId) {
+        try {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: { stockQuantity: { decrement: item.quantity } },
+          });
+        } catch {
+          // Non-critical: stock update failure doesn't block order
+        }
       }
     }
-  }
-  saveStoreData(store);
 
-  return newOrder;
+    console.log(`[createOrder] ✅ Order ${orderNumber} saved to PostgreSQL`);
+    return formatOrder(order);
+  } catch (err: any) {
+    console.error('[createOrder] ❌ DB error:', err.message);
+    throw err;
+  }
 }
 
 export async function updateOrderStatus(
@@ -1544,39 +849,46 @@ export async function updateOrderStatus(
   orderStatus: Order['orderStatus'],
   paymentStatus?: Order['paymentStatus']
 ): Promise<Order | null> {
-  const store = getStoreData();
-  const index = store.orders.findIndex((o) => o.id === id || o.orderNumber === id);
-  if (index !== -1) {
-    store.orders[index].orderStatus = orderStatus;
-    if (paymentStatus) store.orders[index].paymentStatus = paymentStatus;
-    store.orders[index].updatedAt = new Date().toISOString();
-    saveStoreData(store);
-  }
+  try {
+    const existing = await prisma.order.findFirst({
+      where: { OR: [{ id }, { orderNumber: id }] },
+    });
+    if (!existing) return null;
 
-  return index !== -1 ? store.orders[index] : null;
+    const updated = await prisma.order.update({
+      where: { id: existing.id },
+      data: {
+        orderStatus,
+        ...(paymentStatus && { paymentStatus }),
+        updatedAt: new Date(),
+      },
+      include: { items: true },
+    });
+
+    console.log(`[updateOrderStatus] ✅ Order ${updated.orderNumber} status → ${orderStatus}`);
+    return formatOrder(updated);
+  } catch (err: any) {
+    console.error('[updateOrderStatus] ❌ DB error:', err.message);
+    return null;
+  }
 }
 
-// -------------------------------------------------------------
-// WEBSITE CONTENT OPERATIONS
-// -------------------------------------------------------------
+// ============================================================
+// WEBSITE CONTENT OPERATIONS — Pure PostgreSQL
+// ============================================================
 
 export async function getWebsiteContent(): Promise<WebsiteContent> {
-  const store = getStoreData();
-  const raw: any = { ...(store.content || {}) };
+  const raw: any = {};
 
   try {
     const dbRecords = await prisma.websiteContent.findMany();
-    if (dbRecords && dbRecords.length > 0) {
-      for (const r of dbRecords) {
-        raw[r.section] = r.data;
-      }
-      if (!store.content) {
-        store.content = JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
-      }
-      Object.assign(store.content, raw);
+    for (const r of dbRecords) {
+      // Skip catalog sections (those are for products/categories)
+      if (r.section === 'catalog_products' || r.section === 'catalog_categories') continue;
+      raw[r.section] = r.data;
     }
-  } catch {
-    // fallback to JSON / memory store
+  } catch (err: any) {
+    console.error('[getWebsiteContent] DB error:', err.message);
   }
 
   return {
@@ -1605,101 +917,130 @@ export async function getWebsiteContent(): Promise<WebsiteContent> {
 }
 
 export async function updateWebsiteContent(section: keyof WebsiteContent, data: any): Promise<WebsiteContent> {
-  const store = getStoreData();
-
   let payloadData: any;
   if (Array.isArray(data)) {
     payloadData = data;
   } else if (typeof data === 'object' && data !== null) {
-    const currentSection = (store.content as any)?.[section] || (DEFAULT_WEBSITE_CONTENT as any)[section] || {};
+    const current = await getWebsiteContent();
+    const currentSection = (current as any)[section] || (DEFAULT_WEBSITE_CONTENT as any)[section] || {};
     payloadData = { ...currentSection, ...data };
   } else {
     payloadData = data;
   }
 
-  // Handle hero slide image uploads if any are base64
+  // Handle hero slide image uploads
   if (section === 'heroSlides' && Array.isArray(payloadData)) {
     for (let i = 0; i < payloadData.length; i++) {
       const slide = payloadData[i];
       if (slide.image && slide.image.startsWith('data:image/')) {
-        const uploadRes = await uploadProductImage({
-          name: `slide-${i}-${Date.now()}`,
-          type: 'image/jpeg',
-          base64OrUrl: slide.image,
-        });
-        if (uploadRes.success && uploadRes.url) {
-          slide.image = uploadRes.url;
-        }
+        const uploadRes = await uploadProductImage({ name: `slide-${i}-${Date.now()}`, type: 'image/jpeg', base64OrUrl: slide.image });
+        if (uploadRes.success && uploadRes.url) slide.image = uploadRes.url;
       }
     }
   }
 
-  // Update in-memory and file store
-  if (!store.content) {
-    store.content = JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT));
-  }
-  (store.content as any)[section] = payloadData;
-  saveStoreData(store);
-
-  // Sync to PostgreSQL database
   try {
     await prisma.websiteContent.upsert({
       where: { section: String(section) },
       update: { data: payloadData },
       create: { section: String(section), data: payloadData },
     });
+    console.log(`[updateWebsiteContent] ✅ Section "${String(section)}" saved to PostgreSQL`);
   } catch (err: any) {
-    console.warn(`[Content] Database sync note for section "${String(section)}":`, err.message);
+    console.error(`[updateWebsiteContent] ❌ DB error for section "${String(section)}":`, err.message);
+    throw err;
   }
 
   return getWebsiteContent();
 }
 
-// -------------------------------------------------------------
-// ADMIN DASHBOARD STATS
-// -------------------------------------------------------------
+// ============================================================
+// ADMIN DASHBOARD STATS — Pure PostgreSQL
+// ============================================================
 
 export async function getAdminStats() {
-  const store = getStoreData();
-  const totalProducts = store.products.length;
-  const activeProducts = store.products.filter((p) => p.isActive).length;
-  const totalOrders = store.orders.length;
-  const pendingOrders = store.orders.filter((o) => ['Pending', 'Preparing'].includes(o.orderStatus)).length;
-  const deliveredOrders = store.orders.filter((o) => o.orderStatus === 'Delivered').length;
-  const totalRevenue = store.orders
-    .filter((o) => o.paymentStatus === 'Paid' || o.orderStatus === 'Delivered')
-    .reduce((sum, o) => sum + o.totalAmount, 0);
-  const lowStockProducts = store.products.filter((p) => p.isActive && p.stockQuantity <= 10).slice(0, 8);
-  const recentOrders = store.orders.slice(0, 5).map((o) => ({
-    id: o.id,
-    orderNumber: o.orderNumber,
-    customerName: o.customerName,
-    customerPhone: o.customerPhone,
-    orderStatus: o.orderStatus,
-    paymentStatus: o.paymentStatus,
-    totalAmount: o.totalAmount,
-    createdAt: o.createdAt,
-    items: o.items.map((i) => ({
-      productName: i.productName,
-      quantity: i.quantity,
-    })),
-  }));
+  try {
+    const [
+      totalProducts,
+      activeProducts,
+      totalOrders,
+      pendingOrders,
+      deliveredOrders,
+      revenueResult,
+      lowStockProducts,
+      recentOrders,
+    ] = await Promise.all([
+      prisma.product.count(),
+      prisma.product.count({ where: { isActive: true } }),
+      prisma.order.count(),
+      prisma.order.count({ where: { orderStatus: { in: ['Pending', 'Preparing'] } } }),
+      prisma.order.count({ where: { orderStatus: 'Delivered' } }),
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { OR: [{ paymentStatus: 'Paid' }, { orderStatus: 'Delivered' }] },
+      }),
+      prisma.product.findMany({
+        where: { isActive: true, stockQuantity: { lte: 10 } },
+        select: { id: true, name: true, image: true, stockQuantity: true, lowStockThreshold: true, price: true, categorySlug: true },
+        take: 8,
+        orderBy: { stockQuantity: 'asc' },
+      }),
+      prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { items: { select: { productName: true, quantity: true } } },
+      }),
+    ]);
 
-  return {
-    totalProducts,
-    activeProducts,
-    totalOrders,
-    pendingOrders,
-    deliveredOrders,
-    totalRevenue,
-    lowStockProducts,
-    recentOrders,
-  };
+    return {
+      totalProducts,
+      activeProducts,
+      totalOrders,
+      pendingOrders,
+      deliveredOrders,
+      totalRevenue: revenueResult._sum.totalAmount ?? 0,
+      lowStockProducts,
+      recentOrders: recentOrders.map((o) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        customerName: o.customerName,
+        customerPhone: o.customerPhone,
+        orderStatus: o.orderStatus,
+        paymentStatus: o.paymentStatus,
+        totalAmount: o.totalAmount,
+        createdAt: o.createdAt instanceof Date ? o.createdAt.toISOString() : String(o.createdAt),
+        items: o.items.map((i) => ({ productName: i.productName, quantity: i.quantity })),
+      })),
+    };
+  } catch (err: any) {
+    console.error('[getAdminStats] DB error:', err.message);
+    return { totalProducts: 0, activeProducts: 0, totalOrders: 0, pendingOrders: 0, deliveredOrders: 0, totalRevenue: 0, lowStockProducts: [], recentOrders: [] };
+  }
 }
 
-// -------------------------------------------------------------
-// NEWSLETTER SUBSCRIBERS
-// -------------------------------------------------------------
+// ============================================================
+// NEWSLETTER SUBSCRIBERS — stored in PostgreSQL WebsiteContent
+// ============================================================
+
+async function getSubscribersFromDB(): Promise<string[]> {
+  try {
+    const record = await prisma.websiteContent.findUnique({ where: { section: 'newsletter_subscribers' } });
+    if (record && Array.isArray(record.data)) {
+      return record.data as string[];
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveSubscribersToDB(subscribers: string[]): Promise<void> {
+  await prisma.websiteContent.upsert({
+    where: { section: 'newsletter_subscribers' },
+    update: { data: subscribers as any },
+    create: { section: 'newsletter_subscribers', data: subscribers as any },
+  });
+}
 
 export async function addSubscriber(email: string): Promise<{ success: boolean; message: string; isNew: boolean }> {
   if (!email || !email.includes('@')) {
@@ -1707,23 +1048,83 @@ export async function addSubscriber(email: string): Promise<{ success: boolean; 
   }
 
   const cleanEmail = email.trim().toLowerCase();
-  const store = getStoreData();
-  if (!store.subscribers) {
-    store.subscribers = [];
+
+  try {
+    const subscribers = await getSubscribersFromDB();
+
+    if (subscribers.includes(cleanEmail)) {
+      return { success: true, message: 'You are already subscribed to Nutri Ghar updates!', isNew: false };
+    }
+
+    subscribers.push(cleanEmail);
+    await saveSubscribersToDB(subscribers);
+    console.log(`[addSubscriber] ✅ Subscriber ${cleanEmail} saved to PostgreSQL`);
+    return { success: true, message: 'Thank you for subscribing to Nutri Ghar wellness notes & batch updates!', isNew: true };
+  } catch (err: any) {
+    console.error('[addSubscriber] ❌ DB error:', err.message);
+    return { success: false, message: 'Failed to subscribe. Please try again.', isNew: false };
   }
-
-  if (store.subscribers.includes(cleanEmail)) {
-    return { success: true, message: 'You are already subscribed to Nutri Ghar updates!', isNew: false };
-  }
-
-  store.subscribers.push(cleanEmail);
-  saveStoreData(store);
-
-  return { success: true, message: 'Thank you for subscribing to Nutri Ghar wellness notes & batch updates!', isNew: true };
 }
 
 export async function getSubscribers(): Promise<string[]> {
-  const store = getStoreData();
-  return store.subscribers || [];
+  return getSubscribersFromDB();
 }
 
+// ============================================================
+// SEED DEFAULT DATA (only runs once on first DB setup)
+// ============================================================
+
+async function seedDefaultData(): Promise<void> {
+  try {
+    // Seed categories
+    for (const cat of DEFAULT_CATEGORIES) {
+      await prisma.category.upsert({
+        where: { slug: cat.slug },
+        update: {},
+        create: {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          description: cat.description ?? null,
+          image: cat.image ?? null,
+          icon: cat.icon ?? '📦',
+          isActive: cat.isActive,
+        },
+      });
+    }
+
+    // Seed products
+    for (const prod of DEFAULT_PRODUCTS) {
+      await prisma.product.upsert({
+        where: { slug: prod.slug },
+        update: {},
+        create: {
+          id: prod.id,
+          name: prod.name,
+          slug: prod.slug,
+          description: prod.description,
+          price: prod.price,
+          originalPrice: prod.originalPrice ?? null,
+          categoryId: prod.categoryId,
+          categorySlug: prod.categorySlug,
+          image: prod.image,
+          images: prod.images ?? [],
+          ingredients: prod.ingredients ?? [],
+          benefits: prod.benefits ?? [],
+          rating: prod.rating,
+          reviewCount: prod.reviewCount,
+          stockQuantity: prod.stockQuantity,
+          lowStockThreshold: prod.lowStockThreshold,
+          weight: '500g',
+          isFeatured: prod.isFeatured,
+          isBestSeller: prod.isBestSeller,
+          isActive: prod.isActive,
+        } as any,
+      });
+    }
+
+    console.log('[seedDefaultData] ✅ Default products and categories seeded to PostgreSQL');
+  } catch (err: any) {
+    console.error('[seedDefaultData] Seed warning:', err.message);
+  }
+}
