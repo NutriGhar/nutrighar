@@ -262,10 +262,10 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
 // ============================================================
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'cat-mithai', name: 'Mithai & Ladoo', slug: 'mithai', description: 'Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.', image: '/images/dry-fruit-ladoos-banner.jpg', icon: '🍯', weight: '500g', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'cat-peanut-butter', name: 'Peanut Butter', slug: 'peanut-butter', description: '100% stone-ground natural nut butters with zero palm oil or chemical preservatives.', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80', icon: '🥜', weight: '500g', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'cat-protein-nutrition', name: 'Protein & Nutrition', slug: 'protein-nutrition', description: 'Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.', image: '/images/clean-protein-pouch-banner.jpg', icon: '💪', weight: '500g', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'cat-healthy-snacks', name: 'Healthy Snacks', slug: 'healthy-snacks', description: 'Slow-roasted premium nuts, crunchy seeds, and sun-dried fruit assortments.', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80', icon: '🥗', weight: '500g', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-mithai', name: 'Mithai & Ladoo', slug: 'mithai', description: 'Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.', image: '/images/dry-fruit-ladoos-banner.jpg', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-peanut-butter', name: 'Peanut Butter', slug: 'peanut-butter', description: '100% stone-ground natural nut butters with zero palm oil or chemical preservatives.', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-protein-nutrition', name: 'Protein & Nutrition', slug: 'protein-nutrition', description: 'Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.', image: '/images/clean-protein-pouch-banner.jpg', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-healthy-snacks', name: 'Healthy Snacks', slug: 'healthy-snacks', description: 'Slow-roasted premium nuts, crunchy seeds, and sun-dried fruit assortments.', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
 export const DEFAULT_PRODUCTS: Product[] = [
@@ -428,10 +428,8 @@ export async function getProducts(options?: {
     if (products.length === 0 && !options?.categorySlug && !options?.categoryId && !options?.search) {
       // First-ever use: seed defaults into DB
       await seedDefaultData();
-      return prisma.product.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-      });
+      const fallbackProducts = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } });
+      return fallbackProducts.map(formatProduct);
     }
 
     return products.map(formatProduct);
