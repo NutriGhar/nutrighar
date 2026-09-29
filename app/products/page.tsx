@@ -182,7 +182,7 @@ function ProductsContent() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#1C1917] pb-24">
       {/* Header Banner */}
-      <div className="bg-[#FAF7F2] border-b border-[#E8E1D7] py-10 sm:py-16 px-4 sm:px-6 lg:px-8">
+      <div className="bg-[#FAF7F2] border-b border-[#E8E1D7] py-10 sm:py-16 px-4 sm:px-6 md:px-8 lg:px-16">
         <div className="w-full max-w-[1540px] mx-auto">
           <div className="mb-4">
             <Link
@@ -205,7 +205,7 @@ function ProductsContent() {
         </div>
       </div>
 
-      <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16 py-8 sm:py-12">
         {/* Big Search and Filters Card with Generous Padding */}
         <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200 p-4 sm:p-8 mb-8 sm:mb-12 shadow-xs space-y-4 sm:space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-6 items-end">

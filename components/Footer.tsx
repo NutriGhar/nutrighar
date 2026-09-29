@@ -24,10 +24,10 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#13241C] text-[#FAF7F2] pt-12 sm:pt-20 pb-12 border-t border-[#1E382B]">
-      <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 sm:gap-12 pb-12 sm:pb-16 border-b border-[#2A4F3C]/40">
+      <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 sm:gap-12 pb-12 sm:pb-16 border-b border-[#2A4F3C]/40">
           {/* Brand Col */}
-          <div className="col-span-2 md:col-span-5 space-y-4 sm:space-y-5">
+          <div className="col-span-1 sm:col-span-2 md:col-span-5 space-y-4 sm:space-y-5">
             <Link href="/" className="inline-flex items-center gap-3 group">
               <div className="relative w-12 h-12 rounded-full overflow-hidden bg-white shadow-md border border-stone-300 shrink-0 group-hover:scale-105 transition-transform">
                 <Image

@@ -394,6 +394,7 @@ export default function NewProductPage() {
                   <img
                     src={image}
                     alt="Preview"
+                    loading="lazy"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';

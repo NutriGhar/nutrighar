@@ -256,7 +256,7 @@ export default function CheckoutPage() {
           TOP CHECKOUT NAVBAR (Spacious, Clean with SSL Lock)
       ========================================================================= */}
       <header className="border-b border-stone-200 bg-white sticky top-0 z-40 shadow-2xs">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 h-16 flex items-center justify-between">
           <Link
             href="/cart"
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-stone-800 hover:text-[#4E652B] transition-colors"
@@ -338,7 +338,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 pt-6 sm:pt-10">
         
         {orderError && (
           <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold flex items-center gap-2 animate-fadeIn">

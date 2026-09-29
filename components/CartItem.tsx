@@ -3,6 +3,7 @@
 import { CartItem } from '@/types/product';
 import { useCart } from '@/context/CartContext';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface CartItemComponentProps {
   item: CartItem;
@@ -19,13 +20,15 @@ export default function CartItemComponent({ item }: CartItemComponentProps) {
   return (
     <div className="flex gap-4 py-5 border-b border-stone-100 last:border-b-0">
       {/* Product Image */}
-      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-stone-50 border border-stone-200 flex-shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+      <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-stone-50 border border-stone-200 flex-shrink-0">
+        <Image
           src={imgError ? fallback : (item.image || fallback)}
           alt={item.name}
+          fill
+          sizes="96px"
+          quality={85}
           onError={() => setImgError(true)}
-          className="w-full h-full object-cover"
+          className="object-cover"
         />
       </div>
 

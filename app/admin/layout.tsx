@@ -159,7 +159,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <div className="min-h-screen bg-[#F5EFE6] flex text-[#1C1917] font-sans antialiased">
       
       {/* Desktop Sidebar (Clean, High-Contrast Dark Forest) */}
-      <aside className="hidden lg:flex lg:flex-col w-72 bg-[#112219] text-white flex-shrink-0 z-30 shadow-xl border-r border-[#1E382B]">
+      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:flex-col w-64 bg-[#112219] text-white flex-shrink-0 z-30 shadow-xl border-r border-[#1E382B]">
         
         {/* Brand Header */}
         <div className="p-6 border-b border-white/10 flex items-center gap-3">
@@ -229,7 +229,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content Viewport */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-64">
         
         {/* Top Header Bar */}
         <header className="h-18 bg-white border-b border-stone-200 flex items-center justify-between px-6 sm:px-10 z-20 shadow-xs">
@@ -267,31 +267,54 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </header>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Navigation Drawer & Backdrop */}
         {isMobileNavOpen && (
-          <div className="lg:hidden bg-[#112219] text-white p-6 space-y-3 border-b border-white/10 z-30 shadow-2xl animate-fadeIn">
-            {navLinks.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setIsMobileNavOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${
-                  item.active ? 'bg-[#2A4F3C] text-white shadow-md' : 'text-stone-300'
-                }`}
-              >
-                <span>{item.icon}</span>
-                <span>{item.name}</span>
-              </Link>
-            ))}
-            <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-              <Link href="/" target="_blank" className="text-xs text-[#E5B56A] font-bold">
-                Open Storefront ↗
-              </Link>
-              <button onClick={handleLogout} className="text-xs text-rose-400 font-bold cursor-pointer">
-                Sign out
-              </button>
+          <>
+            <div 
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+              onClick={() => setIsMobileNavOpen(false)}
+            />
+            <div className="fixed inset-y-0 left-0 w-64 bg-[#112219] text-white z-50 shadow-2xl flex flex-col lg:hidden overflow-y-auto animate-slideInLeft">
+              <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white text-[#112219] flex items-center justify-center font-serif text-sm font-extrabold shrink-0">
+                    NG
+                  </div>
+                  <span className="font-serif font-bold text-white tracking-tight">Nutri Ghar</span>
+                </div>
+                <button onClick={() => setIsMobileNavOpen(false)} className="text-stone-400 hover:text-white cursor-pointer">
+                  ✕
+                </button>
+              </div>
+              <nav className="flex-1 px-4 py-6 space-y-2">
+                <div className="text-[11px] font-bold uppercase tracking-widest text-stone-400 px-3 pb-2">
+                  Store Management
+                </div>
+                {navLinks.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsMobileNavOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${
+                      item.active ? 'bg-[#2A4F3C] text-white shadow-md' : 'text-stone-300'
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.name}</span>
+                  </Link>
+                ))}
+              </nav>
+              <div className="p-5 border-t border-white/10 space-y-4 bg-black/20">
+                <Link href="/" target="_blank" className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold uppercase tracking-wider text-white transition-colors border border-white/15 shadow-xs">
+                  <span>View Storefront</span>
+                  <span>↗</span>
+                </Link>
+                <button onClick={handleLogout} className="w-full py-2.5 rounded-lg bg-rose-900/40 hover:bg-rose-800/60 text-xs text-rose-300 font-bold border border-rose-700/40 transition-colors cursor-pointer">
+                  Sign out
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Page Main Content Area */}

@@ -51,7 +51,7 @@ const DEFAULT_UPSELLS: Product[] = [
 ];
 
 export default function CartPage() {
-  const { items, getTotal, clearCart, addItem } = useCart();
+  const { items, getTotal, clearCart, addItem, updateQuantity, removeItem } = useCart();
   const [upsells, setUpsells] = useState<Product[]>(DEFAULT_UPSELLS);
   const [addedItemIds, setAddedItemIds] = useState<{ [key: string]: boolean }>({});
 
@@ -122,7 +122,7 @@ export default function CartPage() {
 
       {/* Clean Minimal Header (Kapiva style) */}
       <header className="border-b border-stone-200 bg-white sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 h-16 flex items-center justify-between">
           <Link href="/products" className="inline-flex items-center gap-2 text-sm font-bold text-stone-800 hover:text-stone-600">
             <span className="text-lg">←</span>
             <span>My Basket</span>
@@ -135,7 +135,7 @@ export default function CartPage() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 pt-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
           {/* ====================================================
@@ -157,10 +157,49 @@ export default function CartPage() {
                 </button>
               </div>
 
-              <div className="px-5">
+              <div className="px-5 block md:hidden">
                 {items.map((item) => (
                   <CartItemComponent key={item.id} item={item} />
                 ))}
+              </div>
+
+              <div className="hidden md:block w-full">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-stone-200 bg-stone-50/50">
+                      <th className="py-4 px-5 text-sm font-bold text-stone-900">Product</th>
+                      <th className="py-4 px-5 text-sm font-bold text-stone-900">Price</th>
+                      <th className="py-4 px-5 text-sm font-bold text-stone-900 text-center">Quantity</th>
+                      <th className="py-4 px-5 text-sm font-bold text-stone-900 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id} className="border-b border-stone-100 last:border-0">
+                        <td className="py-5 px-5">
+                          <div className="flex items-center gap-4">
+                            <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-stone-50 border border-stone-200 shrink-0">
+                              <Image src={item.image || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&auto=format&fit=crop&q=80'} alt={item.name} fill sizes="80px" className="object-cover" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-stone-900">{item.name}</div>
+                              <button onClick={() => removeItem(item.id)} className="text-xs text-rose-500 hover:text-rose-700 font-semibold mt-1 transition-colors cursor-pointer">Remove</button>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-5 px-5 font-bold text-stone-900">₹{item.price}</td>
+                        <td className="py-5 px-5">
+                          <div className="flex items-center justify-center border border-stone-300 rounded-md w-max mx-auto overflow-hidden">
+                            <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center hover:bg-stone-100 font-bold transition-colors cursor-pointer">−</button>
+                            <span className="w-8 h-8 flex items-center justify-center font-bold text-stone-900 border-x border-stone-300">{item.quantity}</span>
+                            <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-stone-100 font-bold transition-colors cursor-pointer">+</button>
+                          </div>
+                        </td>
+                        <td className="py-5 px-5 text-right font-bold text-stone-900">₹{item.price * item.quantity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
