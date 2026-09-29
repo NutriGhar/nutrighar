@@ -57,28 +57,13 @@ export async function uploadProductImage(fileData: {
         const safeName = name ? name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 30) : 'img';
         const filename = `${safeName}-${Date.now()}.${ext}`;
 
-        try {
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-          if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-          }
-
-          const filePath = path.join(uploadDir, filename);
-          fs.writeFileSync(filePath, buffer);
-
-          return {
-            url: `/uploads/${filename}`,
-            provider: 'local',
-            success: true,
-          };
-        } catch {
-          // On Vercel serverless (read-only filesystem), return base64 Data URI directly
-          return {
-            url: base64OrUrl,
-            provider: 'cloud',
-            success: true,
-          };
-        }
+        // On Vercel serverless, writing to public/uploads does not persist and causes 404s.
+        // We will return the base64 Data URI directly so it is stored in PostgreSQL.
+        return {
+          url: base64OrUrl,
+          provider: 'cloud',
+          success: true,
+        };
       }
     }
 
