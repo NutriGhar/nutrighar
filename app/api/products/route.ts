@@ -83,6 +83,7 @@ export async function POST(request: Request) {
       reviewCount: Number(body.reviewCount) || 0,
       stockQuantity: Number(body.stockQuantity) >= 0 ? Number(body.stockQuantity) : 50,
       lowStockThreshold: Number(body.lowStockThreshold) >= 0 ? Number(body.lowStockThreshold) : 10,
+      weight: body.weight ? String(body.weight).trim() : '500g',
       isFeatured: Boolean(body.isFeatured),
       isBestSeller: Boolean(body.isBestSeller),
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,

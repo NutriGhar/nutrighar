@@ -14,6 +14,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Gram flour', 'Pure ghee', 'Sugar', 'Cardamom', 'Dry fruits'],
     benefits: ['High in protein', 'Energy boost', 'Pure natural ingredients', 'Freshly made'],
     featured: true,
+    weight: '500g',
   },
   {
     id: 'dry-fruit-ladoo',
@@ -27,6 +28,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Dry fruits', 'Almonds', 'Cashews', 'Dates', 'Pure ghee'],
     benefits: ['Rich in antioxidants', 'Premium quality', 'Perfect for gifting', 'Nutrient dense'],
     featured: true,
+    weight: '500g',
   },
   {
     id: 'coconut-ladoo',
@@ -40,6 +42,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Fresh coconut', 'Milk solids', 'Sugar', 'Cardamom'],
     benefits: ['Rich in minerals', 'Vegan friendly', 'Freshly prepared', 'Traditional taste'],
     featured: true,
+    weight: '500g',
   },
   {
     id: 'protein-ladoo',
@@ -53,6 +56,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Clean Whey Protein', 'Rolled Oats', 'California Almonds', 'Pure Desi Ghee', 'Raw Forest Honey'],
     benefits: ['12g Clean Protein per Ladoo', 'Zero Refined Sugar', 'Pre/Post Workout Energy', '100% Pure Desi Ghee'],
     featured: true,
+    weight: '500g',
   },
 
   // Peanut Butter
@@ -68,6 +72,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['100% Roasted Gujarat Peanuts', 'Himalayan Pink Salt'],
     benefits: ['100% Natural Stone-Ground', 'Zero Added Palm Oil', 'Rich in Protein (30g/100g)', 'Creamy Silky Texture'],
     featured: true,
+    weight: '500g',
   },
   {
     id: 'chocolate-peanut-butter',
@@ -81,6 +86,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Roasted peanuts', 'Dark chocolate', 'Cocoa powder', 'Honey'],
     benefits: ['Delicious taste', 'Natural ingredients', 'Energy rich', 'Antioxidants'],
     featured: true,
+    weight: '500g',
   },
   {
     id: 'crunchy-peanut-butter',
@@ -93,7 +99,8 @@ export const PRODUCTS: Product[] = [
     reviews: 223,
     ingredients: ['Roasted peanuts', 'Organic salt', 'Honey'],
     benefits: ['Great texture', 'Natural ingredients', 'Versatile', 'Satisfying crunch'],
-    featured: false,
+    featured: true,
+    weight: '500g',
   },
 
   // Protein & Nutrition
@@ -109,6 +116,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Clean Plant Protein', 'California Almonds', 'Walnuts', 'Flaxseeds', 'Chia seeds', 'Pumpkin seeds'],
     benefits: ['20g Clean Protein per Serving', '100% Stone Ground', 'Zero Palm Oil & Zero Maida', 'Eco-Friendly Kraft Packaging'],
     featured: true,
+    weight: '500g',
   },
   {
     id: 'high-protein-nutrition',
@@ -122,6 +130,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Whey isolate', 'California Almonds', 'Chia seeds', 'Pumpkin seeds', 'Cardamom'],
     benefits: ['20g protein per serving', 'Muscle recovery', 'Sustained energy', '100% Natural'],
     featured: true,
+    weight: '500g',
   },
 
   // Healthy Snacks
@@ -136,7 +145,8 @@ export const PRODUCTS: Product[] = [
     reviews: 178,
     ingredients: ['Almonds', 'Cashews', 'Peanuts', 'Sunflower seeds', 'Sea salt'],
     benefits: ['High fiber', 'Healthy fats', 'Perfect snack', 'No refined sugar'],
-    featured: false,
+    featured: true,
+    weight: '500g',
   },
   {
     id: 'protein-energy-bites',
@@ -150,6 +160,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Dates', 'Nuts', 'Seeds', 'Dark chocolate', 'Honey'],
     benefits: ['Quick energy boost', 'On-the-go snack', 'Natural sweetness', 'No preservatives'],
     featured: true,
+    weight: '500g',
   },
   {
     id: 'dry-fruit-mix',
@@ -163,6 +174,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Almonds', 'Cashews', 'Walnuts', 'Raisins', 'Dates'],
     benefits: ['Premium quality', 'Nutrient rich', 'Perfect for health', 'Long shelf life'],
     featured: true,
+    weight: '500g',
   },
 ];
 

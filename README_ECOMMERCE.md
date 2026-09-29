@@ -253,7 +253,7 @@ npx tsc --noEmit
 ## 📞 Support
 
 For questions or issues:
-- Phone: +91 98765 43210
+- Phone: +91 79761 19153
 - Email: info@nutrighar.com
 - WhatsApp: Available in footer
 

@@ -7,6 +7,7 @@ import { ContentProvider } from "@/context/ContentContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
@@ -45,6 +46,7 @@ export default function RootLayout({
               <main className="flex-1 pb-28 lg:pb-0">{children}</main>
               <Footer />
               <FloatingWhatsApp />
+              <MobileBottomNav />
             </CartProvider>
           </CustomerAuthProvider>
         </ContentProvider>

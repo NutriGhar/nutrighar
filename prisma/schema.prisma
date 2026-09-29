@@ -43,6 +43,7 @@ model Product {
   reviewCount       Int         @default(0)
   stockQuantity     Int         @default(50)
   lowStockThreshold Int         @default(10)
+  weight            String?     @default("500g")
   isFeatured        Boolean     @default(false)
   isBestSeller      Boolean     @default(false)
   isActive          Boolean     @default(true)

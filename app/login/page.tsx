@@ -21,6 +21,7 @@ function LoginContent() {
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [demoCode, setDemoCode] = useState<string | null>(null);
+  const [otpChannel, setOtpChannel] = useState<'sms' | 'whatsapp'>('sms');
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,8 +34,8 @@ function LoginContent() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Send OTP
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError(null);
     setSuccessMsg(null);
 
@@ -46,11 +47,12 @@ function LoginContent() {
 
     try {
       setIsLoading(true);
-      const res = await sendOtp(cleanPhone, fullName);
+      const res = await sendOtp(cleanPhone, fullName, 'sms');
       if (res.success) {
         setOtpSent(true);
-        setDemoCode(res.demoOtp || '123456');
-        setSuccessMsg(`✓ 6-Digit OTP sent to +91 ${cleanPhone}`);
+        const code = res.otp || res.demoOtp || '123456';
+        setDemoCode(code);
+        setSuccessMsg(res.message || `✓ 6-Digit OTP sent to +91 ${cleanPhone}`);
       } else {
         setError(res.error || 'Failed to send OTP. Please try again.');
       }
@@ -255,7 +257,7 @@ function LoginContent() {
           {authMethod === 'otp' && (
             <div>
               {!otpSent ? (
-                <form onSubmit={handleSendOtp}>
+                <form onSubmit={(e) => handleSendOtp(e)}>
                   {/* Optional/Required Name Field */}
                   <div style={{ marginBottom: '14px' }}>
                     <input
@@ -279,7 +281,7 @@ function LoginContent() {
                     />
                   </div>
 
-                  {/* Field 1: India Box (Exact Kapiva Style) */}
+                  {/* Field 1: India Box */}
                   <div
                     style={{
                       width: '100%',
@@ -295,18 +297,17 @@ function LoginContent() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      {/* SVG Indian Flag */}
                       <svg width="24" height="16" viewBox="0 0 900 600" style={{ borderRadius: '2px', display: 'block' }}>
                         <rect width="900" height="200" fill="#FF9933" />
                         <rect y="200" width="900" height="200" fill="#FFFFFF" />
                         <rect y="400" width="900" height="200" fill="#138808" />
                         <circle cx="450" cy="300" r="80" fill="none" stroke="#000080" strokeWidth="12" />
                       </svg>
-                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#222' }}>India</span>
+                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#222' }}>India (+91)</span>
                     </div>
                   </div>
 
-                  {/* Field 2: Mobile Input with Telephone Outline Icon (Exact Kapiva Style) */}
+                  {/* Field 2: Mobile Input with Telephone Outline Icon */}
                   <div
                     style={{
                       width: '100%',
@@ -319,7 +320,7 @@ function LoginContent() {
                       gap: '12px',
                       backgroundColor: '#FFFFFF',
                       boxSizing: 'border-box',
-                      marginBottom: '10px',
+                      marginBottom: '18px',
                     }}
                   >
                     <svg width="20" height="20" fill="none" stroke="#6E8B4C" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -331,7 +332,7 @@ function LoginContent() {
                       onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                       required
                       maxLength={10}
-                      placeholder="Mobile Number"
+                      placeholder="10-digit Mobile Number"
                       style={{
                         width: '100%',
                         height: '100%',
@@ -345,11 +346,12 @@ function LoginContent() {
                     />
                   </div>
 
-                  {/* Circular Green Arrow Button Overlapping the Bottom (Kapiva Style) */}
+                  {/* Circular Green Arrow Button for OTP (Kapiva Style) */}
                   <button
                     type="submit"
                     disabled={isLoading || phone.length !== 10}
-                    aria-label="Submit"
+                    aria-label="Send OTP to Mobile"
+                    title="Send OTP to Mobile"
                     style={{
                       position: 'absolute',
                       bottom: '-28px',
@@ -384,8 +386,8 @@ function LoginContent() {
                 /* Step 2: 6-Digit OTP */
                 <form onSubmit={handleVerifyOtp}>
                   <div style={{ marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#444' }}>Enter OTP</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E382B' }}>Enter 6-Digit OTP</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -393,7 +395,7 @@ function LoginContent() {
                           setOtpCode('');
                           setError(null);
                         }}
-                        style={{ fontSize: '13px', color: '#B55B32', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                        style={{ fontSize: '12px', color: '#B55B32', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
                       >
                         Change (+91 {phone})
                       </button>
@@ -427,34 +429,80 @@ function LoginContent() {
                   {demoCode && (
                     <div
                       style={{
-                        marginBottom: '16px',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        backgroundColor: '#FEF3C7',
-                        border: '1px solid #FDE68A',
+                        marginBottom: '14px',
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        backgroundColor: '#F0FDF4',
+                        border: '1.5px solid #86EFAC',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: '12px',
-                        color: '#92400E',
+                        flexDirection: 'column',
+                        gap: '8px',
                       }}
                     >
-                      <span>Demo Code: <strong>{demoCode}</strong></span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>📱</span>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#166534' }}>
+                            Your Verification OTP:
+                          </span>
+                        </div>
+                        <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: '#15803D' }}>
+                          {demoCode}
+                        </span>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() => setOtpCode(demoCode)}
-                        style={{ fontWeight: '700', color: '#5C7A38', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                        onClick={async () => {
+                          setOtpCode(demoCode);
+                          try {
+                            setIsLoading(true);
+                            const res = await verifyOtp(phone, demoCode, fullName);
+                            if (res.success) router.push(redirectUrl);
+                            else setError(res.error || 'Verification failed');
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: '#15803D',
+                          color: '#FFFFFF',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                        }}
                       >
-                        Autofill OTP
+                        <span>⚡ 1-Tap Auto-Verify &amp; Login</span>
                       </button>
                     </div>
                   )}
+
+                  {/* Resend Option */}
+                  <div style={{ marginBottom: '8px', textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSendOtp()}
+                      disabled={isLoading}
+                      style={{ fontSize: '12px', color: '#5C7A38', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span>🔄 Resend OTP to +91 {phone}</span>
+                    </button>
+                  </div>
 
                   {/* Circular Button for Verification */}
                   <button
                     type="submit"
                     disabled={isLoading || otpCode.length !== 6}
-                    aria-label="Verify"
+                    aria-label="Verify OTP"
                     style={{
                       position: 'absolute',
                       bottom: '-28px',

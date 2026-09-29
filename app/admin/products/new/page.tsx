@@ -21,6 +21,7 @@ export default function NewProductPage() {
   const [categoryId, setCategoryId] = useState('');
   const [stockQuantity, setStockQuantity] = useState('50');
   const [lowStockThreshold, setLowStockThreshold] = useState('10');
+  const [weight, setWeight] = useState('500g');
   const [image, setImage] = useState('');
   const [ingredientsText, setIngredientsText] = useState('');
   const [benefitsText, setBenefitsText] = useState('');
@@ -99,7 +100,9 @@ export default function NewProductPage() {
 
     try {
       setIsSubmitting(true);
-      const selectedCat = categories.find((c) => c.id === categoryId);
+      const selectedCat = categories.find((c) => c.id === categoryId || c.slug === categoryId);
+      const catSlug = selectedCat?.slug || categoryId.replace(/^cat-/, '') || 'mithai';
+      const finalCategoryId = selectedCat?.id || (categoryId.startsWith('cat-') ? categoryId : `cat-${categoryId}`);
 
       const ingredients = ingredientsText
         .split(',')
@@ -117,14 +120,15 @@ export default function NewProductPage() {
         description: description.trim(),
         price: Number(price),
         originalPrice: originalPrice ? Number(originalPrice) : undefined,
-        categoryId,
-        categorySlug: selectedCat?.slug || 'healthy-snacks',
+        categoryId: finalCategoryId,
+        categorySlug: catSlug,
         image: image.trim(),
         images: [image.trim()],
         ingredients: ingredients.length > 0 ? ingredients : ['Natural ingredients'],
         benefits: benefits.length > 0 ? benefits : ['Freshly handcrafted'],
         stockQuantity: Number(stockQuantity) || 0,
         lowStockThreshold: Number(lowStockThreshold) || 10,
+        weight: weight.trim() || '500g',
         isFeatured,
         isBestSeller,
         isActive,
@@ -221,9 +225,19 @@ export default function NewProductPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
-              Category *
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                Category *
+              </label>
+              <Link
+                href="/admin/categories"
+                target="_blank"
+                className="text-xs font-bold text-[#1E382B] hover:text-[#9C5838] underline inline-flex items-center gap-1"
+              >
+                <span>Manage / Add Categories</span>
+                <span>↗</span>
+              </Link>
+            </div>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
@@ -322,6 +336,43 @@ export default function NewProductPage() {
                 className="w-full px-4 py-3.5 bg-stone-50 border-2 border-stone-300 rounded-xl text-base text-stone-900 font-medium focus:bg-white focus:border-[#1E382B] focus:outline-none transition-colors"
               />
             </div>
+
+            {/* Weight / Pack Size */}
+            <div className="sm:col-span-2 bg-[#FAF7F2] p-4 rounded-xl border border-stone-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                  Weight / Pack Size (e.g., 250g, 400g, 500g, 1kg) *
+                </label>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] text-stone-500 font-medium mr-1">Quick Select:</span>
+                  {['250g', '400g', '500g', '1kg'].map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => setWeight(w)}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                        weight === w
+                          ? 'bg-[#1E382B] text-white shadow-xs'
+                          : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-100'
+                      }`}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <input
+                type="text"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                required
+                placeholder="e.g. 500g, 400g, 1kg, 250g Pack"
+                className="w-full px-4 py-3 bg-white border-2 border-stone-300 rounded-xl text-base text-stone-900 font-bold focus:border-[#1E382B] focus:outline-none transition-colors"
+              />
+              <p className="text-[11px] text-stone-500 mt-1.5">
+                Displayed prominently on product cards, category catalogs, and the product details page.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -335,80 +386,81 @@ export default function NewProductPage() {
           </div>
 
           <div className="space-y-4">
-            {!image ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-stone-300 rounded-2xl cursor-pointer bg-stone-50 hover:bg-stone-100 hover:border-[#1E382B] transition-all group p-4">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-[#1E382B] flex items-center justify-center text-xl mb-2 group-hover:scale-110 transition-transform">
-                      📷
-                    </div>
-                    <p className="mb-0.5 text-xs font-bold text-stone-700">
-                      Upload from Computer / Phone
-                    </p>
-                    <p className="text-[10px] text-stone-500">
-                      PNG, JPG, WEBP
-                    </p>
+            {/* Live Image Preview if present */}
+            {image && (
+              <div className="flex items-center gap-5 p-4 bg-stone-50 rounded-2xl border border-stone-200">
+                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border border-stone-300 shadow-xs bg-white shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
+                    }}
+                  />
+                </div>
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-md inline-block">
+                      ✓ Image Selected
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setImage('')}
+                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Clear Image
+                    </button>
                   </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
-
-                <div className="flex flex-col justify-center p-4 bg-stone-50 border-2 border-stone-200 rounded-2xl space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
-                    Or Enter Image URL
-                  </label>
-                  <input
-                    type="url"
-                    value={image}
-                    onChange={(e) => setImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#1E382B]"
-                  />
+                  <div className="text-[11px] text-stone-600 font-mono truncate max-w-lg">
+                    {image.startsWith('data:') ? 'Local Image File (Ready to save)' : image}
+                  </div>
                   <p className="text-[10px] text-stone-500">
-                    Paste any public image link or CDN URL.
+                    You can replace this photo below by uploading a new file or entering a new URL.
                   </p>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center gap-5 p-4 bg-stone-50 rounded-2xl border border-stone-200">
-                  <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-stone-300 shadow-xs bg-white shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="space-y-2 flex-1">
-                    <p className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-md inline-block">
-                      ✓ Image Selected
-                    </p>
-                    <div className="text-[11px] text-stone-500 font-mono truncate max-w-md">
-                      {image.startsWith('data:') ? 'Local Image File' : image}
-                    </div>
-                    <div>
-                      <label className="inline-block px-4 py-2 bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer transition-colors">
-                        🔄 Upload New Photo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setImage('')}
-                        className="ml-2 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
             )}
+
+            {/* Upload & URL Input Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-stone-300 rounded-2xl cursor-pointer bg-stone-50 hover:bg-stone-100 hover:border-[#1E382B] transition-all group p-4">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-[#1E382B] flex items-center justify-center text-xl mb-1.5 group-hover:scale-110 transition-transform">
+                    📷
+                  </div>
+                  <p className="mb-0.5 text-xs font-bold text-stone-700">
+                    Upload from Computer / Phone
+                  </p>
+                  <p className="text-[10px] text-stone-500">
+                    Supports JPG, PNG, WebP
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+
+              <div className="flex flex-col justify-center p-4 bg-stone-50 border-2 border-stone-200 rounded-2xl space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                  Or Paste Direct Image Web URL
+                </label>
+                <input
+                  type="url"
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                  placeholder="https://... or /images/..."
+                  className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#1E382B]"
+                />
+                <p className="text-[10px] text-stone-500">
+                  Paste any public image link (e.g. Unsplash, CDN, or /images/...).
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -170,15 +170,22 @@ export default function ProductDetailPage({ params }: PageProps) {
             </div>
 
             {/* Price & Stock Badge */}
-            <div className="flex items-baseline gap-4 py-3 border-y border-[#E8E1D7]">
-              <span className="font-serif text-3xl sm:text-4xl font-bold text-[#1E382B]">
-                ₹{product.price}
-              </span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-base text-stone-400 line-through">
-                  ₹{product.originalPrice}
+            <div className="flex items-center gap-4 py-3 border-y border-[#E8E1D7] flex-wrap">
+              <div className="flex items-baseline gap-3">
+                <span className="font-serif text-3xl sm:text-4xl font-bold text-[#1E382B]">
+                  ₹{product.price}
                 </span>
-              )}
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-base text-stone-400 line-through">
+                    ₹{product.originalPrice}
+                  </span>
+                )}
+              </div>
+
+              {/* Weight / Pack Size Badge */}
+              <span className="px-3 py-1 rounded-full bg-[#FAF7F2] text-[#1E382B] text-xs font-bold border border-[#D8CEBE]">
+                ⚖️ Pack Size: {product.weight || '500g'}
+              </span>
 
               {/* Stock Status Indicator */}
               <div className="ml-auto">

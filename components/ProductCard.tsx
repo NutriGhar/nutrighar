@@ -35,13 +35,14 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   // Weight badge display
   const weightBadge =
-    product.category === 'peanut-butter'
+    product.weight ||
+    (product.category === 'peanut-butter'
       ? '500g'
       : product.category === 'mithai'
       ? '400g'
       : product.category === 'protein-nutrition'
       ? '1kg'
-      : '250g';
+      : '250g');
 
   return (
     <div className="group h-full bg-white rounded-2xl border border-stone-200 hover:border-[#4E652B]/40 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
@@ -59,8 +60,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
 
-          {/* Badges (Top Left & Side Weight Badge) */}
-          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 z-10">
+          {/* Badges (Top Left: Bestseller, Discount, Weight) */}
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 z-10 items-start">
             {product.featured && (
               <span className="bg-[#1E382B] text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded shadow-xs">
                 Bestseller
@@ -71,11 +72,9 @@ export default function ProductCard({ product }: ProductCardProps) {
                 {discountPercent}% Off
               </span>
             )}
-          </div>
-
-          {/* Side Weight Tag (Conscious Food reference style) */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-0 bg-[#E5B56A] text-[#1E382B] text-[9px] sm:text-[10px] font-black uppercase tracking-wider py-1 px-1.5 rounded-l-md shadow-xs writing-vertical text-center">
-            {weightBadge}
+            <span className="bg-[#E5B56A] text-[#1E382B] text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 sm:px-2 sm:py-0.5 rounded shadow-xs">
+              ⚖️ {weightBadge}
+            </span>
           </div>
 
           {/* Star Rating Overlay */}

@@ -65,50 +65,61 @@ function ProductsContent() {
     const q = searchQuery.trim().toLowerCase();
 
     let filtered = products.filter((product) => {
-      const catSlug = (product.categorySlug || product.category || '').toLowerCase();
-      const catId = (product.categoryId || '').toLowerCase();
-      const prodName = product.name.toLowerCase();
+      const catSlug = (product.categorySlug || product.category || '').toLowerCase().trim();
+      const catId = (product.categoryId || '').toLowerCase().trim();
+      const prodName = (product.name || '').toLowerCase();
       
       let matchesCategory = false;
-      if (!selCat) {
+      if (!selCat || selCat === 'all') {
         matchesCategory = true;
-      } else if (selCat === 'mithai') {
-        matchesCategory =
-          catSlug === 'mithai' ||
-          catId === 'cat-mithai' ||
-          catSlug.includes('mithai') ||
-          prodName.includes('ladoo') ||
-          prodName.includes('mithai');
-      } else if (selCat === 'peanut-butter') {
-        matchesCategory =
-          catSlug === 'peanut-butter' ||
-          catId === 'cat-peanut-butter' ||
-          prodName.includes('peanut butter') ||
-          prodName.includes('peanut') ||
-          prodName.includes('spread');
-      } else if (selCat === 'protein-nutrition') {
-        matchesCategory =
-          catSlug === 'protein-nutrition' ||
-          catId === 'cat-protein-nutrition' ||
-          prodName.includes('protein mix') ||
-          prodName.includes('high protein') ||
-          prodName.includes('protein power');
-      } else if (selCat === 'healthy-snacks') {
-        matchesCategory =
-          catSlug === 'healthy-snacks' ||
-          catId === 'cat-healthy-snacks' ||
-          prodName.includes('roasted') ||
-          prodName.includes('energy bites') ||
-          prodName.includes('dry fruit') ||
-          prodName.includes('assortment');
       } else {
-        matchesCategory = catSlug === selCat || catId === selCat;
+        // Direct exact match on category slug or ID
+        const directMatch =
+          catSlug === selCat ||
+          catId === selCat ||
+          catId === `cat-${selCat}` ||
+          catSlug === selCat.replace(/^cat-/, '');
+
+        if (directMatch) {
+          matchesCategory = true;
+        } else if (selCat === 'mithai' || selCat === 'cat-mithai' || selCat === 'mithai-ladoos') {
+          matchesCategory =
+            catSlug.includes('mithai') ||
+            catSlug.includes('ladoo') ||
+            catSlug.includes('sweet') ||
+            catId.includes('mithai');
+        } else if (selCat === 'peanut-butter' || selCat === 'cat-peanut-butter') {
+          matchesCategory =
+            catSlug.includes('peanut') ||
+            catSlug.includes('butter') ||
+            catId.includes('peanut');
+        } else if (selCat === 'protein-nutrition' || selCat === 'cat-protein-nutrition' || selCat === 'protein') {
+          matchesCategory =
+            catSlug.includes('protein') ||
+            catSlug.includes('nutrition') ||
+            catId.includes('protein');
+        } else if (selCat === 'healthy-snacks' || selCat === 'cat-healthy-snacks' || selCat === 'snacks') {
+          matchesCategory =
+            catSlug.includes('snack') ||
+            catSlug.includes('nut') ||
+            catSlug.includes('dry-fruit') ||
+            catId.includes('snack');
+        } else {
+          // Dynamic category match for any custom category created by admin
+          const cleanSel = selCat.replace(/^cat-/, '').replace(/[^a-z0-9]/g, '');
+          const cleanProdCat = catSlug.replace(/^cat-/, '').replace(/[^a-z0-9]/g, '');
+          matchesCategory =
+            cleanProdCat === cleanSel ||
+            cleanProdCat.includes(cleanSel) ||
+            cleanSel.includes(cleanProdCat);
+        }
       }
 
       const matchesSearch =
         !q ||
         prodName.includes(q) ||
-        product.description.toLowerCase().includes(q);
+        (product.description || '').toLowerCase().includes(q) ||
+        catSlug.includes(q);
 
       return matchesCategory && matchesSearch;
     });
@@ -196,27 +207,41 @@ function ProductsContent() {
 
       <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Big Search and Filters Card with Generous Padding */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 mb-10 sm:mb-12 shadow-xs">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-end">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200 p-4 sm:p-8 mb-8 sm:mb-12 shadow-xs space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-6 items-end">
             
             {/* Search Input (Big & Prominent) */}
-            <div className="md:col-span-5 space-y-2">
+            <div className="md:col-span-6 space-y-1.5">
               <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-800">
-                🔍 Search Products
+                Search Products
               </label>
-              <div className="relative flex items-center">
+              <div className="flex items-center h-12 sm:h-14 px-3.5 sm:px-4 border-2 border-stone-200 hover:border-stone-300 focus-within:border-[#4E652B] focus-within:ring-2 focus-within:ring-[#4E652B]/20 rounded-xl sm:rounded-2xl bg-[#FAF7F2]/50 focus-within:bg-white transition-all gap-2.5 sm:gap-3">
+                <svg
+                  className="w-5 h-5 text-[#4E652B] shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                  />
+                </svg>
                 <input
                   type="text"
-                  placeholder="Search ladoos, peanut butter, roasted nuts..."
+                  placeholder="Search ladoos, peanut butter, clean protein..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-13 sm:h-14 pl-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-2xl text-sm sm:text-base text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all bg-[#FAF7F2]/50"
+                  className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm sm:text-base font-semibold text-stone-900 placeholder:text-stone-400 p-0 focus:ring-0"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3.5 w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-600 text-xs font-bold flex items-center justify-center cursor-pointer"
+                    className="w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-600 text-xs font-bold flex items-center justify-center cursor-pointer shrink-0"
+                    title="Clear search"
                   >
                     ✕
                   </button>
@@ -224,16 +249,16 @@ function ProductsContent() {
               </div>
             </div>
 
-            {/* Category Filter (Big Dropdown) */}
-            <div className="md:col-span-4 space-y-2">
+            {/* Category Filter (Dropdown) */}
+            <div className="hidden md:block md:col-span-3 space-y-1.5">
               <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-800">
-                📂 Select Category
+                📂 Category
               </label>
               <div className="relative">
                 <select
                   value={categoryParam}
                   onChange={(e) => handleCategorySelect(e.target.value)}
-                  className="w-full h-13 sm:h-14 px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-2xl text-sm sm:text-base font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
+                  className="w-full h-12 sm:h-14 px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
                 >
                   {categoryOptions.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -241,14 +266,14 @@ function ProductsContent() {
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold">
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold text-xs">
                   ▼
                 </div>
               </div>
             </div>
 
-            {/* Sort Filter (Big Dropdown) */}
-            <div className="md:col-span-3 space-y-2">
+            {/* Sort Filter */}
+            <div className="md:col-span-3 space-y-1.5">
               <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-800">
                 ⭐ Sort By
               </label>
@@ -256,19 +281,48 @@ function ProductsContent() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full h-13 sm:h-14 px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-2xl text-sm sm:text-base font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
+                  className="w-full h-12 sm:h-14 px-3.5 sm:px-4 pr-10 border-2 border-stone-200 hover:border-stone-300 focus:border-[#4E652B] rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#4E652B]/20 transition-all cursor-pointer bg-[#FAF7F2]/50 appearance-none"
                 >
                   <option value="featured">Featured First</option>
                   <option value="price-low">Price: Low to High</option>
                   <option value="price-high">Price: High to Low</option>
                   <option value="rating">Highest Rated</option>
                 </select>
-                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold">
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold text-xs">
                   ▼
                 </div>
               </div>
             </div>
 
+          </div>
+
+          {/* Quick Category Filter Pills (1-Tap Switching on Mobile & Desktop) */}
+          <div className="pt-2 border-t border-stone-100 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">
+              Filter:
+            </span>
+            {categoryOptions.map((cat) => {
+              const isSelected = (!categoryParam && !cat.id) || categoryParam.toLowerCase() === cat.id.toLowerCase();
+              return (
+                <button
+                  key={cat.id || 'all'}
+                  type="button"
+                  onClick={() => handleCategorySelect(cat.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border ${
+                    isSelected
+                      ? 'bg-[#4E652B] text-[#E7F0AB] border-[#4E652B] shadow-xs'
+                      : 'bg-[#FAF7F2] text-stone-700 hover:bg-stone-200/80 border-stone-200'
+                  }`}
+                >
+                  {cat.id === '' && '✨ All Products'}
+                  {cat.id === 'mithai' && '🍯 Pure Ghee Mithai'}
+                  {cat.id === 'peanut-butter' && '🥜 Peanut Butter'}
+                  {cat.id === 'protein-nutrition' && '🌿 Clean Protein'}
+                  {cat.id === 'healthy-snacks' && '🌰 Roasted Snacks'}
+                  {!['', 'mithai', 'peanut-butter', 'protein-nutrition', 'healthy-snacks'].includes(cat.id) && cat.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 

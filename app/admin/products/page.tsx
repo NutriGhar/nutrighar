@@ -141,6 +141,13 @@ export default function AdminProductsPage() {
           </button>
 
           <Link
+            href="/admin/categories"
+            className="px-4 py-3 rounded-xl bg-white hover:bg-[#EFE8DE] text-[#1E382B] text-xs font-semibold uppercase tracking-wider transition-all shadow-sm border border-[#D8CEBE] inline-flex items-center justify-center gap-1.5"
+          >
+            <span>📂 Categories</span>
+          </Link>
+
+          <Link
             href="/admin/products/new"
             className="px-5 py-3 rounded-xl bg-[#1E382B] hover:bg-[#2A4F3C] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-sm inline-flex items-center justify-center gap-2"
           >
@@ -167,9 +174,17 @@ export default function AdminProductsPage() {
 
         {/* Category Filter */}
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#6B635B] mb-1.5">
-            Category
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#6B635B]">
+              Category
+            </label>
+            <Link
+              href="/admin/categories"
+              className="text-[11px] font-bold text-[#1E382B] hover:text-[#9C5838] underline"
+            >
+              Manage Categories →
+            </Link>
+          </div>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -236,17 +251,24 @@ export default function AdminProductsPage() {
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3.5">
                           <div className="w-12 h-12 rounded-xl bg-[#EFE8DE] relative overflow-hidden flex-shrink-0 border border-[#E8E1D7]">
-                            <Image
-                              src={product.image}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={product.image || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80'}
                               alt={product.name}
-                              fill
-                              className="object-cover"
-                              sizes="48px"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
+                              }}
+                              className="w-full h-full object-cover"
                             />
                           </div>
                           <div>
-                            <div className="font-serif font-semibold text-[#1C1917]">
-                              {product.name}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-serif font-semibold text-[#1C1917]">
+                                {product.name}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-[#EFE8DE] text-[#1E382B] text-[11px] font-bold">
+                                ⚖️ {product.weight || '500g'}
+                              </span>
                             </div>
                             <div className="text-xs text-stone-500 font-mono">
                               /{product.slug}
@@ -256,8 +278,15 @@ export default function AdminProductsPage() {
                       </td>
 
                       {/* Category */}
-                      <td className="py-4 px-4 text-xs font-medium text-[#6B635B] capitalize">
-                        {product.categorySlug.replace('-', ' ')}
+                      <td className="py-4 px-4 text-xs">
+                        <Link
+                          href="/admin/categories"
+                          className="font-medium text-[#1E382B] hover:text-[#9C5838] hover:underline capitalize inline-flex items-center gap-1"
+                          title="Manage Categories"
+                        >
+                          <span>{product.categorySlug.replace('-', ' ')}</span>
+                          <span className="text-[10px] text-stone-400">↗</span>
+                        </Link>
                       </td>
 
                       {/* Price */}

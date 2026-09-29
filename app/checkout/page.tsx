@@ -20,6 +20,7 @@ export default function CheckoutPage() {
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [demoCode, setDemoCode] = useState<string | null>(null);
+  const [otpChannel, setOtpChannel] = useState<'sms' | 'whatsapp'>('sms');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(true);
@@ -95,10 +96,11 @@ export default function CheckoutPage() {
 
     try {
       setAuthLoading(true);
-      const res = await sendOtp(cleanPhone);
+      const res = await sendOtp(cleanPhone, formData.fullName, 'sms');
       if (res.success) {
         setOtpSent(true);
-        setDemoCode(res.demoOtp || '123456');
+        const code = res.otp || res.demoOtp || '123456';
+        setDemoCode(code);
       } else {
         setAuthError(res.error || 'Failed to send OTP');
       }
@@ -428,7 +430,7 @@ export default function CheckoutPage() {
                 /* Step 1.2: Enter OTP */
                 <form onSubmit={handleVerifyOtp} className="space-y-4 pt-1">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-stone-700">Enter 6-digit OTP sent to +91 {phone}</span>
+                    <span className="font-semibold text-stone-700">Enter OTP sent to +91 {phone}</span>
                     <button
                       type="button"
                       onClick={() => setOtpSent(false)}
@@ -459,17 +461,50 @@ export default function CheckoutPage() {
                   </div>
 
                   {demoCode && (
-                    <div className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex justify-between items-center">
-                      <span>Demo Test OTP: <strong>{demoCode}</strong></span>
+                    <div className="p-3.5 rounded-2xl border flex flex-col gap-2.5 bg-emerald-50/80 border-emerald-300">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <span>📱</span>
+                          <span className="text-emerald-900">Your Verification OTP:</span>
+                        </div>
+                        <span className="font-mono font-extrabold text-base tracking-widest text-emerald-800">
+                          {demoCode}
+                        </span>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() => setOtpCode(demoCode)}
-                        className="font-bold underline text-[#4E652B] cursor-pointer"
+                        onClick={async () => {
+                          setOtpCode(demoCode);
+                          try {
+                            setAuthLoading(true);
+                            const res = await verifyOtp(phone, demoCode);
+                            if (res.success) {
+                              setShowAddressForm(true);
+                            } else {
+                              setAuthError(res.error || 'Invalid OTP code');
+                            }
+                          } finally {
+                            setAuthLoading(false);
+                          }
+                        }}
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer transition-all bg-[#4E652B] hover:bg-[#3D5021]"
                       >
-                        Autofill
+                        <span>⚡ 1-Tap Auto-Verify &amp; Continue</span>
                       </button>
                     </div>
                   )}
+
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={authLoading}
+                      className="text-xs text-[#4E652B] hover:underline font-semibold cursor-pointer"
+                    >
+                      🔄 Resend OTP to +91 {phone}
+                    </button>
+                  </div>
                 </form>
               )}
 
