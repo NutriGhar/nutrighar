@@ -3,7 +3,6 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
 
 function LoginContent() {
@@ -13,277 +12,392 @@ function LoginContent() {
 
   const { sendOtp, verifyOtp, loginWithPassword, registerWithPassword } = useCustomerAuth();
 
+  // Mode & Method
   const [authMethod, setAuthMethod] = useState<'otp' | 'password'>('otp');
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
+  // Form States
   const [phone, setPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [demoCode, setDemoCode] = useState<string | null>(null);
+  const [otpChannel, setOtpChannel] = useState<'sms' | 'whatsapp'>('sms');
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Status
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // Send OTP
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
     setSuccessMsg(null);
+
     const cleanPhone = phone.trim().replace(/[^0-9]/g, '');
-    if (cleanPhone.length !== 10) { setError('Please enter a valid 10-digit mobile number'); return; }
+    if (cleanPhone.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
     try {
       setIsLoading(true);
       const res = await sendOtp(cleanPhone, fullName, 'sms');
       if (res.success) {
         setOtpSent(true);
-        setDemoCode(res.otp || res.demoOtp || '123456');
-        setSuccessMsg(res.message || `OTP sent to +91 ${cleanPhone}`);
-      } else { setError(res.error || 'Failed to send OTP.'); }
-    } catch { setError('Connection error. Please try again.'); }
-    finally { setIsLoading(false); }
+        const code = res.otp || res.demoOtp || '123456';
+        setDemoCode(code);
+        setSuccessMsg(res.message || `✓ 6-Digit OTP sent to +91 ${cleanPhone}`);
+      } else {
+        setError(res.error || 'Failed to send OTP. Please try again.');
+      }
+    } catch {
+      setError('Connection error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // Verify OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!otpCode || otpCode.trim().length < 6) { setError('Please enter the 6-digit OTP code'); return; }
+
+    if (!otpCode || otpCode.trim().length < 6) {
+      setError('Please enter the 6-digit OTP code');
+      return;
+    }
+
     try {
       setIsLoading(true);
       const res = await verifyOtp(phone, otpCode.trim(), fullName);
-      if (res.success) router.push(redirectUrl);
-      else setError(res.error || 'Invalid OTP code. Please try again.');
-    } catch { setError('Verification error. Please try again.'); }
-    finally { setIsLoading(false); }
+      if (res.success) {
+        router.push(redirectUrl);
+      } else {
+        setError(res.error || 'Invalid OTP code. Please try again.');
+      }
+    } catch {
+      setError('Verification error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // Email/Password
   const handlePasswordAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
     if (authMode === 'register') {
-      if (!fullName.trim() || !email.trim() || !password.trim()) { setError('Please fill in all fields'); return; }
+      if (!fullName.trim() || !email.trim() || !password.trim()) {
+        setError('Please fill in all fields');
+        return;
+      }
       try {
         setIsLoading(true);
-        const res = await registerWithPassword({ name: fullName.trim(), email: email.trim(), password: password.trim(), phone: phone.trim() || undefined });
+        const res = await registerWithPassword({
+          name: fullName.trim(),
+          email: email.trim(),
+          password: password.trim(),
+          phone: phone.trim() || undefined,
+        });
         if (res.success) router.push(redirectUrl);
         else setError(res.error || 'Registration failed');
-      } finally { setIsLoading(false); }
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      if (!email.trim() || !password.trim()) { setError('Please enter your email and password'); return; }
+      if (!email.trim() || !password.trim()) {
+        setError('Please enter your email and password');
+        return;
+      }
       try {
         setIsLoading(true);
         const res = await loginWithPassword(email.trim(), password.trim());
         if (res.success) router.push(redirectUrl);
         else setError(res.error || 'Invalid email or password');
-      } finally { setIsLoading(false); }
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const features = [
-    { icon: '🍯', title: '100% Pure A2 Ghee', desc: 'Traditional desi cow ghee in every product' },
-    { icon: '🥜', title: 'Stone Ground Daily', desc: 'Fresh roasted peanuts, zero palm oil' },
-    { icon: '🚫', title: 'No Preservatives', desc: 'Zero chemical additives or fillers' },
-    { icon: '🚚', title: 'Fresh Small Batches', desc: 'Crafted fresh, delivered to your door' },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex flex-col">
-      {/* Top bar */}
-      <header className="bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="bg-[#1E382B] text-white px-3 py-1.5 rounded font-black tracking-[0.18em] text-xs uppercase">
-            NUTRI <span className="text-[#E5B56A]">GHAR</span>
+    <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      
+      {/* =========================================================================
+          TOP CURVED SAGE GREEN CONTAINER (EXACT KAPIVA DESIGN FROM SCREENSHOT)
+      ========================================================================= */}
+      <div
+        style={{
+          width: '100%',
+          backgroundColor: '#A8BD93',
+          paddingTop: '36px',
+          paddingBottom: '70px',
+          borderBottomLeftRadius: '50% 80px',
+          borderBottomRightRadius: '50% 80px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+          position: 'relative',
+        }}
+      >
+        {/* Centered Heading "Login" */}
+        <h1
+          style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#1C2914',
+            marginBottom: '24px',
+            textAlign: 'center',
+            fontFamily: 'inherit',
+          }}
+        >
+          {authMode === 'login' ? 'Login' : 'Register'}
+        </h1>
+
+        {/* Floating White Card (Exact Kapiva Card Dimensions & Styling) */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '470px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            padding: '36px 36px 42px 36px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
+            position: 'relative',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+            margin: '0 16px',
+          }}
+        >
+          {/* Official Logo Emblem */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+            <img
+              src="/images/nutrighar-logo-emblem.png"
+              alt="Nutri Ghar"
+              style={{ width: '68px', height: '68px', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+            />
           </div>
-        </Link>
-        <Link href="/products" className="text-xs font-semibold text-stone-500 hover:text-[#1E382B] transition-colors">
-          Continue Shopping →
-        </Link>
-      </header>
 
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* ── LEFT PANEL: Brand visual (desktop only) ── */}
-        <div className="hidden lg:flex lg:w-1/2 bg-[#1E382B] relative overflow-hidden flex-col items-center justify-center p-12">
-          {/* Background pattern */}
-          <div className="absolute inset-0 opacity-5">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="absolute rounded-full border border-white"
-                style={{ width: `${120 + i * 80}px`, height: `${120 + i * 80}px`, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-            ))}
-          </div>
+          {/* Card Title in Warm Terracotta */}
+          <h2
+            style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: '#B55B32',
+              margin: '0 0 8px 0',
+            }}
+          >
+            Welcome to Nutri Ghar!
+          </h2>
 
-          <div className="relative z-10 text-center max-w-sm">
-            {/* Logo */}
-            <div className="w-24 h-24 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center mx-auto mb-6 overflow-hidden">
-              <Image src="/images/nutrighar-logo-emblem.png" alt="Nutri Ghar" width={96} height={96} className="object-cover" />
+          {/* Subtitle */}
+          <p
+            style={{
+              fontSize: '14px',
+              color: '#555555',
+              margin: '0 0 24px 0',
+              lineHeight: '1.5',
+              fontWeight: '400',
+            }}
+          >
+            {authMethod === 'otp'
+              ? otpSent
+                ? `Enter the 6-digit OTP code sent to +91 ${phone}`
+                : 'Enter your mobile number and we will send you an OTP for verification.'
+              : 'Enter your email and password to access your account.'}
+          </p>
+
+          {/* Alert Messages */}
+          {error && (
+            <div
+              style={{
+                marginBottom: '18px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#991B1B',
+                fontSize: '13px',
+                fontWeight: '500',
+                textAlign: 'center',
+              }}
+            >
+              ⚠️ {error}
             </div>
+          )}
 
-            <h2 className="text-3xl font-serif font-bold text-white mb-3 leading-tight">
-              Pure. Homemade.<br />
-              <span className="text-[#E5B56A] italic">Delivered with Love.</span>
-            </h2>
-            <p className="text-white/70 text-sm leading-relaxed mb-8">
-              Handcrafted Indian foods made with pure A2 ghee, whole ingredients, and zero industrial shortcuts.
-            </p>
-
-            {/* Trust badges */}
-            <div className="grid grid-cols-2 gap-3">
-              {features.map((f) => (
-                <div key={f.title} className="bg-white/10 rounded-2xl p-4 text-left border border-white/10">
-                  <div className="text-2xl mb-2">{f.icon}</div>
-                  <div className="text-white text-xs font-bold mb-0.5">{f.title}</div>
-                  <div className="text-white/60 text-[11px]">{f.desc}</div>
-                </div>
-              ))}
+          {successMsg && (
+            <div
+              style={{
+                marginBottom: '18px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #A7F3D0',
+                color: '#065F46',
+                fontSize: '13px',
+                fontWeight: '500',
+                textAlign: 'center',
+              }}
+            >
+              ✓ {successMsg}
             </div>
+          )}
 
-            {/* Reviews */}
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <div className="flex -space-x-2">
-                {['🙂', '😊', '😄'].map((e, i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-sm">{e}</div>
-                ))}
-              </div>
-              <div className="text-white/80 text-xs">
-                <span className="font-bold text-white">4.9★</span> from 800+ happy families
-              </div>
-            </div>
-          </div>
-        </div>
+          {/* ================= OPTION 1: MOBILE OTP FLOW ================= */}
+          {authMethod === 'otp' && (
+            <div>
+              {!otpSent ? (
+                <form onSubmit={(e) => handleSendOtp(e)}>
+                  {/* Optional/Required Name Field */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder={authMode === 'register' ? 'Full Name *' : 'Your Name (e.g. Apoorv)'}
+                      required={authMode === 'register'}
+                      style={{
+                        width: '100%',
+                        height: '48px',
+                        padding: '0 16px',
+                        border: '1.5px solid #6E8B4C',
+                        borderRadius: '8px',
+                        fontSize: '15px',
+                        boxSizing: 'border-box',
+                        outline: 'none',
+                        color: '#222',
+                        backgroundColor: '#FFFFFF',
+                      }}
+                    />
+                  </div>
 
-        {/* ── RIGHT PANEL: Auth form ── */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-16">
-          <div className="w-full max-w-md">
-            {/* Mobile logo */}
-            <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#1E382B]/20">
-                <Image src="/images/nutrighar-logo-emblem.png" alt="Nutri Ghar" width={56} height={56} className="object-cover" />
-              </div>
-              <div>
-                <div className="font-black text-lg text-[#1E382B] tracking-wider">NUTRI GHAR</div>
-                <div className="text-xs text-stone-500">Pure Homemade Nutrition</div>
-              </div>
-            </div>
-
-            {/* Heading */}
-            <div className="mb-8">
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mb-2">
-                {authMode === 'login' ? 'Welcome back 👋' : 'Create your account'}
-              </h1>
-              <p className="text-sm text-stone-500 leading-relaxed">
-                {authMethod === 'otp'
-                  ? otpSent
-                    ? `Enter the 6-digit OTP sent to +91 ${phone}`
-                    : 'Enter your mobile number — we\'ll send you an OTP instantly.'
-                  : authMode === 'register'
-                    ? 'Fill in your details to join the Nutri Ghar family.'
-                    : 'Enter your email and password to sign in.'}
-              </p>
-            </div>
-
-            {/* Auth method toggle */}
-            <div className="flex bg-stone-100 rounded-xl p-1 mb-6">
-              <button
-                type="button"
-                onClick={() => { setAuthMethod('otp'); setError(null); setSuccessMsg(null); }}
-                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${authMethod === 'otp' ? 'bg-white text-[#1E382B] shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
-              >
-                📱 Mobile OTP
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAuthMethod('password'); setError(null); setSuccessMsg(null); }}
-                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${authMethod === 'password' ? 'bg-white text-[#1E382B] shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
-              >
-                ✉️ Email & Password
-              </button>
-            </div>
-
-            {/* Alerts */}
-            {error && (
-              <div className="mb-5 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold flex items-start gap-2">
-                <span className="mt-0.5">⚠️</span><span>{error}</span>
-              </div>
-            )}
-            {successMsg && (
-              <div className="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold flex items-start gap-2">
-                <span className="mt-0.5">✅</span><span>{successMsg}</span>
-              </div>
-            )}
-
-            {/* ── OTP FLOW ── */}
-            {authMethod === 'otp' && (
-              <>
-                {!otpSent ? (
-                  <form onSubmit={handleSendOtp} className="space-y-4">
-                    {/* Name field */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2">
-                        {authMode === 'register' ? 'Full Name *' : 'Your Name (optional)'}
-                      </label>
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="e.g. Priya Sharma"
-                        required={authMode === 'register'}
-                        className="w-full h-12 px-4 border border-stone-300 rounded-xl text-sm text-stone-900 placeholder:text-stone-400 bg-white focus:outline-none focus:border-[#1E382B] focus:ring-2 focus:ring-[#1E382B]/10 transition-all"
-                      />
+                  {/* Field 1: India Box */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '48px',
+                      padding: '0 16px',
+                      border: '1.5px solid #6E8B4C',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      backgroundColor: '#FFFFFF',
+                      boxSizing: 'border-box',
+                      marginBottom: '14px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <svg width="24" height="16" viewBox="0 0 900 600" style={{ borderRadius: '2px', display: 'block' }}>
+                        <rect width="900" height="200" fill="#FF9933" />
+                        <rect y="200" width="900" height="200" fill="#FFFFFF" />
+                        <rect y="400" width="900" height="200" fill="#138808" />
+                        <circle cx="450" cy="300" r="80" fill="none" stroke="#000080" strokeWidth="12" />
+                      </svg>
+                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#222' }}>India (+91)</span>
                     </div>
+                  </div>
 
-                    {/* Phone field */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2">Mobile Number *</label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-                          <svg width="20" height="14" viewBox="0 0 900 600">
-                            <rect width="900" height="200" fill="#FF9933" />
-                            <rect y="200" width="900" height="200" fill="#FFFFFF" />
-                            <rect y="400" width="900" height="200" fill="#138808" />
-                            <circle cx="450" cy="300" r="80" fill="none" stroke="#000080" strokeWidth="12" />
-                          </svg>
-                          <span className="text-sm font-bold text-stone-700">+91</span>
-                          <span className="text-stone-300">|</span>
-                        </div>
-                        <input
-                          type="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                          placeholder="10-digit mobile number"
-                          required
-                          maxLength={10}
-                          className="w-full h-12 pl-24 pr-4 border border-stone-300 rounded-xl text-sm font-semibold text-stone-900 placeholder:font-normal placeholder:text-stone-400 bg-white focus:outline-none focus:border-[#1E382B] focus:ring-2 focus:ring-[#1E382B]/10 transition-all"
-                        />
-                      </div>
-                    </div>
+                  {/* Field 2: Mobile Input with Telephone Outline Icon */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '48px',
+                      padding: '0 16px',
+                      border: '1.5px solid #6E8B4C',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      backgroundColor: '#FFFFFF',
+                      boxSizing: 'border-box',
+                      marginBottom: '18px',
+                    }}
+                  >
+                    <svg width="20" height="20" fill="none" stroke="#6E8B4C" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                    </svg>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                      required
+                      maxLength={10}
+                      placeholder="10-digit Mobile Number"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: '15px',
+                        color: '#222',
+                        backgroundColor: 'transparent',
+                        padding: 0,
+                      }}
+                    />
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={isLoading || phone.length !== 10}
-                      className="w-full h-13 bg-[#1E382B] hover:bg-[#2A4F3C] text-white rounded-xl font-bold text-sm tracking-wide transition-all shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 py-3.5"
-                    >
-                      {isLoading ? (
-                        <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>Send OTP <span>→</span></>
-                      )}
-                    </button>
-
-                    <p className="text-center text-xs text-stone-400 leading-relaxed">
-                      🔒 Your number is used only for OTP verification & order updates
-                    </p>
-                  </form>
-                ) : (
-                  /* OTP Verify Step */
-                  <form onSubmit={handleVerifyOtp} className="space-y-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-stone-600">Enter 6-Digit OTP</label>
-                      <button type="button" onClick={() => { setOtpSent(false); setOtpCode(''); setError(null); }}
-                        className="text-xs font-bold text-[#1E382B] hover:underline">
-                        ← Change number
+                  {/* Circular Green Arrow Button for OTP (Kapiva Style) */}
+                  <button
+                    type="submit"
+                    disabled={isLoading || phone.length !== 10}
+                    aria-label="Send OTP to Mobile"
+                    title="Send OTP to Mobile"
+                    style={{
+                      position: 'absolute',
+                      bottom: '-28px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      backgroundColor: '#5C7A38',
+                      border: '4px solid #FFFFFF',
+                      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      cursor: phone.length === 10 ? 'pointer' : 'not-allowed',
+                      opacity: phone.length === 10 ? 1 : 0.6,
+                      transition: 'all 0.2s ease',
+                      zIndex: 10,
+                    }}
+                  >
+                    {isLoading ? (
+                      <span style={{ width: '20px', height: '20px', border: '2px solid #FFF', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <svg width="24" height="24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                      </svg>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                /* Step 2: 6-Digit OTP */
+                <form onSubmit={handleVerifyOtp}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E382B' }}>Enter 6-Digit OTP</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOtpSent(false);
+                          setOtpCode('');
+                          setError(null);
+                        }}
+                        style={{ fontSize: '12px', color: '#B55B32', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        Change (+91 {phone})
                       </button>
                     </div>
 
@@ -291,137 +405,369 @@ function LoginContent() {
                       type="text"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-                      required maxLength={6} autoFocus
-                      placeholder="• • • • • •"
-                      className="w-full h-16 text-center text-3xl font-bold font-mono tracking-[0.5em] border-2 border-[#1E382B] rounded-2xl focus:outline-none bg-white text-[#1E382B]"
+                      required
+                      maxLength={6}
+                      autoFocus
+                      placeholder="••••••"
+                      style={{
+                        width: '100%',
+                        height: '52px',
+                        border: '2px solid #5C7A38',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        letterSpacing: '0.4em',
+                        fontSize: '24px',
+                        fontFamily: 'monospace',
+                        fontWeight: '700',
+                        color: '#1E382B',
+                        backgroundColor: '#F9FAF7',
+                        outline: 'none',
+                      }}
                     />
+                  </div>
 
-                    {demoCode && (
-                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
-                            <span>📱</span><span>Your Verification OTP</span>
-                          </div>
-                          <span className="font-mono font-black text-lg text-emerald-700">{demoCode}</span>
+                  {demoCode && (
+                    <div
+                      style={{
+                        marginBottom: '14px',
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        backgroundColor: '#F0FDF4',
+                        border: '1.5px solid #86EFAC',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>📱</span>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#166534' }}>
+                            Your Verification OTP:
+                          </span>
                         </div>
-                        <button type="button"
-                          onClick={async () => {
-                            setOtpCode(demoCode);
-                            try { setIsLoading(true); const r = await verifyOtp(phone, demoCode, fullName); if (r.success) router.push(redirectUrl); else setError(r.error || 'Failed'); } finally { setIsLoading(false); }
-                          }}
-                          className="w-full py-2.5 bg-[#1E382B] hover:bg-[#2A4F3C] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
-                          ⚡ 1-Tap Verify & Continue
-                        </button>
+                        <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: '#15803D' }}>
+                          {demoCode}
+                        </span>
                       </div>
-                    )}
 
-                    <button type="submit" disabled={isLoading || otpCode.length !== 6}
-                      className="w-full py-3.5 bg-[#1E382B] hover:bg-[#2A4F3C] text-white rounded-xl font-bold text-sm tracking-wide transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                      {isLoading ? <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <>Verify & Continue →</>}
-                    </button>
-
-                    <div className="text-center">
-                      <button type="button" onClick={() => handleSendOtp()} disabled={isLoading}
-                        className="text-xs text-[#1E382B] font-semibold hover:underline">
-                        🔄 Resend OTP to +91 {phone}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setOtpCode(demoCode);
+                          try {
+                            setIsLoading(true);
+                            const res = await verifyOtp(phone, demoCode, fullName);
+                            if (res.success) router.push(redirectUrl);
+                            else setError(res.error || 'Verification failed');
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: '#15803D',
+                          color: '#FFFFFF',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                        }}
+                      >
+                        <span>⚡ 1-Tap Auto-Verify &amp; Login</span>
                       </button>
                     </div>
-                  </form>
-                )}
-              </>
-            )}
+                  )}
 
-            {/* ── PASSWORD FLOW ── */}
-            {authMethod === 'password' && (
-              <form onSubmit={handlePasswordAuth} className="space-y-4">
-                {authMode === 'register' && (
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2">Full Name *</label>
-                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="e.g. Priya Sharma"
-                      className="w-full h-12 px-4 border border-stone-300 rounded-xl text-sm bg-white focus:outline-none focus:border-[#1E382B] focus:ring-2 focus:ring-[#1E382B]/10 transition-all" />
-                  </div>
-                )}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2">Email Address *</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="your@email.com"
-                    className="w-full h-12 px-4 border border-stone-300 rounded-xl text-sm bg-white focus:outline-none focus:border-[#1E382B] focus:ring-2 focus:ring-[#1E382B]/10 transition-all" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2">Password *</label>
-                  <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Min. 8 characters"
-                      className="w-full h-12 pl-4 pr-16 border border-stone-300 rounded-xl text-sm bg-white focus:outline-none focus:border-[#1E382B] focus:ring-2 focus:ring-[#1E382B]/10 transition-all" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#1E382B] hover:text-[#2A4F3C]">
-                      {showPassword ? 'Hide' : 'Show'}
+                  {/* Resend Option */}
+                  <div style={{ marginBottom: '8px', textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSendOtp()}
+                      disabled={isLoading}
+                      style={{ fontSize: '12px', color: '#5C7A38', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span>🔄 Resend OTP to +91 {phone}</span>
                     </button>
                   </div>
-                </div>
-                <button type="submit" disabled={isLoading}
-                  className="w-full py-3.5 bg-[#1E382B] hover:bg-[#2A4F3C] text-white rounded-xl font-bold text-sm tracking-wide transition-all shadow-md disabled:opacity-40 flex items-center justify-center gap-2">
-                  {isLoading ? <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <>{authMode === 'login' ? 'Sign In →' : 'Create Account →'}</>}
-                </button>
-              </form>
-            )}
 
-            {/* Divider */}
-            <div className="my-6 flex items-center gap-4">
-              <div className="flex-1 h-px bg-stone-200" />
-              <span className="text-xs text-stone-400 font-medium">OR</span>
-              <div className="flex-1 h-px bg-stone-200" />
-            </div>
-
-            {/* Toggle login/register */}
-            <div className="text-center space-y-2">
-              {authMode === 'login' ? (
-                <p className="text-sm text-stone-600">
-                  Don&apos;t have an account?{' '}
-                  <button type="button" onClick={() => { setAuthMode('register'); setError(null); setSuccessMsg(null); }}
-                    className="font-bold text-[#1E382B] hover:underline">Register Free →</button>
-                </p>
-              ) : (
-                <p className="text-sm text-stone-600">
-                  Already have an account?{' '}
-                  <button type="button" onClick={() => { setAuthMode('login'); setError(null); setSuccessMsg(null); }}
-                    className="font-bold text-[#1E382B] hover:underline">Sign In →</button>
-                </p>
+                  {/* Circular Button for Verification */}
+                  <button
+                    type="submit"
+                    disabled={isLoading || otpCode.length !== 6}
+                    aria-label="Verify OTP"
+                    style={{
+                      position: 'absolute',
+                      bottom: '-28px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      backgroundColor: '#5C7A38',
+                      border: '4px solid #FFFFFF',
+                      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      cursor: otpCode.length === 6 ? 'pointer' : 'not-allowed',
+                      opacity: otpCode.length === 6 ? 1 : 0.6,
+                      transition: 'all 0.2s ease',
+                      zIndex: 10,
+                    }}
+                  >
+                    {isLoading ? (
+                      <span style={{ width: '20px', height: '20px', border: '2px solid #FFF', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <svg width="24" height="24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    )}
+                  </button>
+                </form>
               )}
             </div>
+          )}
 
-            {/* Mobile trust badges */}
-            <div className="lg:hidden mt-10 grid grid-cols-2 gap-3">
-              {features.map((f) => (
-                <div key={f.title} className="bg-white rounded-2xl p-4 border border-stone-200 flex items-start gap-3">
-                  <span className="text-2xl">{f.icon}</span>
-                  <div>
-                    <div className="text-xs font-bold text-stone-900">{f.title}</div>
-                    <div className="text-[11px] text-stone-500 mt-0.5">{f.desc}</div>
-                  </div>
+          {/* ================= OPTION 2: EMAIL & PASSWORD ================= */}
+          {authMethod === 'password' && (
+            <form onSubmit={handlePasswordAuth}>
+              {authMode === 'register' && (
+                <div style={{ marginBottom: '14px' }}>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    placeholder="Full Name"
+                    style={{
+                      width: '100%',
+                      height: '48px',
+                      padding: '0 16px',
+                      border: '1.5px solid #6E8B4C',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      boxSizing: 'border-box',
+                      outline: 'none',
+                    }}
+                  />
                 </div>
-              ))}
-            </div>
+              )}
+
+              <div style={{ marginBottom: '14px' }}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="Email Address"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '0 16px',
+                    border: '1.5px solid #6E8B4C',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '10px', position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Password"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '0 45px 0 16px',
+                    border: '1.5px solid #6E8B4C',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '12px',
+                    color: '#6E8B4C',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+
+              {/* Circular Button for Email Submit */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                aria-label="Submit"
+                style={{
+                  position: 'absolute',
+                  bottom: '-28px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  backgroundColor: '#5C7A38',
+                  border: '4px solid #FFFFFF',
+                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  zIndex: 10,
+                }}
+              >
+                {isLoading ? (
+                  <span style={{ width: '20px', height: '20px', border: '2px solid #FFF', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <svg width="24" height="24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                )}
+              </button>
+            </form>
+          )}
+
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+          BOTTOM SECTION: "What makes Nutri Ghar special?" (Exact Kapiva Style)
+      ========================================================================= */}
+      <div style={{ width: '100%', maxWidth: '800px', padding: '60px 16px 40px 16px', textAlign: 'center', boxSizing: 'border-box' }}>
+        
+        {/* Toggle Mode */}
+        <div style={{ marginBottom: '32px' }}>
+          {authMode === 'login' ? (
+            <p style={{ fontSize: '14px', color: '#444' }}>
+              Don&apos;t have an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setError(null);
+                  setSuccessMsg(null);
+                }}
+                style={{ color: '#5C7A38', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Register with Nutri Ghar
+              </button>
+            </p>
+          ) : (
+            <p style={{ fontSize: '14px', color: '#444' }}>
+              Already registered?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setError(null);
+                  setSuccessMsg(null);
+                }}
+                style={{ color: '#5C7A38', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Sign In to Account
+              </button>
+            </p>
+          )}
+
+          <div style={{ marginTop: '8px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod(authMethod === 'otp' ? 'password' : 'otp');
+                setError(null);
+                setSuccessMsg(null);
+              }}
+              style={{ fontSize: '12px', color: '#666', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              {authMethod === 'otp' ? '✉️ Sign in with Email & Password instead' : '📱 Sign in with Mobile OTP instead'}
+            </button>
           </div>
         </div>
+
+        {/* Section Heading */}
+        <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1C2914', marginBottom: '24px' }}>
+          What makes Nutri Ghar special?
+        </h3>
+
+        {/* 4 Feature Badges */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: '16px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: '#F9FAF7', border: '1px solid #E5E7EB' }}>
+            <div style={{ fontSize: '28px', marginBottom: '6px' }}>🍯</div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#111', textTransform: 'uppercase' }}>100% Pure Ghee</div>
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>Pure A2 desi cow ghee</div>
+          </div>
+
+          <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: '#F9FAF7', border: '1px solid #E5E7EB' }}>
+            <div style={{ fontSize: '28px', marginBottom: '6px' }}>🥜</div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#111', textTransform: 'uppercase' }}>Stone Ground</div>
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>Roasted peanuts, zero palm oil</div>
+          </div>
+
+          <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: '#F9FAF7', border: '1px solid #E5E7EB' }}>
+            <div style={{ fontSize: '28px', marginBottom: '6px' }}>🚫</div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#111', textTransform: 'uppercase' }}>No Preservatives</div>
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>Zero chemical additives</div>
+          </div>
+
+          <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: '#F9FAF7', border: '1px solid #E5E7EB' }}>
+            <div style={{ fontSize: '28px', marginBottom: '6px' }}>🚚</div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#111', textTransform: 'uppercase' }}>Fresh Batch</div>
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>Small batch preparation</div>
+          </div>
+        </div>
+
       </div>
 
-      {/* Footer strip */}
-      <div className="border-t border-stone-200 bg-white py-4 px-6 text-center">
-        <p className="text-xs text-stone-400">
-          🔒 Your data is secure. We never share personal information.{' '}
-          <Link href="/" className="text-[#1E382B] font-semibold hover:underline">Privacy Policy</Link>
-        </p>
-      </div>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-[#1E382B] border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div style={{ minHeight: '100vh', backgroundColor: '#A8BD93', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '32px', height: '32px', border: '3px solid #5C7A38', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

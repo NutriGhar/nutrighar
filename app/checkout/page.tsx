@@ -213,39 +213,19 @@ export default function CheckoutPage() {
   const upsellItems = [
     {
       id: 'besan-ladoo',
-      name: 'Pure Desi Cow Ghee Besan Ladoo',
+      name: 'Pure Desi Cow Ghee Ladoo',
       price: 299,
       mrp: 349,
       discount: '15% OFF',
-      category: 'mithai',
       image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=500&auto=format&fit=crop&q=80',
     },
     {
       id: 'classic-peanut-butter',
-      name: 'Stone-Ground Creamy Peanut Butter',
+      name: 'Stone-Ground Peanut Butter',
       price: 249,
       mrp: 289,
       discount: '14% OFF',
-      category: 'peanut-butter',
       image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=500&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'dry-fruit-ladoo',
-      name: 'Premium Dry Fruit Ladoo Box',
-      price: 449,
-      mrp: 499,
-      discount: '10% OFF',
-      category: 'mithai',
-      image: '/images/dry-fruit-ladoo-product.jpg',
-    },
-    {
-      id: 'roasted-almonds',
-      name: 'Himalayan Pink Salt Almonds',
-      price: 399,
-      mrp: 449,
-      discount: '11% OFF',
-      category: 'healthy-snacks',
-      image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=500&auto=format&fit=crop&q=80',
     },
   ];
 
@@ -556,10 +536,10 @@ export default function CheckoutPage() {
               </div>
 
               {showAddressForm ? (
-                <div className="space-y-5 pt-2 animate-fadeIn">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-4 pt-1 animate-fadeIn">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         Full Name *
                       </label>
                       <input
@@ -569,11 +549,11 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         placeholder="e.g. Priya Sharma"
-                        className="w-full h-13 px-4 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] focus:ring-2 focus:ring-[#4E652B]/20 transition-all"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         Contact Phone *
                       </label>
                       <input
@@ -583,13 +563,13 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         placeholder="10-digit mobile"
-                        className="w-full h-13 px-4 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] focus:ring-2 focus:ring-[#4E652B]/20 transition-all"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                       Flat / House No / Street Address *
                     </label>
                     <input
@@ -599,14 +579,14 @@ export default function CheckoutPage() {
                       onChange={handleInputChange}
                       required
                       placeholder="e.g. Flat 402, Sunshine Heights, MG Road"
-                      className="w-full h-13 px-4 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] focus:ring-2 focus:ring-[#4E652B]/20 transition-all"
+                      className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                     />
                   </div>
 
                   {/* Responsive City/State/Pincode grid: Stacks neatly on mobile */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         City *
                       </label>
                       <input
@@ -616,11 +596,11 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         placeholder="City"
-                        className="w-full h-13 px-4 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] focus:ring-2 focus:ring-[#4E652B]/20 transition-all"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         State *
                       </label>
                       <input
@@ -630,11 +610,11 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         placeholder="State"
-                        className="w-full h-13 px-4 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] focus:ring-2 focus:ring-[#4E652B]/20 transition-all"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
                         PIN Code *
                       </label>
                       <input
@@ -645,7 +625,7 @@ export default function CheckoutPage() {
                         required
                         maxLength={6}
                         placeholder="6-digit PIN"
-                        className="w-full h-13 px-4 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] focus:ring-2 focus:ring-[#4E652B]/20 transition-all"
+                        className="w-full h-11 px-3.5 border border-stone-300 rounded-xl text-sm bg-stone-50/50 focus:bg-white focus:outline-none focus:border-[#4E652B] transition-colors"
                       />
                     </div>
                   </div>
@@ -993,12 +973,12 @@ export default function CheckoutPage() {
                             name: u.name,
                             price: u.price,
                             image: u.image,
-                            category: u.category,
+                            category: 'healthy-food',
                           } as any,
                           1
                         )
                       }
-                      className="w-full py-2 mt-2 bg-[#4E652B] hover:bg-[#3D5021] text-white text-[10px] font-bold uppercase rounded-lg transition-colors cursor-pointer"
+                      className="w-full py-1.5 bg-[#4E652B] hover:bg-[#3D5021] text-white text-[10px] font-bold uppercase rounded-lg transition-colors cursor-pointer"
                     >
                       + ADD
                     </button>
