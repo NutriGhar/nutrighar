@@ -90,26 +90,33 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        setImage(base64);
-        try {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: file.name.replace(/\.[^/.]+$/, ''),
-              type: file.type,
-              base64OrUrl: base64,
-            }),
-          });
-          const data = await res.json();
-          if (data.success && data.url) {
-            setImage(data.url);
-          }
-        } catch {
-          // Keep base64 as fallback
-        }
+      reader.onloadend = (event) => {
+        const img = new window.Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          setImage(compressedBase64);
+          try {
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: file.name.replace(/\.[^/.]+$/, ''),
+                type: 'image/jpeg',
+                base64OrUrl: compressedBase64,
+              }),
+            });
+            const data = await res.json();
+            if (data.success && data.url) setImage(data.url);
+          } catch {}
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
