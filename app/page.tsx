@@ -142,7 +142,7 @@ export default function HomePage() {
           2. TRUST STRIP (Clean, Spacious & Minimal)
       ======================================================== */}
       <section className="border-y border-[#E8E1D7] bg-[#F6F1EA] py-5 sm:py-8">
-        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-8">
             
             <div className="flex items-center gap-2.5 sm:gap-3 group">
@@ -201,7 +201,7 @@ export default function HomePage() {
       {/* ========================================================
           3. CATEGORY SHOWCASE GRID (4 Clean Visual Category Cards)
       ======================================================== */}
-      <section id="collections" className="py-10 sm:py-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+      <section id="collections" className="py-10 sm:py-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-12 gap-3">
           <div>
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-1">
@@ -211,7 +211,7 @@ export default function HomePage() {
               {content?.curatedCollections?.heading || 'Pure Food For Everyday Living'}
             </h2>
           </div>
-          <p className="text-sm sm:text-base text-[#6B635B] max-w-md font-light">
+          <p className="text-xs sm:text-base text-[#6B635B] max-w-md font-light">
             {content?.curatedCollections?.description || 'From handcrafted ghee mithais to stone-ground peanut butters, explore wholesome nutrition crafted for your family.'}
           </p>
         </div>
@@ -262,7 +262,7 @@ export default function HomePage() {
           4. BESTSELLERS PRODUCT GRID ("Made for Everyday Goodness")
       ======================================================== */}
       <section id="bestsellers" className="py-10 sm:py-20 bg-[#F4EFEA] border-y border-[#E8E1D7]">
-        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-12 gap-3">
             <div>
@@ -296,7 +296,7 @@ export default function HomePage() {
       {/* ========================================================
           5. BRAND STORY & CRAFT (Artisanal Kitchen Split)
       ======================================================== */}
-      <section id="story" className="py-20 lg:py-28 w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+      <section id="story" className="py-20 lg:py-28 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           
           {/* Left: Lifestyle Kitchen Visual */}
@@ -363,7 +363,7 @@ export default function HomePage() {
           6. WHY CHOOSE NUTRI GHAR (Brand Manifesto & Visual Showcase)
       ======================================================== */}
       <section className="py-16 sm:py-24 bg-[#F4EFEA] border-y border-[#E8E1D7]">
-        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
             
             {/* Infographic Visual Showcase */}
@@ -441,7 +441,7 @@ export default function HomePage() {
       {/* ========================================================
           7. SIGNATURE SPOTLIGHT (Protein Power Ladoo Feature)
       ======================================================== */}
-      <section className="py-16 sm:py-24 w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+      <section className="py-16 sm:py-24 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-[#FAF7F2] rounded-3xl border border-[#E8E1D7] p-6 sm:p-10 lg:p-14 shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
             
@@ -549,7 +549,7 @@ export default function HomePage() {
           8. CUSTOMER LOVE & TESTIMONIALS (Clean Centered Layout)
       ======================================================== */}
       <section className="py-16 sm:py-24 bg-[#F6F1EA] border-y border-[#E8E1D7]">
-        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+        <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-2">
               {content?.testimonials?.eyebrow || 'VERIFIED EXPERIENCES'}
@@ -591,7 +591,7 @@ export default function HomePage() {
           9. STAY CONNECTED / NEWSLETTER (Clean Centered Banner)
       ======================================================== */}
       <section className="py-20 lg:py-24 bg-[#EFE8DE] border-t border-[#E8E1D7]">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 text-center flex flex-col items-center justify-center space-y-4">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center justify-center space-y-4">
           <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#9C5838] block">
             STAY CONNECTED
           </span>
@@ -619,7 +619,7 @@ export default function HomePage() {
                 <button
                   type="submit"
                   disabled={newsletterSubmitting}
-                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] rounded-full bg-[#1E382B] text-white hover:bg-[#2A4F3C] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#1E382B] text-white hover:bg-[#2A4F3C] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 disabled:opacity-50"
                 >
                   {newsletterSubmitting ? 'Subscribing...' : 'Subscribe'}
                 </button>

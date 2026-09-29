@@ -112,7 +112,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   return (
     <div className="bg-[#FAF7F2] min-h-screen text-[#1C1917] pb-24">
       {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center gap-2 text-xs text-[#6B635B]">
           <Link href="/" className="hover:text-[#1E382B]">
             Home
@@ -127,19 +127,17 @@ export default function ProductDetailPage({ params }: PageProps) {
       </div>
 
       {/* Main Product Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           
           {/* Left Column: Product Image Showcase */}
           <div className="lg:col-span-6 relative">
             <div className="relative h-[400px] sm:h-[500px] w-full rounded-3xl overflow-hidden bg-[#EBE2D5] border border-[#E8E1D7] shadow-sm">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={product.image || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80'}
                 alt={product.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                quality={85}
-                className="object-cover"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
                 }}

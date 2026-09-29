@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Product } from '@/types/product';
 import { useCart } from '@/context/CartContext';
 import { useState } from 'react';
@@ -53,14 +52,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           href={productHref}
           className="block relative w-full h-44 sm:h-64 bg-[#FAF7F2] overflow-hidden cursor-pointer"
         >
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={imgError ? fallbackImage : (product.image || fallbackImage)}
             alt={product.name}
-            fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            quality={85}
             onError={() => setImgError(true)}
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
 
           {/* Badges (Top Left: Bestseller, Discount, Weight) */}
@@ -142,16 +139,16 @@ export default function ProductCard({ product }: ProductCardProps) {
               type="button"
               onClick={() => setIsInquiryOpen(true)}
               title="Ask on WhatsApp"
-              className="p-2.5 min-h-[44px] min-w-[44px] bg-[#FAF7F2] hover:bg-emerald-50 text-stone-700 hover:text-emerald-700 border border-stone-200 rounded-xl transition-all flex items-center justify-center cursor-pointer shrink-0"
+              className="p-2.5 bg-[#FAF7F2] hover:bg-emerald-50 text-stone-700 hover:text-emerald-700 border border-stone-200 rounded-xl transition-all flex items-center justify-center cursor-pointer shrink-0"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.817-.168.75.75 0 01-.168-.817c.214-.652.383-1.332.502-2.03C3.655 16.485 3 14.341 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
               </svg>
             </button>
 
             <button
               onClick={handleAddToCart}
-              className={`flex-1 py-2.5 px-3 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm hover:shadow cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm hover:shadow cursor-pointer ${
                 showAddedMessage
                   ? 'bg-[#2A4F3C] text-white'
                   : 'bg-[#4E652B] hover:bg-[#3D5021] text-white'

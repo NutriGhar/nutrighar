@@ -218,11 +218,9 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Products Display */}
+      {/* Products Table Card */}
       <div className="bg-white rounded-3xl border border-[#E8E1D7] shadow-sm overflow-hidden">
-        
-        {/* Desktop Table View */}
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-[#FAF7F2] border-b border-[#E8E1D7] text-[11px] uppercase tracking-wider text-[#6B635B] font-semibold">
               <tr>
@@ -253,10 +251,10 @@ export default function AdminProductsPage() {
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3.5">
                           <div className="w-12 h-12 rounded-xl bg-[#EFE8DE] relative overflow-hidden flex-shrink-0 border border-[#E8E1D7]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={product.image || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80'}
                               alt={product.name}
-                              loading="lazy"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
                               }}
@@ -323,7 +321,7 @@ export default function AdminProductsPage() {
                       <td className="py-4 px-4">
                         <button
                           onClick={() => handleToggleStatus(product)}
-                          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
                             product.isActive
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                               : 'bg-stone-100 text-stone-500 border-stone-300 hover:bg-stone-200'
@@ -357,7 +355,7 @@ export default function AdminProductsPage() {
                         </Link>
                         <button
                           onClick={() => setProductToDelete(product)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-semibold text-rose-700 transition-colors cursor-pointer"
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-semibold text-rose-700 transition-colors"
                         >
                           Delete
                         </button>
@@ -374,93 +372,6 @@ export default function AdminProductsPage() {
               )}
             </tbody>
           </table>
-        </div>
-
-        {/* Mobile Card View */}
-        <div className="lg:hidden flex flex-col divide-y divide-[#E8E1D7]/60">
-          {isLoading ? (
-            <div className="py-12 text-center text-xs text-stone-500 font-light">
-              Loading product catalog...
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => {
-              const isLowStock = product.stockQuantity <= product.lowStockThreshold && product.stockQuantity > 0;
-              const isOutOfStock = product.stockQuantity === 0;
-
-              return (
-                <div key={product.id} className="p-4 flex flex-col gap-3 hover:bg-[#FAF7F2]/60 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className="w-20 h-20 rounded-xl bg-[#EFE8DE] relative overflow-hidden flex-shrink-0 border border-[#E8E1D7]">
-                      <img
-                        src={product.image || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80'}
-                        alt={product.name}
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
-                        }}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start gap-2">
-                        <span className="font-serif font-semibold text-[#1C1917] truncate">
-                          {product.name}
-                        </span>
-                        <div className="font-serif font-bold text-[#1E382B]">
-                          ₹{product.price}
-                        </div>
-                      </div>
-                      <div className="text-xs text-stone-500 mb-1">
-                        {product.categorySlug.replace('-', ' ')} • ⚖️ {product.weight || '500g'}
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            isOutOfStock
-                              ? 'bg-rose-100 text-rose-800 border-rose-200'
-                              : isLowStock
-                              ? 'bg-amber-100 text-amber-800 border-amber-200'
-                              : 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                          }`}
-                        >
-                          <span>{product.stockQuantity} units</span>
-                        </span>
-                        <button
-                          onClick={() => handleToggleStatus(product)}
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-colors cursor-pointer ${
-                            product.isActive
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-stone-100 text-stone-500 border-stone-300'
-                          }`}
-                        >
-                          {product.isActive ? 'Active' : 'Inactive'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 pt-2 border-t border-[#E8E1D7]/40 mt-1">
-                    <Link
-                      href={`/admin/products/${product.id}/edit`}
-                      className="flex-1 text-center py-2 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE8DE] border border-[#D8CEBE] text-xs font-semibold text-[#1C1917] transition-colors"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => setProductToDelete(product)}
-                      className="flex-1 text-center py-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-semibold text-rose-700 transition-colors cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="py-8 text-center text-sm text-stone-500 font-light">
-              No products matching your search criteria.
-            </div>
-          )}
         </div>
       </div>
 
