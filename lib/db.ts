@@ -262,10 +262,10 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
 // ============================================================
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'cat-mithai', name: 'Mithai & Ladoo', slug: 'mithai', description: 'Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.', image: '/images/dry-fruit-ladoos-banner.jpg', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'cat-peanut-butter', name: 'Peanut Butter', slug: 'peanut-butter', description: '100% stone-ground natural nut butters with zero palm oil or chemical preservatives.', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'cat-protein-nutrition', name: 'Protein & Nutrition', slug: 'protein-nutrition', description: 'Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.', image: '/images/clean-protein-pouch-banner.jpg', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: 'cat-healthy-snacks', name: 'Healthy Snacks', slug: 'healthy-snacks', description: 'Slow-roasted premium nuts, crunchy seeds, and sun-dried fruit assortments.', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80', icon: '??', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-mithai', name: 'Mithai & Ladoo', slug: 'mithai', description: 'Traditional sweets made with pure A2 cow ghee and authentic heritage recipes.', image: '/images/dry-fruit-ladoos-banner.jpg', icon: '🍯', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-peanut-butter', name: 'Peanut Butter', slug: 'peanut-butter', description: '100% stone-ground natural nut butters with zero palm oil or chemical preservatives.', image: '/images/peanut-butter-banner.jpg', icon: '🥜', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-protein-nutrition', name: 'Protein & Nutrition', slug: 'protein-nutrition', description: 'Enriched stone-ground superfood nuts, seeds, and clean protein blends in artisanal kraft packaging.', image: '/images/clean-protein-pouch-banner.jpg', icon: '💪', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: 'cat-healthy-snacks', name: 'Healthy Snacks', slug: 'healthy-snacks', description: 'Slow-roasted premium nuts, crunchy seeds, and sun-dried fruit assortments.', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&auto=format&fit=crop&q=80', icon: '🥗', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
 export const DEFAULT_PRODUCTS: Product[] = [
@@ -689,11 +689,64 @@ export async function getCategories(includeInactive = false): Promise<Category[]
       return includeInactive ? DEFAULT_CATEGORIES : DEFAULT_CATEGORIES.filter((c) => c.isActive);
     }
 
+    // Auto-sync legacy Unsplash placeholder images to official NutriGhar banner images
+    for (const cat of categories) {
+      const defaultMatch = DEFAULT_CATEGORIES.find((d) => d.slug === cat.slug);
+      if (
+        defaultMatch &&
+        (
+          !cat.image ||
+          cat.image.includes('photo-1601050690597') || // legacy samosa
+          cat.image.includes('photo-1590080875515') || // legacy rice krispie
+          cat.image.includes('photo-1540420773420') || // legacy salad
+          cat.image.includes('photo-1599599810769') || // legacy placeholder
+          cat.image.includes('unsplash.com/photo-1556910103')
+        )
+      ) {
+        try {
+          await prisma.category.update({
+            where: { id: cat.id },
+            data: { image: defaultMatch.image ?? null, icon: defaultMatch.icon ?? null },
+          });
+          cat.image = defaultMatch.image ?? null;
+          cat.icon = defaultMatch.icon ?? null;
+        } catch {}
+      }
+    }
+
     return categories.map(formatCategory);
   } catch (err: any) {
     console.error('[getCategories] DB error:', err.message);
     return includeInactive ? DEFAULT_CATEGORIES : DEFAULT_CATEGORIES.filter((c) => c.isActive);
   }
+}
+
+export async function syncOfficialCategories(): Promise<Category[]> {
+  for (const defaultCat of DEFAULT_CATEGORIES) {
+    try {
+      await prisma.category.upsert({
+        where: { slug: defaultCat.slug },
+        update: {
+          name: defaultCat.name,
+          image: defaultCat.image ?? null,
+          icon: defaultCat.icon ?? null,
+          description: defaultCat.description ?? null,
+        },
+        create: {
+          id: defaultCat.id,
+          name: defaultCat.name,
+          slug: defaultCat.slug,
+          description: defaultCat.description ?? null,
+          image: defaultCat.image ?? null,
+          icon: defaultCat.icon ?? null,
+          isActive: true,
+        },
+      });
+    } catch (err: any) {
+      console.error(`[syncOfficialCategories] Error syncing ${defaultCat.slug}:`, err.message);
+    }
+  }
+  return getCategories(true);
 }
 
 export async function getCategoryById(id: string): Promise<Category | null> {

@@ -201,8 +201,8 @@ export default function HomePage() {
       {/* ========================================================
           3. CATEGORY SHOWCASE GRID (4 Clean Visual Category Cards)
       ======================================================== */}
-      <section id="collections" className="py-10 sm:py-20 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-12 gap-3">
+      <section id="collections" className="py-12 sm:py-24 w-full max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-3">
           <div>
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-1">
               {content?.curatedCollections?.eyebrow || 'Curated Collections'}
@@ -217,14 +217,14 @@ export default function HomePage() {
         </div>
 
         {/* Dynamic Category Cards Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {(content?.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).map((card: any) => (
             <Link
               key={card.id || card.title}
               href={`/products?category=${encodeURIComponent(card.categorySlug || 'all')}`}
               className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
             >
-              <div className="relative h-36 sm:h-64 w-full bg-[#EBE2D5] overflow-hidden">
+              <div className="relative h-44 sm:h-48 md:h-52 w-full bg-[#EBE2D5] overflow-hidden shrink-0">
                 <Image
                   src={card.image}
                   alt={card.title}
@@ -233,23 +233,23 @@ export default function HomePage() {
                   sizes="(max-width: 640px) 50vw, 25vw"
                 />
                 {card.tag && (
-                  <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs">
+                  <div className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-xs text-[#9C5838] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-xs">
                     {card.tag}
                   </div>
                 )}
               </div>
-              <div className="p-3.5 sm:p-5 pb-3.5 sm:pb-5 flex flex-col justify-between flex-1">
+              <div className="p-4 sm:p-5 pb-6 sm:pb-8 flex flex-col justify-between flex-1">
                 <div>
-                  <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
+                  <h3 className="font-serif text-base sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1.5">
                     {card.title}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
+                  <p className="text-xs text-[#6B635B] font-light leading-relaxed line-clamp-2">
                     {card.description}
                   </p>
                 </div>
-                <div className="pt-2.5 sm:pt-4 mt-3 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
-                  <span>Explore</span>
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                <div className="pt-3.5 sm:pt-4 mt-3 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-bold text-[#4E652B] group-hover:text-[#2A4F3C] pb-1.5">
+                  <span>Explore Collection</span>
+                  <span className="text-sm group-hover:translate-x-1.5 transition-transform">→</span>
                 </div>
               </div>
             </Link>

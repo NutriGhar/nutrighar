@@ -221,6 +221,24 @@ export default function AdminCategoriesPage() {
     return products.filter((p) => p.categoryId === cat.id || p.categorySlug === cat.slug).length;
   };
 
+  const handleSyncOfficial = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/categories/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setCategories(data.data);
+        showToast('All category photos synced with official NutriGhar photos!');
+      } else {
+        showToast('Sync failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      showToast('Error syncing categories');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Toast Notification */}
@@ -255,6 +273,15 @@ export default function AdminCategoriesPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSyncOfficial}
+            className="px-4 py-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold uppercase tracking-wider transition-all shadow-sm inline-flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Update all categories to official NutriGhar banner images"
+          >
+            <span>⚡ Sync Official Photos</span>
+          </button>
+
           <button
             type="button"
             onClick={fetchData}
@@ -338,22 +365,22 @@ export default function AdminCategoriesPage() {
                 </div>
 
                 {/* Card Actions Footer */}
-                <div className="p-4 bg-[#FAF7F2] border-t border-[#E8E1D7] flex items-center justify-between">
-                  <span className="font-mono text-[11px] text-stone-500 truncate max-w-[120px]">
+                <div className="p-4 sm:p-4.5 pb-5 bg-[#FAF7F2] border-t border-[#E8E1D7] flex items-center justify-between gap-2">
+                  <span className="font-mono text-[11px] text-stone-500 truncate min-w-0 flex-1">
                     /{cat.slug}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(cat)}
-                      className="px-3 py-1.5 rounded-lg bg-white hover:bg-stone-100 border border-[#D8CEBE] text-xs font-semibold text-[#1E382B] transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-white hover:bg-stone-100 border border-[#D8CEBE] text-xs font-semibold text-[#1E382B] transition-colors cursor-pointer shrink-0"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => setCategoryToDelete(cat)}
-                      className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-semibold text-rose-700 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-semibold text-rose-700 transition-colors cursor-pointer shrink-0"
                     >
                       Delete
                     </button>
