@@ -308,13 +308,23 @@ function formatProduct(p: any): Product {
 }
 
 function formatCategory(c: any): Category {
+  let icon = c.icon ?? null;
+  if (!icon || icon === '??' || icon.includes('?')) {
+    const slug = (c.slug || '').toLowerCase();
+    if (slug.includes('mithai') || slug.includes('ladoo')) icon = '🍯';
+    else if (slug.includes('peanut') || slug.includes('butter')) icon = '🥜';
+    else if (slug.includes('protein') || slug.includes('nutrition')) icon = '💪';
+    else if (slug.includes('snack') || slug.includes('nut') || slug.includes('almond')) icon = '🥗';
+    else icon = '📦';
+  }
+
   return {
     id: c.id,
     name: c.name,
     slug: c.slug,
     description: c.description ?? null,
     image: c.image ?? null,
-    icon: c.icon ?? null,
+    icon,
     isActive: Boolean(c.isActive),
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
     updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
@@ -689,27 +699,28 @@ export async function getCategories(includeInactive = false): Promise<Category[]
       return includeInactive ? DEFAULT_CATEGORIES : DEFAULT_CATEGORIES.filter((c) => c.isActive);
     }
 
-    // Auto-sync legacy Unsplash placeholder images to official NutriGhar banner images
+    // Auto-sync legacy Unsplash placeholder images & corrupted icons to official NutriGhar banner images and emojis
     for (const cat of categories) {
       const defaultMatch = DEFAULT_CATEGORIES.find((d) => d.slug === cat.slug);
-      if (
-        defaultMatch &&
-        (
-          !cat.image ||
-          cat.image.includes('photo-1601050690597') || // legacy samosa
-          cat.image.includes('photo-1590080875515') || // legacy rice krispie
-          cat.image.includes('photo-1540420773420') || // legacy salad
-          cat.image.includes('photo-1599599810769') || // legacy placeholder
-          cat.image.includes('unsplash.com/photo-1556910103')
-        )
-      ) {
+      const isCorruptedIcon = !cat.icon || cat.icon === '??' || cat.icon.includes('?');
+      const isLegacyImage =
+        !cat.image ||
+        cat.image.includes('photo-1601050690597') || // legacy samosa
+        cat.image.includes('photo-1590080875515') || // legacy rice krispie
+        cat.image.includes('photo-1540420773420') || // legacy salad
+        cat.image.includes('photo-1599599810769') || // legacy placeholder
+        cat.image.includes('unsplash.com/photo-1556910103');
+
+      if (defaultMatch && (isLegacyImage || isCorruptedIcon)) {
         try {
+          const targetImage = isLegacyImage ? defaultMatch.image : cat.image;
+          const targetIcon = isCorruptedIcon ? defaultMatch.icon : cat.icon;
           await prisma.category.update({
             where: { id: cat.id },
-            data: { image: defaultMatch.image ?? null, icon: defaultMatch.icon ?? null },
+            data: { image: targetImage ?? null, icon: targetIcon ?? null },
           });
-          cat.image = defaultMatch.image ?? null;
-          cat.icon = defaultMatch.icon ?? null;
+          cat.image = targetImage ?? null;
+          cat.icon = targetIcon ?? null;
         } catch {}
       }
     }

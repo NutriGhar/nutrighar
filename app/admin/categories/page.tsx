@@ -312,15 +312,32 @@ export default function AdminCategoriesPage() {
         ) : (
           categories.map((cat) => {
             const count = getProductCountForCategory(cat);
+            const icon =
+              cat.icon && cat.icon !== '??' && !cat.icon.includes('?')
+                ? cat.icon
+                : cat.slug?.includes('mithai') || cat.slug?.includes('ladoo')
+                ? '🍯'
+                : cat.slug?.includes('peanut') || cat.slug?.includes('butter')
+                ? '🥜'
+                : cat.slug?.includes('protein') || cat.slug?.includes('nutrition')
+                ? '💪'
+                : cat.slug?.includes('snack') || cat.slug?.includes('nut') || cat.slug?.includes('almond')
+                ? '🥗'
+                : '📦';
+
             return (
               <div
                 key={cat.id}
-                className="bg-white rounded-3xl border border-[#E8E1D7] overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                className="bg-white rounded-3xl border border-[#E8E1D7] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
-                  {/* Category Banner Image */}
-                  <div className="relative h-40 w-full bg-[#EBE2D5] overflow-hidden group">
-                    {cat.image && (
+                  {/* Category Banner Image - Clickable to Edit */}
+                  <div
+                    onClick={() => handleOpenEdit(cat)}
+                    className="relative h-44 w-full bg-[#EBE2D5] overflow-hidden group cursor-pointer"
+                    title="Click to edit category banner"
+                  >
+                    {cat.image ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={cat.image}
@@ -330,25 +347,53 @@ export default function AdminCategoriesPage() {
                         }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-4xl bg-stone-100">
+                        {icon}
+                      </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    
+                    {/* Top Right Quick Storefront Preview Link */}
+                    <Link
+                      href={`/products?category=${encodeURIComponent(cat.slug)}`}
+                      target="_blank"
+                      onClick={(e) => e.stopPropagation()}
+                      title="View category on live storefront"
+                      className="absolute top-3 right-3 bg-black/40 hover:bg-black/70 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/20 transition-all flex items-center gap-1 shadow-xs"
+                    >
+                      <span>Store</span>
+                      <span>↗</span>
+                    </Link>
+
+                    {/* Bottom overlay: Emoji Icon + Products Count */}
                     <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white">
-                      <span className="text-2xl drop-shadow-md">{cat.icon || '📦'}</span>
-                      <span className="text-xs bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full font-bold border border-white/20">
-                        {count} Products
-                      </span>
+                      <span className="text-3xl drop-shadow-md">{icon}</span>
+                      <Link
+                        href={`/admin/products?category=${encodeURIComponent(cat.slug)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs bg-black/60 hover:bg-emerald-900/80 backdrop-blur-sm px-3 py-1 rounded-full font-bold border border-white/20 transition-colors shadow-xs"
+                        title="View products in this category"
+                      >
+                        {count} Products →
+                      </Link>
                     </div>
                   </div>
 
                   {/* Body */}
                   <div className="p-5 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-serif text-lg font-bold text-[#1C1917] line-clamp-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(cat)}
+                        className="font-serif text-lg font-bold text-[#1C1917] hover:text-[#4E652B] transition-colors line-clamp-1 text-left cursor-pointer"
+                        title="Click to edit category details"
+                      >
                         {cat.name}
-                      </h3>
+                      </button>
                       <button
                         onClick={() => handleToggleActive(cat)}
-                        className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                        className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border transition-colors cursor-pointer shrink-0 ${
                           cat.isActive
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                             : 'bg-stone-100 text-stone-500 border-stone-300 hover:bg-stone-200'
