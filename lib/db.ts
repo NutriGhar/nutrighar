@@ -359,17 +359,28 @@ function formatOrder(o: any): Order {
 
 // Ensure category exists in DB, upsert if needed
 async function ensureCategoryInDB(categoryId: string, categorySlug: string, categories: Category[]): Promise<string> {
-  const catInList = categories.find((c) => c.id === categoryId || c.slug === categorySlug);
-  const catName = catInList?.name ?? categorySlug;
-  const id = catInList?.id ?? `cat-${categorySlug}`;
+  const cleanSlug = categorySlug || categoryId.replace(/^cat-/, '');
   try {
+    // 1. Check if category exists by ID
+    const existingById = await prisma.category.findUnique({ where: { id: categoryId } }).catch(() => null);
+    if (existingById) return existingById.id;
+
+    // 2. Check if category exists by slug
+    const existingBySlug = await prisma.category.findUnique({ where: { slug: cleanSlug } }).catch(() => null);
+    if (existingBySlug) return existingBySlug.id;
+
+    // 3. Check in categories list
+    const catInList = categories.find((c) => c.id === categoryId || c.slug === categorySlug || c.slug === cleanSlug);
+    const catName = catInList?.name ?? cleanSlug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    const id = catInList?.id ?? (categoryId.startsWith('cat-') ? categoryId : `cat-${cleanSlug}`);
+
     const dbCat = await prisma.category.upsert({
-      where: { slug: categorySlug },
+      where: { slug: cleanSlug },
       update: { name: catName },
       create: {
         id,
         name: catName,
-        slug: categorySlug,
+        slug: cleanSlug,
         description: catInList?.description ?? '',
         icon: catInList?.icon ?? '📦',
         image: catInList?.image ?? null,
@@ -377,8 +388,13 @@ async function ensureCategoryInDB(categoryId: string, categorySlug: string, cate
       },
     });
     return dbCat.id;
-  } catch {
-    return id;
+  } catch (err: any) {
+    console.error('[ensureCategoryInDB] Upsert error:', err.message);
+    try {
+      const anyCat = await prisma.category.findFirst();
+      if (anyCat) return anyCat.id;
+    } catch {}
+    return categoryId;
   }
 }
 
@@ -441,9 +457,47 @@ export async function getProducts(options?: {
 
 export async function getProductById(id: string): Promise<Product | null> {
   try {
-    const product = await prisma.product.findFirst({
+    let product = await prisma.product.findFirst({
       where: { OR: [{ id }, { slug: id }] },
     });
+
+    // If not found in DB, check if it is one of the defaults and auto-seed into PostgreSQL
+    if (!product) {
+      const defaultProd = DEFAULT_PRODUCTS.find((p) => p.id === id || p.slug === id);
+      if (defaultProd) {
+        try {
+          const categories = await getCategories(true);
+          const catId = await ensureCategoryInDB(defaultProd.categoryId, defaultProd.categorySlug, categories);
+          product = await prisma.product.create({
+            data: {
+              id: defaultProd.id,
+              name: defaultProd.name,
+              slug: defaultProd.slug,
+              description: defaultProd.description,
+              price: defaultProd.price,
+              originalPrice: defaultProd.originalPrice ?? null,
+              categoryId: catId,
+              categorySlug: defaultProd.categorySlug,
+              image: defaultProd.image,
+              images: defaultProd.images ?? [],
+              ingredients: defaultProd.ingredients ?? [],
+              benefits: defaultProd.benefits ?? [],
+              rating: defaultProd.rating,
+              reviewCount: defaultProd.reviewCount,
+              stockQuantity: defaultProd.stockQuantity,
+              lowStockThreshold: defaultProd.lowStockThreshold,
+              weight: defaultProd.weight ?? '500g',
+              isFeatured: defaultProd.isFeatured,
+              isBestSeller: defaultProd.isBestSeller,
+              isActive: defaultProd.isActive,
+            } as any,
+          });
+        } catch {
+          return defaultProd;
+        }
+      }
+    }
+
     if (!product) return null;
     return formatProduct(product);
   } catch (err: any) {
@@ -534,7 +588,36 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
 
   try {
     const existing = await prisma.product.findFirst({ where: { OR: [{ id }, { slug: id }] } });
-    if (!existing) return null;
+
+    // If not existing in DB, auto-seed/create it so editing default or unseeded products works seamlessly
+    if (!existing) {
+      const defaultProd = DEFAULT_PRODUCTS.find((p) => p.id === id || p.slug === id);
+      if (defaultProd || updates.name) {
+        console.log(`[updateProduct] Product "${id}" not found in DB, auto-creating in PostgreSQL...`);
+        return await createProduct({
+          name: updates.name || defaultProd?.name || id,
+          slug: updates.slug || defaultProd?.slug || id,
+          description: updates.description || defaultProd?.description || '',
+          price: updates.price !== undefined ? Number(updates.price) : (defaultProd?.price || 0),
+          originalPrice: updates.originalPrice !== undefined ? updates.originalPrice : defaultProd?.originalPrice,
+          categoryId: updates.categoryId || defaultProd?.categoryId || 'cat-mithai',
+          categorySlug: updates.categorySlug || defaultProd?.categorySlug || 'mithai',
+          image: imageUrl || updates.image || defaultProd?.image || '',
+          images: updates.images?.length ? updates.images : (defaultProd?.images || (imageUrl ? [imageUrl] : [])),
+          ingredients: updates.ingredients || defaultProd?.ingredients || [],
+          benefits: updates.benefits || defaultProd?.benefits || [],
+          rating: updates.rating !== undefined ? updates.rating : (defaultProd?.rating || 5.0),
+          reviewCount: updates.reviewCount !== undefined ? updates.reviewCount : (defaultProd?.reviewCount || 0),
+          stockQuantity: updates.stockQuantity !== undefined ? updates.stockQuantity : (defaultProd?.stockQuantity || 50),
+          lowStockThreshold: updates.lowStockThreshold !== undefined ? updates.lowStockThreshold : (defaultProd?.lowStockThreshold || 10),
+          weight: updates.weight || defaultProd?.weight || '500g',
+          isFeatured: updates.isFeatured !== undefined ? updates.isFeatured : (defaultProd?.isFeatured || false),
+          isBestSeller: updates.isBestSeller !== undefined ? updates.isBestSeller : (defaultProd?.isBestSeller || false),
+          isActive: updates.isActive !== undefined ? updates.isActive : (defaultProd?.isActive ?? true),
+        });
+      }
+      return null;
+    }
 
     const data: any = {
       updatedAt: new Date(),
@@ -572,7 +655,7 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     return formatProduct(updated);
   } catch (err: any) {
     console.error('[updateProduct] ❌ DB error:', err.message);
-    return null;
+    throw err;
   }
 }
 
@@ -1091,6 +1174,9 @@ async function seedDefaultData(): Promise<void> {
 
     // Seed products
     for (const prod of DEFAULT_PRODUCTS) {
+      const cat = await prisma.category.findUnique({ where: { slug: prod.categorySlug } });
+      const categoryId = cat?.id || prod.categoryId;
+
       await prisma.product.upsert({
         where: { slug: prod.slug },
         update: {},
@@ -1101,7 +1187,7 @@ async function seedDefaultData(): Promise<void> {
           description: prod.description,
           price: prod.price,
           originalPrice: prod.originalPrice ?? null,
-          categoryId: prod.categoryId,
+          categoryId: categoryId,
           categorySlug: prod.categorySlug,
           image: prod.image,
           images: prod.images ?? [],
