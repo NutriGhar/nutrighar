@@ -88,13 +88,13 @@ export default function AdminCategoriesPage() {
         const img = new window.Image();
         img.onload = async () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
+          const MAX_WIDTH = 1200;
+          const scaleSize = Math.min(1, MAX_WIDTH / img.width);
+          canvas.width = img.width * scaleSize;
           canvas.height = img.height * scaleSize;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          const compressedBase64 = canvas.toDataURL(file.type || 'image/jpeg', 0.88);
           setImage(compressedBase64);
           try {
             const res = await fetch('/api/upload', {
@@ -102,13 +102,15 @@ export default function AdminCategoriesPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 name: `cat-${file.name.replace(/\.[^/.]+$/, '')}`,
-                type: 'image/jpeg',
+                type: file.type || 'image/jpeg',
                 base64OrUrl: compressedBase64,
               }),
             });
             const data = await res.json();
             if (data.success && data.url) setImage(data.url);
-          } catch {}
+          } catch (uploadErr) {
+            console.error('Category image upload failed:', uploadErr);
+          }
         };
         img.src = event.target?.result as string;
       };
