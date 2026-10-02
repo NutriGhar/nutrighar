@@ -295,7 +295,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         )}
 
         {/* Page Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-10 lg:p-12 max-w-6xl w-full mx-auto">
+        <main className="flex-1 overflow-y-auto p-6 sm:p-10 lg:p-12 pb-24 sm:pb-32 max-w-6xl w-full mx-auto">
           {children}
         </main>
       </div>
