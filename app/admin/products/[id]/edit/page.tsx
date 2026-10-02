@@ -90,26 +90,35 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        setImage(base64);
-        try {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: file.name.replace(/\.[^/.]+$/, ''),
-              type: file.type,
-              base64OrUrl: base64,
-            }),
-          });
-          const data = await res.json();
-          if (data.success && data.url) {
-            setImage(data.url);
+      reader.onloadend = (event) => {
+        const img = new window.Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const scaleSize = Math.min(1, MAX_WIDTH / img.width);
+          canvas.width = img.width * scaleSize;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedBase64 = canvas.toDataURL(file.type || 'image/jpeg', 0.88);
+          setImage(compressedBase64);
+          try {
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: file.name.replace(/\.[^/.]+$/, ''),
+                type: file.type || 'image/jpeg',
+                base64OrUrl: compressedBase64,
+              }),
+            });
+            const data = await res.json();
+            if (data.success && data.url) setImage(data.url);
+          } catch (uploadErr) {
+            console.error('Image upload failed:', uploadErr);
           }
-        } catch {
-          // Keep base64 as fallback
-        }
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
