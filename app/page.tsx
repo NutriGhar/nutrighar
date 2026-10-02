@@ -238,7 +238,7 @@ export default function HomePage() {
                   </div>
                 )}
               </div>
-              <div className="p-3 sm:p-5 flex flex-col justify-between flex-1">
+              <div className="p-3.5 sm:p-5 pb-3.5 sm:pb-5 flex flex-col justify-between flex-1">
                 <div>
                   <h3 className="font-serif text-sm sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1">
                     {card.title}
@@ -247,7 +247,7 @@ export default function HomePage() {
                     {card.description}
                   </p>
                 </div>
-                <div className="pt-2 sm:pt-4 mt-2 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
+                <div className="pt-2.5 sm:pt-4 mt-3 border-t border-stone-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#4E652B] group-hover:text-[#3D5021]">
                   <span>Explore</span>
                   <span className="group-hover:translate-x-1 transition-transform">→</span>
                 </div>
