@@ -564,7 +564,7 @@ export default function HomePage() {
             {(content?.testimonials?.items || DEFAULT_TESTIMONIALS.items).map((item: any) => (
               <div
                 key={item.id || item.name}
-                className="bg-white p-6 sm:p-7 pb-8 sm:pb-9 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
+                className="bg-white p-7 sm:p-8 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
               >
                 <div className="space-y-3">
                   <div className="flex gap-1 text-amber-500 text-xs">
@@ -574,7 +574,7 @@ export default function HomePage() {
                     “{item.review}”
                   </p>
                 </div>
-                <div className="pt-3 border-t border-stone-100">
+                <div className="pt-3.5 border-t border-stone-100 pl-1.5 sm:pl-2">
                   <div className="font-bold text-xs text-[#1C1917]">{item.name}</div>
                   <div className="text-[11px] text-[#6B635B] font-light mt-0.5">
                     {item.location ? `${item.location} • ` : ''}{item.product}
