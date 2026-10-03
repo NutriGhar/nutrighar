@@ -564,7 +564,7 @@ export default function HomePage() {
             {(content?.testimonials?.items || DEFAULT_TESTIMONIALS.items).map((item: any) => (
               <div
                 key={item.id || item.name}
-                className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
+                className="bg-white p-6 sm:p-7 pb-8 sm:pb-9 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
               >
                 <div className="space-y-3">
                   <div className="flex gap-1 text-amber-500 text-xs">
