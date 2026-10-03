@@ -207,7 +207,7 @@ export default function HomePage() {
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-1">
               {content?.curatedCollections?.eyebrow || 'Curated Collections'}
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-[#1C1917] tracking-tight">
+            <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-[#1C1917] tracking-tight mb-8">
               {content?.curatedCollections?.heading || 'Pure Food For Everyday Living'}
             </h2>
           </div>
@@ -217,12 +217,12 @@ export default function HomePage() {
         </div>
 
         {/* Dynamic Category Cards Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mt-4">
           {(content?.curatedCollections?.cards || DEFAULT_CURATED_COLLECTIONS.cards).map((card: any) => (
             <Link
               key={card.id || card.title}
               href={`/products?category=${encodeURIComponent(card.categorySlug || 'all')}`}
-              className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white rounded-2xl overflow-hidden border border-stone-200 hover:border-[#4E652B]/50 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
             >
               <div className="relative h-44 sm:h-48 md:h-52 w-full bg-[#EBE2D5] overflow-hidden shrink-0">
                 <Image
@@ -238,7 +238,7 @@ export default function HomePage() {
                   </div>
                 )}
               </div>
-              <div className="p-4 sm:p-5 pb-6 sm:pb-8 flex flex-col justify-between flex-1">
+              <div className="p-4 sm:p-5 pb-5 sm:pb-6 flex flex-col justify-between flex-1">
                 <div>
                   <h3 className="font-serif text-base sm:text-xl font-normal text-[#1C1917] group-hover:text-[#4E652B] transition-colors mb-1.5">
                     {card.title}
@@ -247,7 +247,7 @@ export default function HomePage() {
                     {card.description}
                   </p>
                 </div>
-                <div className="pt-3.5 sm:pt-4 mt-3 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-bold text-[#4E652B] group-hover:text-[#2A4F3C] pb-1.5">
+                <div className="pt-3.5 sm:pt-4 mt-3 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-bold text-[#4E652B] group-hover:text-[#2A4F3C] pb-1">
                   <span>Explore Collection</span>
                   <span className="text-sm group-hover:translate-x-1.5 transition-transform">→</span>
                 </div>
@@ -269,7 +269,7 @@ export default function HomePage() {
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#9C5838] block mb-1">
                 Fresh From The Kitchen
               </span>
-              <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-[#1C1917] tracking-tight">
+              <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-[#1C1917] tracking-tight mb-8">
                 Made for Everyday Goodness
               </h2>
             </div>
@@ -283,7 +283,7 @@ export default function HomePage() {
           </div>
 
           {/* Product Cards Grid: 2 columns on Mobile, 3 on Tablet, 4 on Desktop */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mt-4">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -564,7 +564,7 @@ export default function HomePage() {
             {(content?.testimonials?.items || DEFAULT_TESTIMONIALS.items).map((item: any) => (
               <div
                 key={item.id || item.name}
-                className="bg-white p-7 sm:p-8 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
+                className="bg-white p-6 sm:p-7 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
               >
                 <div className="space-y-3">
                   <div className="flex gap-1 text-amber-500 text-xs">
@@ -574,7 +574,7 @@ export default function HomePage() {
                     “{item.review}”
                   </p>
                 </div>
-                <div className="pt-3.5 border-t border-stone-100 pl-1.5 sm:pl-2">
+                <div className="pt-3.5 border-t border-stone-100">
                   <div className="font-bold text-xs text-[#1C1917]">{item.name}</div>
                   <div className="text-[11px] text-[#6B635B] font-light mt-0.5">
                     {item.location ? `${item.location} • ` : ''}{item.product}
